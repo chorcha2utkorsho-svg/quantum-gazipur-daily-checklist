@@ -1,7 +1,47 @@
 export type TaskStatus = 'done' | 'pending';
 
+export type BranchId = 'all' | 'chowrasta' | 'rajbari';
+
+export interface BranchInfo {
+  id: BranchId;
+  nameBn: string;
+  nameEn: string;
+  locationBn: string;
+  tag: string;
+  color: string;
+  badgeBg: string;
+  badgeText: string;
+  badgeBorder: string;
+}
+
+export const BRANCHES: BranchInfo[] = [
+  {
+    id: 'chowrasta',
+    nameBn: '১। চৌরাস্তা ব্রাঞ্চ',
+    nameEn: 'Chowrasta Branch',
+    locationBn: 'গাজীপুর চৌরাস্তা মোড়',
+    tag: 'Chowrasta',
+    color: '#10b981', // emerald
+    badgeBg: 'bg-emerald-500/10',
+    badgeText: 'text-emerald-400',
+    badgeBorder: 'border-emerald-500/30',
+  },
+  {
+    id: 'rajbari',
+    nameBn: '২। রাজবাড়ি ব্রাঞ্চ',
+    nameEn: 'Rajbari Branch',
+    locationBn: 'গাজীপুর রাজবাড়ি রোড',
+    tag: 'Rajbari',
+    color: '#0ea5e9', // sky
+    badgeBg: 'bg-sky-500/10',
+    badgeText: 'text-sky-400',
+    badgeBorder: 'border-sky-500/30',
+  },
+];
+
 export type UserRole =
-  | 'office_assistant'     // অফিস সহকারী / সুপারভাইজার (সবকিছু পর্যবেক্ষণ, রিপোর্ট তৈরি, নিয়োগ ও পদায়ন)
+  | 'main_boss'            // রাজি স্যার (মেইন বস - উভয় ব্রাঞ্চের সার্বিক পর্যবেক্ষণ ও নীতি নির্ধারক)
+  | 'office_assistant'     // অফিস সহকারী / ইনচার্জ (ব্রাঞ্চ কার্যক্রম তত্ত্বাবধান, রিপোর্ট তৈরি, নিয়োগ ও পদায়ন)
   | 'front_desk'            // ফ্রন্ট ডেস্ক ও সাধারণ কার্যক্রম
   | 'accounts'              // হিসাব ও ক্যাশ ব্যবস্থাপনা
   | 'customer_service'      // গ্রাহক সেবা ও সেলস
@@ -21,10 +61,19 @@ export interface RoleInfo {
 
 export const SYSTEM_ROLES: RoleInfo[] = [
   {
+    id: 'main_boss',
+    titleBn: 'মেইন বস (রাজি স্যার)',
+    titleEn: 'Main Boss / Central Director',
+    description: 'চৌরাস্তা ও রাজবাড়ি উভয় ব্রাঞ্চের কেন্দ্রীয় নিয়ন্ত্রণ, এক নজরে সার্বিক তদারকি ও নির্বাহী সিদ্ধান্ত গ্রহণ।',
+    badgeBg: 'bg-amber-500/20',
+    badgeText: 'text-amber-300',
+    badgeBorder: 'border-amber-500/40',
+  },
+  {
     id: 'office_assistant',
-    titleBn: 'অফিস সহকারী / সুপারভাইজার',
-    titleEn: 'Office Assistant / Supervisor',
-    description: 'সম্পূর্ণ কার্যক্রম তত্ত্বাবধান, কর্মীদের পদায়ন/নিয়োগ, সিদ্ধান্ত গ্রহণ ও সামগ্রিক রিপোর্ট।',
+    titleBn: 'অফিস সহকারী / ব্রাঞ্চ ইনচার্জ',
+    titleEn: 'Office Assistant / Branch In-charge',
+    description: 'সম্পূর্ণ কার্যক্রম তত্ত্বাবধান, কর্মীদের পদায়ন/নিয়োগ, সিদ্ধান্ত গ্রহণ ও ব্রাঞ্চ রিপোর্ট।',
     badgeBg: 'bg-emerald-500/10',
     badgeText: 'text-emerald-400',
     badgeBorder: 'border-emerald-500/30',
@@ -87,10 +136,11 @@ export const SYSTEM_ROLES: RoleInfo[] = [
 
 export interface Employee {
   id: string;
-  employee_id: string; // Login ID, e.g. "EMP-01", "EMP-02", "SUPERVISOR"
+  employee_id: string; // Login ID, e.g. "RAJI_SIR", "SUP-CHOW", "EMP-01"
   name: string;
   pin: string;         // Password / PIN for login
   role: UserRole;
+  branch: BranchId;    // 'chowrasta' | 'rajbari' | 'all'
   is_active: boolean;  // Active vs Terminated / Inactive
   phone?: string;
   joined_date: string; // YYYY-MM-DD
@@ -102,7 +152,9 @@ export interface SessionUser {
   employee_id: string;
   name: string;
   role: UserRole;
+  branch: BranchId;
   is_supervisor: boolean;
+  is_boss: boolean;
 }
 
 export interface TaskTemplate {
@@ -117,6 +169,7 @@ export interface DailyLogItem {
   id: string;
   date: string; // YYYY-MM-DD
   employee_id: string; // ID of the employee this log belongs to
+  branch?: BranchId;
   task_name: string;
   status: TaskStatus;
   reason_for_pending: string;
@@ -130,6 +183,17 @@ export interface DailySummaryStats {
   done: number;
   pending: number;
   percentage: number;
+}
+
+export interface BranchSummaryStats {
+  branchId: BranchId;
+  nameBn: string;
+  activeStaffCount: number;
+  totalTasks: number;
+  doneTasks: number;
+  pendingTasks: number;
+  completionRate: number;
+  pendingReasonsCount: number;
 }
 
 export interface EmployeeDailyProgress {
@@ -156,67 +220,158 @@ export interface AIAnalysisResult {
   source?: string;
 }
 
-export const DEFAULT_SUPERVISOR: Employee = {
-  id: 'emp-supervisor',
-  employee_id: 'SUPERVISOR',
-  name: 'অফিস সহকারী / সুপারভাইজার (Raji Sir Team)',
+export const BOSS_RAJI_SIR: Employee = {
+  id: 'emp-raji-sir-boss',
+  employee_id: 'RAJI_SIR',
+  name: 'রাজি স্যার (মেইন বস)',
   pin: '1234',
-  role: 'office_assistant',
+  role: 'main_boss',
+  branch: 'all',
   is_active: true,
-  joined_date: '2024-01-01',
-  notes: 'সার্বিক সেল পরিচালনা ও সিদ্ধান্ত গ্রহণকারী কর্মকর্তা।',
-  avatar_color: '#10b981',
+  phone: '01700000000',
+  joined_date: '2023-01-01',
+  notes: 'কোয়ান্টাম গাজীপুর সেল: চৌরাস্তা ও রাজবাড়ি উভয় ব্রাঞ্চের সার্বিক প্রধান ও নীতিনির্ধারক।',
+  avatar_color: '#f59e0b',
 };
 
+export const DEFAULT_SUPERVISOR: Employee = BOSS_RAJI_SIR;
+
 export const INITIAL_EMPLOYEES: Employee[] = [
-  DEFAULT_SUPERVISOR,
+  // মেইন বস (রাজি স্যার)
+  BOSS_RAJI_SIR,
+
+  // ১। চৌরাস্তা ব্রাঞ্চ টিম (Chowrasta Branch Staff)
   {
-    id: 'emp-01',
-    employee_id: 'EMP-01',
-    name: 'মিনা (Mina)',
+    id: 'emp-chow-sup',
+    employee_id: 'SUP-CHOW',
+    name: 'মিজানুর রহমান (ইনচার্জ - চৌরাস্তা)',
+    pin: '1234',
+    role: 'office_assistant',
+    branch: 'chowrasta',
+    is_active: true,
+    phone: '01711000001',
+    joined_date: '2023-05-01',
+    notes: 'চৌরাস্তা ব্রাঞ্চের সার্বিক কার্যক্রম পরিচালনা ও তত্ত্বাবধান।',
+    avatar_color: '#10b981',
+  },
+  {
+    id: 'emp-chow-01',
+    employee_id: 'CR-01',
+    name: 'মিনা (Mina - ফ্রন্ট ডেস্ক)',
     pin: '1234',
     role: 'front_desk',
+    branch: 'chowrasta',
     is_active: true,
-    phone: '01700000001',
+    phone: '01711000002',
     joined_date: '2024-01-15',
-    notes: 'ফ্রন্ট ডেস্ক ও দৈনন্দিন ২০টি প্রধান কাজের দায়িত্বপ্রাপ্ত কর্মী।',
+    notes: 'চৌরাস্তা ব্রাঞ্চের ফ্রন্ট ডেস্ক ও রিসেপশন পরিচালনা।',
     avatar_color: '#38bdf8',
   },
   {
-    id: 'emp-02',
-    employee_id: 'EMP-02',
-    name: 'তানভীর আহমেদ',
+    id: 'emp-chow-02',
+    employee_id: 'CR-02',
+    name: 'তানভীর আহমেদ (হিসাব)',
     pin: '1234',
     role: 'accounts',
+    branch: 'chowrasta',
     is_active: true,
-    phone: '01700000002',
+    phone: '01711000003',
     joined_date: '2024-02-01',
-    notes: 'ক্যাশ ক্লোজিং, বিকাশ এমআর ও আর্থিক রেকর্ড ব্যবস্থাপক।',
+    notes: 'চৌরাস্তা ব্রাঞ্চের ক্যাশ ক্লোজিং, বিকাশ এমআর ও হিসাব রেকর্ড।',
     avatar_color: '#fbbf24',
   },
   {
-    id: 'emp-03',
-    employee_id: 'EMP-03',
-    name: 'সাদিয়া তাসনিম',
+    id: 'emp-chow-03',
+    employee_id: 'CR-03',
+    name: 'সাদিয়া তাসনিম (কাস্টমার সার্ভিস)',
     pin: '1234',
     role: 'customer_service',
+    branch: 'chowrasta',
     is_active: true,
-    phone: '01700000003',
+    phone: '01711000004',
     joined_date: '2024-03-01',
-    notes: 'সেলস আইটেম ও গ্রাহক যোগাযোগ তত্ত্বাবধায়ক।',
+    notes: 'চৌরাস্তা ব্রাঞ্চের সেলস আইটেম ও গ্রাহক যোগাযোগ তত্ত্বাবধায়ক।',
     avatar_color: '#a78bfa',
   },
   {
-    id: 'emp-04',
-    employee_id: 'EMP-04',
-    name: 'মো. রফিকুল ইসলাম',
+    id: 'emp-chow-04',
+    employee_id: 'CR-04',
+    name: 'মো. রফিকুল ইসলাম (লজিস্টিকস)',
     pin: '1234',
     role: 'logistics',
+    branch: 'chowrasta',
     is_active: true,
-    phone: '01700000004',
+    phone: '01711000005',
     joined_date: '2024-03-15',
-    notes: 'অফিস চেক, গাছপালা যত্ন ও অফিস নিরাপত্তা রুটিন।',
+    notes: 'চৌরাস্তা ব্রাঞ্চের অফিস চেক, গাছপালা ও নিরাপত্তা ব্যবস্থাপনা।',
     avatar_color: '#34d399',
+  },
+
+  // ২। রাজবাড়ি ব্রাঞ্চ টিম (Rajbari Branch Staff)
+  {
+    id: 'emp-rajb-sup',
+    employee_id: 'SUP-RAJB',
+    name: 'ফারহানা ইয়াসমিন (ইনচার্জ - রাজবাড়ি)',
+    pin: '1234',
+    role: 'office_assistant',
+    branch: 'rajbari',
+    is_active: true,
+    phone: '01722000001',
+    joined_date: '2023-06-01',
+    notes: 'রাজবাড়ি ব্রাঞ্চের সার্বিক কার্যক্রম পরিচালনা ও তত্ত্বাবধান।',
+    avatar_color: '#0ea5e9',
+  },
+  {
+    id: 'emp-rajb-01',
+    employee_id: 'RB-01',
+    name: 'কবীর হোসেন (ফ্রন্ট ডেস্ক)',
+    pin: '1234',
+    role: 'front_desk',
+    branch: 'rajbari',
+    is_active: true,
+    phone: '01722000002',
+    joined_date: '2024-01-20',
+    notes: 'রাজবাড়ি ব্রাঞ্চের ফ্রন্ট ডেস্ক ও ভিজিটর অভ্যর্থনা।',
+    avatar_color: '#60a5fa',
+  },
+  {
+    id: 'emp-rajb-02',
+    employee_id: 'RB-02',
+    name: 'নুসরাত জাহান (হিসাব)',
+    pin: '1234',
+    role: 'accounts',
+    branch: 'rajbari',
+    is_active: true,
+    phone: '01722000003',
+    joined_date: '2024-02-10',
+    notes: 'রাজবাড়ি ব্রাঞ্চের ক্যাশ ক্লোজিং, অনুদান ও ব্যালেন্স ফলোআপ।',
+    avatar_color: '#f59e0b',
+  },
+  {
+    id: 'emp-rajb-03',
+    employee_id: 'RB-03',
+    name: 'আলমগীর কবীর (কাস্টমার সার্ভিস)',
+    pin: '1234',
+    role: 'customer_service',
+    branch: 'rajbari',
+    is_active: true,
+    phone: '01722000004',
+    joined_date: '2024-03-05',
+    notes: 'রাজবাড়ি সেলস আইটেম, কো-অর্ডিনেশন ও যোগাযোগ লিস্ট।',
+    avatar_color: '#c084fc',
+  },
+  {
+    id: 'emp-rajb-04',
+    employee_id: 'RB-04',
+    name: 'শরিফুল ইসলাম (লজিস্টিকস)',
+    pin: '1234',
+    role: 'logistics',
+    branch: 'rajbari',
+    is_active: true,
+    phone: '01722000005',
+    joined_date: '2024-03-20',
+    notes: 'রাজবাড়ি ব্রাঞ্চের ইকুইপমেন্ট সুরক্ষা ও অফিস ফ্যাসিলিটি কেয়ার।',
+    avatar_color: '#2dd4bf',
   },
 ];
 

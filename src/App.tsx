@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 
 import {
+  BranchId,
   DailyLogItem,
   DailySummaryStats,
   Employee,
@@ -76,8 +77,10 @@ export default function App() {
   const [templates, setTemplates] = useState<TaskTemplate[]>([]);
   const [logs, setLogs] = useState<DailyLogItem[]>([]);
   const [progressList, setProgressList] = useState<EmployeeDailyProgress[]>([]);
+  const [selectedBranch, setSelectedBranch] = useState<BranchId>('all');
 
-  const isSupervisor = currentUser?.role === 'office_assistant';
+  const isBoss = currentUser?.role === 'main_boss' || currentUser?.employee_id === 'RAJI_SIR';
+  const isSupervisor = currentUser?.role === 'office_assistant' || isBoss;
   const [viewMode, setViewMode] = useState<'supervisor' | 'checklist'>(() =>
     isSupervisor ? 'supervisor' : 'checklist'
   );
@@ -108,7 +111,7 @@ export default function App() {
 
   // Synchronize viewMode whenever user changes
   useEffect(() => {
-    if (currentUser?.role === 'office_assistant') {
+    if (currentUser?.role === 'office_assistant' || currentUser?.role === 'main_boss' || currentUser?.employee_id === 'RAJI_SIR') {
       setViewMode('supervisor');
     } else {
       setViewMode('checklist');
@@ -328,6 +331,8 @@ export default function App() {
         currentUser={currentUser}
         viewMode={viewMode}
         onToggleViewMode={setViewMode}
+        selectedBranch={selectedBranch}
+        onSelectBranch={setSelectedBranch}
       />
 
       {/* Main Content Area */}
@@ -339,6 +344,9 @@ export default function App() {
             employees={employees}
             progressList={progressList}
             templates={templates}
+            currentUser={currentUser}
+            selectedBranch={selectedBranch}
+            onSelectBranch={setSelectedBranch}
             onOpenEmployeeManager={() => setIsEmployeeManagerOpen(true)}
             onRefreshData={handleRefreshComparative}
             onInspectEmployee={handleInspectEmployee}

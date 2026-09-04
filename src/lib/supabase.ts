@@ -102,22 +102,33 @@ const STORAGE_PREFIX = 'qgz_cell_';
 
 export function getLocalEmployees(): Employee[] {
   if (typeof window === 'undefined') return INITIAL_EMPLOYEES;
-  const stored = localStorage.getItem(`${STORAGE_PREFIX}employees`);
+  const stored = localStorage.getItem(`${STORAGE_PREFIX}employees_v2`);
   if (stored) {
     try {
       const parsed = JSON.parse(stored);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        // Ensure Raji Sir is present
+        const hasRajiSir = parsed.some((e) => e.employee_id === 'RAJI_SIR');
+        if (!hasRajiSir) {
+          const merged = [INITIAL_EMPLOYEES[0], ...parsed];
+          localStorage.setItem(`${STORAGE_PREFIX}employees_v2`, JSON.stringify(merged));
+          return merged;
+        }
+        return parsed;
+      }
     } catch {
       // fallback
     }
   }
-  localStorage.setItem(`${STORAGE_PREFIX}employees`, JSON.stringify(INITIAL_EMPLOYEES));
+
+  // Fallback to initial multi-branch roster with Raji Sir
+  localStorage.setItem(`${STORAGE_PREFIX}employees_v2`, JSON.stringify(INITIAL_EMPLOYEES));
   return INITIAL_EMPLOYEES;
 }
 
 export function saveLocalEmployees(employees: Employee[]) {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(`${STORAGE_PREFIX}employees`, JSON.stringify(employees));
+  localStorage.setItem(`${STORAGE_PREFIX}employees_v2`, JSON.stringify(employees));
 }
 
 export function getLocalTemplates(): TaskTemplate[] {
@@ -174,7 +185,7 @@ export function saveLocalDailyLogs(date: string, logs: DailyLogItem[], employeeI
 // Active session user in local storage
 export function getStoredSession(): Employee | null {
   if (typeof window === 'undefined') return null;
-  const stored = localStorage.getItem(`${STORAGE_PREFIX}active_user`);
+  const stored = localStorage.getItem(`${STORAGE_PREFIX}active_user_v2`);
   if (stored) {
     try {
       return JSON.parse(stored);
@@ -182,16 +193,16 @@ export function getStoredSession(): Employee | null {
       // fallback
     }
   }
-  // Default to supervisor for easy first use
+  // Default to Raji Sir (Boss) for immediate executive oversight
   return INITIAL_EMPLOYEES[0];
 }
 
 export function saveStoredSession(user: Employee | null) {
   if (typeof window === 'undefined') return;
   if (user) {
-    localStorage.setItem(`${STORAGE_PREFIX}active_user`, JSON.stringify(user));
+    localStorage.setItem(`${STORAGE_PREFIX}active_user_v2`, JSON.stringify(user));
   } else {
-    localStorage.removeItem(`${STORAGE_PREFIX}active_user`);
+    localStorage.removeItem(`${STORAGE_PREFIX}active_user_v2`);
   }
 }
 
@@ -241,6 +252,7 @@ export async function upsertEmployee(emp: Employee): Promise<Employee[]> {
           name: emp.name,
           pin: emp.pin,
           role: emp.role,
+          branch: emp.branch || 'chowrasta',
           is_active: emp.is_active,
           phone: emp.phone || '',
           joined_date: emp.joined_date,

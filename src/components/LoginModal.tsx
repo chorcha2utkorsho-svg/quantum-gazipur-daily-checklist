@@ -99,77 +99,221 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             </div>
           )}
 
-          {/* Quick 1-Click Login List */}
-          <div>
-            <label className="block text-xs font-semibold text-[#8e9299] uppercase tracking-wider mb-2.5">
-              ১-ক্লিক কুইক সাইন ইন (Demo / Fast Switch)
-            </label>
-            <div className="grid grid-cols-1 gap-2">
-              {activeEmployees.map((emp) => {
-                const isSelected = emp.employee_id === currentUserId;
-                const roleDef = SYSTEM_ROLES.find((r) => r.id === emp.role);
-                const isSupervisor = emp.role === 'office_assistant';
+          {/* Quick 1-Click Login List organized by Branch */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-semibold text-[#8e9299] uppercase tracking-wider">
+                ১-ক্লিক কুইক সাইন ইন (ব্রাঞ্চ অনুযায়ী বাছাই)
+              </label>
+              <span className="text-[11px] text-amber-400 font-mono">PIN: 1234</span>
+            </div>
 
-                return (
-                  <button
-                    key={emp.id}
-                    type="button"
-                    onClick={() => handleQuickLogin(emp)}
-                    className={`flex items-center justify-between p-3 rounded-xl border text-left transition-all group ${
-                      isSelected
-                        ? 'bg-emerald-500/15 border-emerald-500/40 text-white'
-                        : 'bg-white/[0.03] hover:bg-white/[0.07] border-white/10 text-[#d4d4d8]'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div
-                        className="w-9 h-9 rounded-lg flex items-center justify-center font-bold text-xs uppercase text-white shrink-0"
-                        style={{ backgroundColor: emp.avatar_color || '#3b82f6' }}
-                      >
-                        {emp.name.slice(0, 2)}
+            {/* Boss Account (Raji Sir) */}
+            {activeEmployees.filter((e) => e.role === 'main_boss' || e.employee_id === 'RAJI_SIR').map((emp) => {
+              const isSelected = emp.employee_id === currentUserId;
+              return (
+                <button
+                  key={emp.id}
+                  type="button"
+                  onClick={() => handleQuickLogin(emp)}
+                  className={`w-full flex items-center justify-between p-3.5 rounded-xl border text-left transition-all group ${
+                    isSelected
+                      ? 'bg-amber-500/20 border-amber-500/50 text-white shadow-[0_0_15px_rgba(245,158,11,0.25)]'
+                      : 'bg-amber-500/10 hover:bg-amber-500/15 border-amber-500/30 text-[#fef3c7]'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500 text-black flex items-center justify-center font-black text-base shrink-0 shadow-md">
+                      👑
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm text-amber-300 truncate">
+                          {emp.name}
+                        </span>
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200 border border-amber-500/30">
+                          {emp.employee_id}
+                        </span>
                       </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-sm text-white truncate">
-                            {emp.name}
-                          </span>
-                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/10 text-white/70">
-                            {emp.employee_id}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span
-                            className={`text-[11px] px-2 py-0.5 rounded-full border font-medium ${
-                              roleDef?.badgeBg || 'bg-white/10'
-                            } ${roleDef?.badgeText || 'text-white/80'} ${
-                              roleDef?.badgeBorder || 'border-white/10'
-                            }`}
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[11px] px-2 py-0.5 rounded-full border border-amber-500/40 bg-amber-500/20 text-amber-200 font-semibold">
+                          মেইন বস • উভয় ব্রাঞ্চ সেন্ট্রাল পর্যবেক্ষণ
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="shrink-0 flex items-center gap-2 text-xs font-bold text-amber-400">
+                    {isSelected ? (
+                      <span className="flex items-center gap-1">
+                        <Check className="w-4 h-4" /> অ্যাক্টিভ
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1">
+                        প্রবেশ করুন <ArrowRight className="w-3.5 h-3.5" />
+                      </span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+
+            {/* Branch 1: Chowrasta */}
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 px-1 pt-1">
+                <span>🏢 ১। চৌরাস্তা ব্রাঞ্চ টিম</span>
+              </div>
+              <div className="grid grid-cols-1 gap-1.5">
+                {activeEmployees
+                  .filter(
+                    (e) =>
+                      (e.branch === 'chowrasta' || e.employee_id.startsWith('CR-') || e.employee_id === 'SUP-CHOW') &&
+                      e.role !== 'main_boss' &&
+                      e.employee_id !== 'RAJI_SIR'
+                  )
+                  .map((emp) => {
+                    const isSelected = emp.employee_id === currentUserId;
+                    const roleDef = SYSTEM_ROLES.find((r) => r.id === emp.role);
+                    const isIncharge = emp.role === 'office_assistant';
+
+                    return (
+                      <button
+                        key={emp.id}
+                        type="button"
+                        onClick={() => handleQuickLogin(emp)}
+                        className={`flex items-center justify-between p-2.5 rounded-xl border text-left transition-all group ${
+                          isSelected
+                            ? 'bg-emerald-500/15 border-emerald-500/40 text-white'
+                            : 'bg-white/[0.02] hover:bg-white/[0.06] border-white/10 text-[#d4d4d8]'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div
+                            className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs uppercase text-white shrink-0"
+                            style={{ backgroundColor: emp.avatar_color || '#10b981' }}
                           >
-                            {roleDef?.titleBn || emp.role}
-                          </span>
-                          {isSupervisor && (
-                            <span className="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">
-                              • ফুল অ্যাক্সেস
+                            {emp.name.slice(0, 2)}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-semibold text-xs text-white truncate">
+                                {emp.name}
+                              </span>
+                              <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-white/10 text-white/70">
+                                {emp.employee_id}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <span
+                                className={`text-[10px] px-1.5 py-0.2 rounded border font-medium ${
+                                  roleDef?.badgeBg || 'bg-white/10'
+                                } ${roleDef?.badgeText || 'text-white/80'} ${
+                                  roleDef?.badgeBorder || 'border-white/10'
+                                }`}
+                              >
+                                {roleDef?.titleBn || emp.role}
+                              </span>
+                              {isIncharge && (
+                                <span className="text-[10px] text-emerald-400 font-bold">
+                                  • ইনচার্জ
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="shrink-0 text-xs text-[#8e9299] group-hover:text-emerald-400">
+                          {isSelected ? (
+                            <span className="flex items-center gap-1 text-emerald-400 text-xs font-semibold">
+                              <Check className="w-3.5 h-3.5" /> অ্যাক্টিভ
                             </span>
+                          ) : (
+                            <ArrowRight className="w-3.5 h-3.5" />
                           )}
                         </div>
-                      </div>
-                    </div>
+                      </button>
+                    );
+                  })}
+              </div>
+            </div>
 
-                    <div className="shrink-0 flex items-center gap-2 text-xs text-[#8e9299] group-hover:text-emerald-400 transition-colors">
-                      {isSelected ? (
-                        <span className="flex items-center gap-1 text-emerald-400 text-xs font-semibold">
-                          <Check className="w-4 h-4" /> অ্যাক্টিভ
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-1">
-                          লগইন <ArrowRight className="w-3.5 h-3.5" />
-                        </span>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
+            {/* Branch 2: Rajbari */}
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2 text-xs font-bold text-sky-400 px-1 pt-1">
+                <span>🏛️ ২। রাজবাড়ি ব্রাঞ্চ টিম</span>
+              </div>
+              <div className="grid grid-cols-1 gap-1.5">
+                {activeEmployees
+                  .filter(
+                    (e) =>
+                      (e.branch === 'rajbari' || e.employee_id.startsWith('RB-') || e.employee_id === 'SUP-RAJB') &&
+                      e.role !== 'main_boss' &&
+                      e.employee_id !== 'RAJI_SIR'
+                  )
+                  .map((emp) => {
+                    const isSelected = emp.employee_id === currentUserId;
+                    const roleDef = SYSTEM_ROLES.find((r) => r.id === emp.role);
+                    const isIncharge = emp.role === 'office_assistant';
+
+                    return (
+                      <button
+                        key={emp.id}
+                        type="button"
+                        onClick={() => handleQuickLogin(emp)}
+                        className={`flex items-center justify-between p-2.5 rounded-xl border text-left transition-all group ${
+                          isSelected
+                            ? 'bg-sky-500/15 border-sky-500/40 text-white'
+                            : 'bg-white/[0.02] hover:bg-white/[0.06] border-white/10 text-[#d4d4d8]'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div
+                            className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs uppercase text-white shrink-0"
+                            style={{ backgroundColor: emp.avatar_color || '#0ea5e9' }}
+                          >
+                            {emp.name.slice(0, 2)}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-semibold text-xs text-white truncate">
+                                {emp.name}
+                              </span>
+                              <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-white/10 text-white/70">
+                                {emp.employee_id}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <span
+                                className={`text-[10px] px-1.5 py-0.2 rounded border font-medium ${
+                                  roleDef?.badgeBg || 'bg-white/10'
+                                } ${roleDef?.badgeText || 'text-white/80'} ${
+                                  roleDef?.badgeBorder || 'border-white/10'
+                                }`}
+                              >
+                                {roleDef?.titleBn || emp.role}
+                              </span>
+                              {isIncharge && (
+                                <span className="text-[10px] text-sky-400 font-bold">
+                                  • ইনচার্জ
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="shrink-0 text-xs text-[#8e9299] group-hover:text-sky-400">
+                          {isSelected ? (
+                            <span className="flex items-center gap-1 text-sky-400 text-xs font-semibold">
+                              <Check className="w-3.5 h-3.5" /> অ্যাক্টিভ
+                            </span>
+                          ) : (
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+              </div>
             </div>
           </div>
 

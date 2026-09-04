@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Employee, SYSTEM_ROLES, UserRole } from '../types';
+import { Employee, SYSTEM_ROLES, UserRole, BRANCHES, BranchId } from '../types';
 import {
   UserPlus,
   UserCheck,
@@ -12,6 +12,8 @@ import {
   Calendar,
   Save,
   Trash2,
+  Building2,
+  Landmark,
 } from 'lucide-react';
 
 interface EmployeeManagerModalProps {
@@ -41,6 +43,7 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
 }) => {
   const [editingEmployee, setEditingEmployee] = useState<Partial<Employee> | null>(null);
   const [filter, setFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [branchFilter, setBranchFilter] = useState<BranchId>('all');
   const [errorMsg, setErrorMsg] = useState('');
 
   if (!isOpen) return null;
@@ -54,6 +57,7 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
       name: '',
       pin: '1234',
       role: 'general_staff',
+      branch: 'chowrasta',
       is_active: true,
       phone: '',
       joined_date: new Date().toISOString().split('T')[0],
@@ -86,8 +90,12 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
   };
 
   const filteredEmployees = employees.filter((e) => {
-    if (filter === 'active') return e.is_active;
-    if (filter === 'inactive') return !e.is_active;
+    if (filter === 'active' && !e.is_active) return false;
+    if (filter === 'inactive' && e.is_active) return false;
+    if (branchFilter !== 'all') {
+      const b = e.branch || (e.employee_id.startsWith('RB-') || e.employee_id === 'SUP-RAJB' ? 'rajbari' : 'chowrasta');
+      if (b !== branchFilter) return false;
+    }
     return true;
   });
 
@@ -121,44 +129,85 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
         {/* Modal Content */}
         <div className="p-6 overflow-y-auto space-y-5">
           {/* Top action bar: Filter & Add New */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-white/5">
-            <div className="flex items-center gap-2">
+          <div className="space-y-2 pb-2 border-b border-white/5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              {/* Active/Inactive Status Filter */}
+              <div className="flex items-center gap-1.5 p-1 rounded-lg bg-white/[0.03] border border-white/10 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setFilter('all')}
+                  className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${
+                    filter === 'all' ? 'bg-white/20 text-white' : 'text-[#8e9299] hover:text-white'
+                  }`}
+                >
+                  সকল ({employees.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilter('active')}
+                  className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${
+                    filter === 'active' ? 'bg-emerald-500/20 text-emerald-400' : 'text-[#8e9299] hover:text-white'
+                  }`}
+                >
+                  সক্রিয় ({employees.filter((e) => e.is_active).length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilter('inactive')}
+                  className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${
+                    filter === 'inactive' ? 'bg-red-500/20 text-red-400' : 'text-[#8e9299] hover:text-white'
+                  }`}
+                >
+                  বাতিল ({employees.filter((e) => !e.is_active).length})
+                </button>
+              </div>
+
+              {/* Branch Filter Tabs */}
+              <div className="flex items-center gap-1.5 p-1 rounded-lg bg-white/[0.03] border border-white/10 text-xs">
+                <span className="text-[10px] text-[#8e9299] px-1 font-semibold">ব্রাঞ্চ:</span>
+                <button
+                  type="button"
+                  onClick={() => setBranchFilter('all')}
+                  className={`px-2 py-1 rounded-md text-xs font-bold transition-colors ${
+                    branchFilter === 'all' ? 'bg-amber-500/20 text-amber-300' : 'text-[#8e9299] hover:text-white'
+                  }`}
+                >
+                  উভয়
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBranchFilter('chowrasta')}
+                  className={`px-2 py-1 rounded-md text-xs font-bold transition-colors flex items-center gap-1 ${
+                    branchFilter === 'chowrasta'
+                      ? 'bg-emerald-500/20 text-emerald-400'
+                      : 'text-[#8e9299] hover:text-emerald-300'
+                  }`}
+                >
+                  <Building2 className="w-3 h-3" />
+                  <span>চৌরাস্তা</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBranchFilter('rajbari')}
+                  className={`px-2 py-1 rounded-md text-xs font-bold transition-colors flex items-center gap-1 ${
+                    branchFilter === 'rajbari'
+                      ? 'bg-sky-500/20 text-sky-400'
+                      : 'text-[#8e9299] hover:text-sky-300'
+                  }`}
+                >
+                  <Landmark className="w-3 h-3" />
+                  <span>রাজবাড়ি</span>
+                </button>
+              </div>
+
               <button
-                type="button"
-                onClick={() => setFilter('all')}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-colors ${
-                  filter === 'all' ? 'bg-white/20 text-white' : 'text-[#8e9299] hover:text-white'
-                }`}
+                onClick={handleStartNew}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
               >
-                সকল ({employees.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setFilter('active')}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-colors ${
-                  filter === 'active' ? 'bg-emerald-500/20 text-emerald-400' : 'text-[#8e9299] hover:text-white'
-                }`}
-              >
-                সক্রিয় ({employees.filter((e) => e.is_active).length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setFilter('inactive')}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-colors ${
-                  filter === 'inactive' ? 'bg-red-500/20 text-red-400' : 'text-[#8e9299] hover:text-white'
-                }`}
-              >
-                বাতিল / নিষ্ক্রিয় ({employees.filter((e) => !e.is_active).length})
+                <UserPlus className="w-4 h-4" />
+                <span>নতুন কর্মী নিয়োগ</span>
               </button>
             </div>
-
-            <button
-              onClick={handleStartNew}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
-            >
-              <UserPlus className="w-4 h-4" />
-              <span>নতুন কর্মী নিয়োগ</span>
-            </button>
           </div>
 
           {/* Add / Edit Form */}
@@ -200,15 +249,15 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-[#8e9299] mb-1">এমপ্লয়ী আইডি (Login ID) *</label>
-                  <input
-                    type="text"
-                    value={editingEmployee.employee_id || ''}
-                    onChange={(e) => setEditingEmployee({ ...editingEmployee, employee_id: e.target.value.toUpperCase() })}
-                    placeholder="EMP-05"
-                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white uppercase focus:outline-none focus:border-emerald-500"
-                    required
-                  />
+                  <label className="block text-xs font-medium text-[#8e9299] mb-1">ব্রাঞ্চ নির্ধারণ *</label>
+                  <select
+                    value={editingEmployee.branch || 'chowrasta'}
+                    onChange={(e) => setEditingEmployee({ ...editingEmployee, branch: e.target.value as 'chowrasta' | 'rajbari' })}
+                    className="w-full px-3 py-2 bg-[#1c1f24] border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500"
+                  >
+                    <option value="chowrasta">🏢 ১। চৌরাস্তা ব্রাঞ্চ (Chowrasta Branch)</option>
+                    <option value="rajbari">🏛️ ২। রাজবাড়ি ব্রাঞ্চ (Rajbari Branch)</option>
+                  </select>
                 </div>
 
                 <div>
@@ -224,6 +273,18 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
                       </option>
                     ))}
                   </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-[#8e9299] mb-1">এমপ্লয়ী আইডি (Login ID) *</label>
+                  <input
+                    type="text"
+                    value={editingEmployee.employee_id || ''}
+                    onChange={(e) => setEditingEmployee({ ...editingEmployee, employee_id: e.target.value.toUpperCase() })}
+                    placeholder="CR-05 বা RB-05"
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white uppercase focus:outline-none focus:border-emerald-500"
+                    required
+                  />
                 </div>
 
                 <div>
@@ -339,6 +400,22 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
                         >
                           {roleDef?.titleBn || emp.role}
                         </span>
+
+                        {/* Branch badge */}
+                        {emp.role === 'main_boss' || emp.employee_id === 'RAJI_SIR' ? (
+                          <span className="text-xs px-2 py-0.5 rounded-md border font-bold bg-amber-500/15 text-amber-300 border-amber-500/30 flex items-center gap-1">
+                            👑 উভয় ব্রাঞ্চ (সেন্ট্রাল)
+                          </span>
+                        ) : (emp.branch === 'rajbari' || emp.employee_id.startsWith('RB-') || emp.employee_id === 'SUP-RAJB') ? (
+                          <span className="text-xs px-2 py-0.5 rounded-md border font-bold bg-sky-500/15 text-sky-400 border-sky-500/30 flex items-center gap-1">
+                            <Landmark className="w-3 h-3" /> রাজবাড়ি ব্রাঞ্চ
+                          </span>
+                        ) : (
+                          <span className="text-xs px-2 py-0.5 rounded-md border font-bold bg-emerald-500/15 text-emerald-400 border-emerald-500/30 flex items-center gap-1">
+                            <Building2 className="w-3 h-3" /> চৌরাস্তা ব্রাঞ্চ
+                          </span>
+                        )}
+
                         {emp.phone && (
                           <span className="text-xs text-[#8e9299] flex items-center gap-1">
                             <Phone className="w-3 h-3" /> {emp.phone}

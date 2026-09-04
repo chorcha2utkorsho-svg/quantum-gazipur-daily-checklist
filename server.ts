@@ -21,30 +21,48 @@ async function startServer() {
     res.json({ status: 'ok', time: new Date().toISOString() });
   });
 
-  // AI Strategic Analysis endpoint for Office Assistant / Supervisor
+  // AI Strategic Analysis endpoint for Raji Sir (Boss) & Branch Supervisors
   app.post('/api/ai-analyze', async (req: Request, res: Response) => {
     try {
-      const { date, employeesSummary, teamStats } = req.body;
+      const { date, employeesSummary, teamStats, branchStats, isBossView } = req.body;
 
       const apiKey = process.env.GEMINI_API_KEY;
 
+      const chowrastaStaff = (employeesSummary || []).filter((e: any) => e.branch === 'chowrasta');
+      const rajbariStaff = (employeesSummary || []).filter((e: any) => e.branch === 'rajbari');
+
       const promptData = `
 তারিখ: ${date || 'আজ'}
+ভিউ মোড: ${isBossView ? 'মেইন বস রাজি স্যারের সেন্ট্রাল ড্যাশবোর্ড (দুটো ব্রাঞ্চ যৌথ চিত্র)' : 'ব্রাঞ্চ সুপারভাইজার ড্যাশবোর্ড'}
 মোট সক্রিয় কর্মী: ${teamStats?.activeStaff || employeesSummary?.length || 0} জন
 গড় টাস্ক সম্পন্ন হার: ${teamStats?.averageCompletion || 0}%
 মোট অনিষ্পন্ন/পেন্ডিং কাজ: ${teamStats?.totalPendingItems || 0} টি
 
-কর্মীভিত্তিক তুলনামূলক রিপোর্ট:
-${(employeesSummary || [])
+[১। চৌরাস্তা ব্রাঞ্চ (Chowrasta Branch)]:
+- কর্মী সংখ্যা: ${chowrastaStaff.length} জন
+- কর্মী বিবরণ ও প্রগ্রেস:
+${chowrastaStaff
   .map(
-    (emp: any) => `
-- নাম: ${emp.name} (রোল: ${emp.role})
-  সম্পন্ন: ${emp.doneTasks}/${emp.totalTasks} (${emp.completionRate}%)
-  পেন্ডিং টাস্ক ও কারণ: ${
-    emp.pendingReasons && emp.pendingReasons.length > 0
-      ? emp.pendingReasons.map((p: any) => `"${p.task}": ${p.reason}`).join('; ')
-      : 'সব কাজ সম্পন্ন'
-  }`
+    (emp: any) =>
+      `  * ${emp.name} (${emp.role}): সম্পন্ন ${emp.doneTasks}/${emp.totalTasks} (${emp.completionRate}%); পেন্ডিং: ${
+        emp.pendingReasons && emp.pendingReasons.length > 0
+          ? emp.pendingReasons.map((p: any) => `"${p.task}": ${p.reason}`).join('; ')
+          : 'সব সম্পন্ন'
+      }`
+  )
+  .join('\n')}
+
+[২। রাজবাড়ি ব্রাঞ্চ (Rajbari Branch)]:
+- কর্মী সংখ্যা: ${rajbariStaff.length} জন
+- কর্মী বিবরণ ও প্রগ্রেস:
+${rajbariStaff
+  .map(
+    (emp: any) =>
+      `  * ${emp.name} (${emp.role}): সম্পন্ন ${emp.doneTasks}/${emp.totalTasks} (${emp.completionRate}%); পেন্ডিং: ${
+        emp.pendingReasons && emp.pendingReasons.length > 0
+          ? emp.pendingReasons.map((p: any) => `"${p.task}": ${p.reason}`).join('; ')
+          : 'সব সম্পন্ন'
+      }`
   )
   .join('\n')}
 `;
@@ -52,16 +70,21 @@ ${(employeesSummary || [])
       if (apiKey) {
         try {
           const ai = new GoogleGenAI({ apiKey });
-          const systemInstruction = `You are an elite operational executive and managerial strategist advising the Office Assistant / Operations Supervisor of "Quantum Gazipur Cell (Raji sir Team)".
-Your role is to analyze the daily comparative activity reports of employees across different roles (Accounts, Front Desk, Sales, Logistics, etc.) and provide crisp, professional, actionable strategic advice in clear and dignified Bengali.
+          const systemInstruction = `You are a world-class organizational executive and strategic advisor advising Mr. Raji ("রাজি স্যার"), the Main Boss & Central Director of "Quantum Gazipur Cell", supervising two branches:
+1. চৌরাস্তা ব্রাঞ্চ (Chowrasta Branch)
+2. রাজবাড়ি ব্রাঞ্চ (Rajbari Branch)
 
-Structure your response into the following 4 sections using Markdown:
-1. 📊 **সার্বিক কার্যকারিতা ও তুলনামূলক সারসংক্ষেপ**: সামগ্রিক টিমের পারফরম্যান্স এবং কর্মীদের কাজের গতি মূল্যায়ন।
-2. ⚠️ **চিহ্নিত সমস্যা ও বাধার ক্ষেত্রসমূহ (Critical Bottlenecks)**: যেসব কাজ পেন্ডিং রয়েছে এবং কর্মীদের দেওয়া কারণগুলোর অন্তর্নিহিত ঝুঁকি চিহ্নিত করা।
-3. 🎯 **অফিস সহকারীর পরবর্তী সিদ্ধান্ত ও তাৎক্ষণিক পদক্ষেপ (Actionable Decisions)**: সুপারভাইজার হিসেবে তার আজকেই কী কী সুনির্দিষ্ট সিদ্ধান্ত নেওয়া উচিত।
-4. 🔄 **কর্মী পদায়ন ও দায়িত্ব পুনর্বণ্টন পরামর্শ**: কাজের চাপ সামলাতে বা সমস্যা সমাধানে কোন কর্মীকে কীভাবে কাজে লাগানো যায় বা রোলে পরিবর্তন আনা প্রয়োজন কি না।
+Both branches run the exact same daily management framework and 20 core operational tasks.
 
-Keep the tone constructive, authoritative, empathetic, and highly practical.`;
+Analyze the dual-branch daily performance, compare Chowrasta vs Rajbari, and provide actionable, respectful, and authoritative strategic counsel in dignified Bengali (বাংলা).
+
+Structure your response using the following 4 Markdown sections:
+1. 👑 **রাজি স্যারের এক্সিকিউটিভ সামারি (উভয় ব্রাঞ্চের এক নজরে চিত্র)**: চৌরাস্তা ও রাজবাড়ি ব্রাঞ্চের পারফরম্যান্সের তুলনামূলক চিত্র, কোন ব্রাঞ্চ এগিয়ে এবং সার্বিক সেল স্বাস্থ্য।
+2. 🏢 **ব্রাঞ্চভিত্তিক পর্যবেক্ষণ ও চিহ্নিত জটিলতা (Chowrasta vs Rajbari Issues)**: চৌরাস্তা ও রাজবাড়ি ব্রাঞ্চের নির্দিষ্ট কর্মী ও পেন্ডিং কাজের কারণসমূহের বিশ্লেষণ।
+3. 🎯 **রাজি স্যারের তাৎক্ষণিক সিদ্ধান্ত ও দুই ব্রাঞ্চ ইনচার্জকে নির্দেশনা**: রাজি স্যার আজকেই চৌরাস্তা ইনচার্জ এবং রাজবাড়ি ইনচার্জকে কী কী সুনির্দিষ্ট নির্দেশ দেবেন।
+4. 🔄 **কর্মী পদায়ন ও সম্পদ সমন্বয় পরামর্শ**: দুই ব্রাঞ্চের কাজের চাপ সামলাতে কর্মী দায়িত্ব পুনর্বণ্টন বা আন্তঃব্রাঞ্চ সহায়তার কৌশল।
+
+Keep the tone constructive, authoritative, empathetic, and highly executive.`;
 
           const response = await ai.models.generateContent({
             model: 'gemini-3.8-flash',
@@ -70,7 +93,7 @@ Keep the tone constructive, authoritative, empathetic, and highly practical.`;
                 role: 'user',
                 parts: [
                   {
-                    text: `দয়া করে নিচের কর্মীবাহিনীর দৈনিক কাজের ডেটা পর্যালোচনা করে অফিস সহকারীর সিদ্ধান্ত গ্রহণের জন্য গভীর কৌশলগত বিশ্লেষণ ও পরামর্শ প্রদান করুন:\n\n${promptData}`,
+                    text: `রাজি স্যারের বস একাউন্টের জন্য গাজীপুরের দুটো ব্রাঞ্চের (১। চৌরাস্তা ব্রাঞ্চ, ২। রাজবাড়ি ব্রাঞ্চ) আজকের কর্মতৎপরতার তুলনামূলক বিশ্লেষণ ও পরামর্শ প্রস্তুত করুন:\n\n${promptData}`,
                   },
                 ],
               },
@@ -92,46 +115,44 @@ Keep the tone constructive, authoritative, empathetic, and highly practical.`;
       const lowPerformers = (employeesSummary || []).filter((e: any) => e.completionRate < 70);
       const highPerformers = (employeesSummary || []).filter((e: any) => e.completionRate >= 90);
       const allPendingReasons = (employeesSummary || []).flatMap((e: any) =>
-        (e.pendingReasons || []).map((r: any) => `${e.name} (${e.role}): ${r.task} - ${r.reason}`)
+        (e.pendingReasons || []).map((r: any) => `${e.name} (${e.role} - ${e.branch === 'chowrasta' ? 'চৌরাস্তা' : 'রাজবাড়ি'}): ${r.task} - ${r.reason}`)
       );
 
-      const fallbackAnalysis = `### 📊 সার্বিক কার্যকারিতা ও তুলনামূলক সারসংক্ষেপ
+      const fallbackAnalysis = `### 👑 রাজি স্যারের এক্সিকিউটিভ সামারি (উভয় ব্রাঞ্চের এক নজরে চিত্র)
 - **তারিখ**: ${date || 'চলতি কার্যদিবস'}
-- **টিমের কার্যক্ষমতা**: সক্রিয় কর্মীদের গড় সম্পন্ন হার **${teamStats?.averageCompletion || 0}%**।
-- **শীর্ষ পারফর্মার**: ${
+- **সেন্ট্রাল পর্যবেক্ষণ**: গাজীপুর সেলের অধীন **১। চৌরাস্তা ব্রাঞ্চ** এবং **২। রাজবাড়ি ব্রাঞ্চ**-এর মোট সক্রিয় কর্মীদের সার্বিক গড় সম্পন্ন হার **${teamStats?.averageCompletion || 0}%**।
+- **উভয় ব্রাঞ্চের তুলনামূলক অবস্থা**: 
+  - **চৌরাস্তা ব্রাঞ্চ**: মোট ${chowrastaStaff.length} জন সক্রিয় কর্মী কার্যক্রম পরিচালনা করছেন।
+  - **রাজবাড়ি ব্রাঞ্চ**: মোট ${rajbariStaff.length} জন সক্রিয় কর্মী কার্যক্রম পরিচালনা করছেন।
+- **শীর্ষ পারফর্মার কর্মী**: ${
         highPerformers.length > 0
-          ? highPerformers.map((e: any) => `${e.name} (${e.role} - ${e.completionRate}%)`).join(', ')
-          : 'সকলের কাজে মাঝারি অগ্রগতি রয়েছে।'
-      }
-- **বিশেষ মনোযোগ প্রয়োজন**: ${
-        lowPerformers.length > 0
-          ? lowPerformers.map((e: any) => `${e.name} (${e.role} - ${e.completionRate}%)`).join(', ')
-          : 'কোনো কর্মীর কাজ আশঙ্কাজনকভাবে ঝুলে নেই।'
+          ? highPerformers.map((e: any) => `${e.name} (${e.completionRate}%)`).slice(0, 4).join(', ')
+          : 'উভয় ব্রাঞ্চের কর্মীদের কাজে স্বাভাবিক গতি রয়েছে।'
       }
 
 ---
 
-### ⚠️ চিহ্নিত সমস্যা ও বাধার ক্ষেত্রসমূহ (Bottlenecks)
-- মোট **${teamStats?.totalPendingItems || 0}টি টাস্ক** এখনো অনিষ্পন্ন অবস্থায় রয়েছে।
+### 🏢 ব্রাঞ্চভিত্তিক পর্যবেক্ষণ ও চিহ্নিত জটিলতা (Bottlenecks)
+- পুরো সেলে সর্বমোট **${teamStats?.totalPendingItems || 0}টি টাস্ক** পেন্ডিং রয়েছে।
 ${
   allPendingReasons.length > 0
-    ? allPendingReasons.slice(0, 5).map((r: string) => `- 🔍 ${r}`).join('\n')
-    : '- কোনো টাস্কের বিলম্বিত কারণ নথিভুক্ত হয়নি।'
+    ? allPendingReasons.slice(0, 6).map((r: string) => `- 🔍 ${r}`).join('\n')
+    : '- কোনো কর্মী বিলম্বের বড় কোনো কারণ উল্লেখ করেননি; রুটিন ক্লোজিং বাকি।'
 }
-- অর্থনৈতিক ও ক্লোজিং টাস্কগুলোতে (যেমন: ক্যাশ, বিকাশ এমআর ও লগ আপডেট) বিলম্ব হলে দিনের শেষে হিসাব মেলাতে জটিলতা তৈরি হতে পারে।
+- **বিশেষ ঝুঁকি সতর্কতা**: দিনের শেষভাগে ক্যাশ ক্লোজিং, বিকাশ এমআর এবং কিউএমআইএস আপডেট উভয় ব্রাঞ্চেই সময়মতো সম্পন্ন হচ্ছে কিনা তা নিশ্চিত করা প্রয়োজন।
 
 ---
 
-### 🎯 অফিস সহকারীর পরবর্তী সিদ্ধান্ত ও তাৎক্ষণিক পদক্ষেপ
-1. **তাত্ক্ষণিক ফলো-আপ**: যেসকল কর্মীর সম্পন্ন হার ৭০%-এর নিচে, তাদের সাথে এখনই ৫ মিনিটের স্ট্যান্ডআপ মিটিং করে বাধার কারণ জেনে সমাধান দিন।
-2. **পেন্ডিং কারণ যাচাই**: নথিভুক্ত কারণগুলো যৌক্তিক নাকি প্রক্রিয়াগত ত্রুটি—তা যাচাই করে ক্লিয়ারেন্স দিন।
-3. **দিনের শেষ রিপোর্ট লক**: প্রতিদিন অফিস ত্যাগের পূর্বে সকল কর্মীর রিপোর্ট শতভাগ নিশ্চিত করে রাজী স্যার বা শীর্ষ ম্যানেজমেন্টে জমা দিন।
+### 🎯 রাজি স্যারের তাৎক্ষণিক সিদ্ধান্ত ও ইনচার্জদের নির্দেশনা
+1. **চৌরাস্তা ব্রাঞ্চ ইনচার্জকে নির্দেশনা**: ফ্রন্ট ডেস্ক ও রিসেপশন কার্যক্রম শতভাগ সম্পন্ন নিশ্চিত করে অপরাহ্ন ৫টার মধ্যে ক্যাশ ও এমআর ব্যালেন্স ফাইনাল করার আদেশ দিন।
+2. **রাজবাড়ি ব্রাঞ্চ ইনচার্জকে নির্দেশনা**: গ্রাহক যোগাযোগ ও সেলস ফলোআপের তালিকা দ্রুত আপডেট করে পেন্ডিং কাজের সুরাহা করতে বলুন।
+3. **সেন্ট্রাল ক্লোজিং নিশ্চিতকরণ**: রাজি স্যারের টেবিলে উভয় ব্রাঞ্চের দৈনিক চেকলিস্ট ও লগ রিপোর্ট সন্ধ্যা ৬টার মধ্যে স্বাক্ষরিত আকারে জমা দেওয়ার স্থায়ী নির্দেশনা জারি রাখুন।
 
 ---
 
-### 🔄 কর্মী পদায়ন ও দায়িত্ব পুনর্বণ্টন পরামর্শ
-- **ভূমিকা পুনর্বণ্টন**: ফ্রন্ট ডেস্ক ও অ্যাকাউন্টস রোলের কর্মীদের ওপর কাজের চাপ বেশি থাকলে কাস্টমার রিলেশনস বা লজিস্টিকস থেকে সাময়িক সাপোর্ট দিন।
-- **নতুন কর্মী নিয়োগ ও মূল্যায়ন**: নতুন কর্মীদের প্রাথমিক ৩ দিন মেন্টরিং রোলে রাখুন এবং তাদের কার্যকারিতা দেখে স্থায়ী পদের দায়িত্ব নির্ধারণ করুন।`;
+### 🔄 কর্মী পদায়ন ও আন্তঃব্রাঞ্চ সমন্বয় পরামর্শ
+- **ভারসাম্য রক্ষা**: কোনো ব্রাঞ্চে হঠাৎ অডিট বা বিশেষ ইভেন্ট থাকলে অপর ব্রাঞ্চের অতিরিক্ত লজিস্টিকস বা কো-অর্ডিনেটর কর্মীকে অস্থায়ীভাবে সমন্বয় করা যেতে পারে।
+- **মাসিক পর্যালোচনা**: মাসের শেষে চৌরাস্তা ও রাজবাড়ি ব্রাঞ্চের কর্মীদের মধ্যে স্বাস্থ্যকর প্রতিযোগিতার লক্ষ্যে শ্রেষ্ঠ পারফরমার পুরস্কার প্রবর্তন বিবেচনা করতে পারেন।`;
 
       return res.json({ success: true, analysis: fallbackAnalysis, source: 'executive-rule-engine' });
     } catch (err: any) {

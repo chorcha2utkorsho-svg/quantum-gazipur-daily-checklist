@@ -13,8 +13,11 @@ import {
   UserCheck,
   Shield,
   ArrowRightLeft,
+  Crown,
+  Building2,
+  Landmark,
 } from 'lucide-react';
-import { Employee, SYSTEM_ROLES } from '../types';
+import { BranchId, Employee, SYSTEM_ROLES } from '../types';
 
 interface HeaderProps {
   selectedDate: string;
@@ -29,6 +32,8 @@ interface HeaderProps {
   currentUser: Employee | null;
   viewMode: 'checklist' | 'supervisor';
   onToggleViewMode: (mode: 'checklist' | 'supervisor') => void;
+  selectedBranch?: BranchId;
+  onSelectBranch?: (branch: BranchId) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -44,6 +49,8 @@ export const Header: React.FC<HeaderProps> = ({
   currentUser,
   viewMode,
   onToggleViewMode,
+  selectedBranch = 'all',
+  onSelectBranch,
 }) => {
   const dateObj = new Date(`${selectedDate}T00:00:00`);
   const formattedDisplay = isNaN(dateObj.getTime())
@@ -75,7 +82,8 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   const roleDef = currentUser ? SYSTEM_ROLES.find((r) => r.id === currentUser.role) : null;
-  const isSupervisor = currentUser?.role === 'office_assistant';
+  const isBoss = currentUser?.role === 'main_boss' || currentUser?.employee_id === 'RAJI_SIR';
+  const isSupervisor = currentUser?.role === 'office_assistant' || isBoss;
 
   return (
     <header className="w-full border-b border-white/10 bg-black/40 backdrop-blur-md shrink-0">
@@ -87,14 +95,25 @@ export const Header: React.FC<HeaderProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-                  Quantum Gazipur cell
+                  Quantum Gazipur Cell
                 </h1>
-                <span className="text-[11px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-semibold border border-emerald-500/20">
-                  Raji sir Team
-                </span>
+                {isBoss ? (
+                  <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40 flex items-center gap-1 shadow-sm">
+                    <Crown className="w-3 h-3 text-amber-400" />
+                    <span>রাজি স্যার • বস কমান্ড</span>
+                  </span>
+                ) : (
+                  <span className="text-[11px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-semibold border border-emerald-500/20">
+                    Raji Sir Team
+                  </span>
+                )}
               </div>
-              <p className="text-xs text-[#8e9299] mt-0.5">
-                দৈনন্দিন কর্মতালিকা, জবাবদিহিতা ও সুপারভাইজার সিদ্ধান্ত ব্যবস্থাপনা
+              <p className="text-xs text-[#8e9299] mt-0.5 flex flex-wrap items-center gap-1.5">
+                <span>১। চৌরাস্তা ব্রাঞ্চ</span>
+                <span>•</span>
+                <span>২। রাজবাড়ি ব্রাঞ্চ</span>
+                <span>•</span>
+                <span>দৈনন্দিন কর্মতালিকা, জবাবদিহিতা ও সুপারভাইজার সিদ্ধান্ত</span>
               </p>
             </div>
           </div>
@@ -102,12 +121,16 @@ export const Header: React.FC<HeaderProps> = ({
           {/* User Account & Action Controls */}
           <div className="flex flex-wrap items-center gap-2.5">
             {/* Active User Card & Switch Button */}
-            <div className="flex items-center gap-2 p-1.5 pl-2.5 rounded-xl bg-white/[0.04] border border-white/10 shadow-sm">
+            <div className={`flex items-center gap-2 p-1.5 pl-2.5 rounded-xl border shadow-sm ${
+              isBoss ? 'bg-amber-500/10 border-amber-500/40' : 'bg-white/[0.04] border-white/10'
+            }`}>
               <div
-                className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs uppercase text-white shrink-0"
-                style={{ backgroundColor: currentUser?.avatar_color || '#10b981' }}
+                className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs uppercase text-white shrink-0 shadow-sm ${
+                  isBoss ? 'ring-1 ring-amber-400' : ''
+                }`}
+                style={{ backgroundColor: currentUser?.avatar_color || (isBoss ? '#f59e0b' : '#10b981') }}
               >
-                {currentUser?.name ? currentUser.name.slice(0, 2) : 'EM'}
+                {isBoss ? '👑' : currentUser?.name ? currentUser.name.slice(0, 2) : 'EM'}
               </div>
               <div className="text-left pr-1">
                 <div className="flex items-center gap-1.5">
@@ -210,38 +233,84 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Middle row: Mode Switcher (For Supervisor) */}
+        {/* Middle row: Mode Switcher (For Boss or Supervisor) */}
         {isSupervisor && (
-          <div className="mt-3.5 pt-3 border-t border-white/10 flex items-center justify-between">
-            <div className="flex items-center gap-2 p-1 rounded-xl bg-white/[0.04] border border-white/10">
+          <div className="mt-3.5 pt-3 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2 p-1 rounded-xl bg-white/[0.04] border border-white/10">
               <button
                 onClick={() => onToggleViewMode('supervisor')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                   viewMode === 'supervisor'
-                    ? 'bg-emerald-500 text-black shadow-md'
+                    ? isBoss
+                      ? 'bg-amber-500 text-black shadow-[0_0_12px_rgba(245,158,11,0.3)]'
+                      : 'bg-emerald-500 text-black shadow-md'
                     : 'text-[#8e9299] hover:text-white'
                 }`}
               >
-                <LayoutDashboard className="w-3.5 h-3.5" />
-                <span>অফিস সহকারী ড্যাশবোর্ড (তুলনামূলক চিত্র ও এআই)</span>
+                {isBoss ? <Crown className="w-3.5 h-3.5" /> : <LayoutDashboard className="w-3.5 h-3.5" />}
+                <span>
+                  {isBoss
+                    ? '👑 বস সেন্ট্রাল ড্যাশবোর্ড (উভয় ব্রাঞ্চ এক নজরে)'
+                    : 'অফিস সহকারী ড্যাশবোর্ড (তুলনামূলক চিত্র ও এআই)'}
+                </span>
               </button>
 
               <button
                 onClick={() => onToggleViewMode('checklist')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                   viewMode === 'checklist'
-                    ? 'bg-emerald-500 text-black shadow-md'
+                    ? isBoss
+                      ? 'bg-amber-500 text-black shadow-md'
+                      : 'bg-emerald-500 text-black shadow-md'
                     : 'text-[#8e9299] hover:text-white'
                 }`}
               >
                 <CheckSquare className="w-3.5 h-3.5" />
-                <span>আমার দৈনিক চেকলিস্ট ও কারণ</span>
+                <span>আমার ব্যক্তিগত চেকলিস্ট ও টাস্ক</span>
               </button>
             </div>
 
-            <span className="text-[11px] text-[#8e9299] hidden sm:inline">
-              ভিউ মোড পরিবর্তন করে চেকলিস্ট বা সামগ্রিক রিপোর্ট দেখুন
-            </span>
+            {/* Quick Branch Switcher in Header for Boss */}
+            {isBoss && onSelectBranch && (
+              <div className="flex items-center gap-1.5 bg-black/40 p-1 rounded-xl border border-white/10 text-xs">
+                <span className="text-[10px] text-[#8e9299] px-1 font-semibold uppercase tracking-wider">ব্রাঞ্চ:</span>
+                <button
+                  type="button"
+                  onClick={() => onSelectBranch('all')}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                    selectedBranch === 'all'
+                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                      : 'text-[#8e9299] hover:text-white'
+                  }`}
+                >
+                  উভয় ব্রাঞ্চ
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onSelectBranch('chowrasta')}
+                  className={`px-2 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
+                    selectedBranch === 'chowrasta'
+                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                      : 'text-[#8e9299] hover:text-emerald-300'
+                  }`}
+                >
+                  <Building2 className="w-3 h-3" />
+                  <span>১। চৌরাস্তা</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onSelectBranch('rajbari')}
+                  className={`px-2 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
+                    selectedBranch === 'rajbari'
+                      ? 'bg-sky-500/20 text-sky-400 border border-sky-500/40'
+                      : 'text-[#8e9299] hover:text-sky-300'
+                  }`}
+                >
+                  <Landmark className="w-3 h-3" />
+                  <span>২। রাজবাড়ি</span>
+                </button>
+              </div>
+            )}
           </div>
         )}
 
