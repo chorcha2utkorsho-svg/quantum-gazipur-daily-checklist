@@ -86,69 +86,66 @@ export const Header: React.FC<HeaderProps> = ({
   const isSupervisor = currentUser?.role === 'office_assistant' || isBoss;
 
   return (
-    <header className="w-full border-b border-white/10 bg-black/40 backdrop-blur-md shrink-0">
-      <div className="max-w-6xl mx-auto px-4 sm:px-8 py-4">
+    <header className="w-full border-b border-slate-200 bg-white shadow-2xs shrink-0">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 py-3.5">
         {/* Top row: Brand & Status & User Switcher */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           {/* Brand & Persona */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+                <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-xs">
+                  Q
+                </div>
+                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900">
                   Quantum Gazipur Cell
                 </h1>
                 {isBoss ? (
-                  <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40 flex items-center gap-1 shadow-sm">
-                    <Crown className="w-3 h-3 text-amber-400" />
-                    <span>রাজি স্যার • বস কমান্ড</span>
+                  <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 font-bold border border-amber-200 flex items-center gap-1 shadow-2xs">
+                    <Crown className="w-3 h-3 text-amber-600" />
+                    <span>রাজি স্যার • সার্বিক তত্ত্বাবধান</span>
                   </span>
                 ) : (
-                  <span className="text-[11px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-semibold border border-emerald-500/20">
-                    Raji Sir Team
+                  <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-semibold border border-indigo-200">
+                    গাজীপুর সেল টিম
                   </span>
                 )}
               </div>
-              <p className="text-xs text-[#8e9299] mt-0.5 flex flex-wrap items-center gap-1.5">
-                <span>১। চৌরাস্তা ব্রাঞ্চ</span>
+              <p className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-1.5 font-medium">
+                <span className="text-slate-700 font-semibold">১। চৌরাস্তা ব্রাঞ্চ</span>
                 <span>•</span>
-                <span>২। রাজবাড়ি ব্রাঞ্চ</span>
+                <span className="text-slate-700 font-semibold">২। রাজবাড়ি ব্রাঞ্চ</span>
                 <span>•</span>
-                <span>দৈনন্দিন কর্মতালিকা, জবাবদিহিতা ও সুপারভাইজার সিদ্ধান্ত</span>
+                <span>দৈনন্দিন কার্যপদ্ধতি, জবাবদিহিতা ও সুপারভাইজার সিদ্ধান্ত</span>
               </p>
             </div>
           </div>
 
           {/* User Account & Action Controls */}
-          <div className="flex flex-wrap items-center gap-2.5">
-            {/* Active User Card & Switch Button */}
-            <div className={`flex items-center gap-2 p-1.5 pl-2.5 rounded-xl border shadow-sm ${
-              isBoss ? 'bg-amber-500/10 border-amber-500/40' : 'bg-white/[0.04] border-white/10'
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Active User Card & Switch Button (Matching Screenshot Avatar/Role Badge) */}
+            <div className={`flex items-center gap-2 p-1.5 pl-2.5 rounded-xl border shadow-2xs ${
+              isBoss ? 'bg-amber-50/70 border-amber-300' : 'bg-slate-50 border-slate-200'
             }`}>
               <div
-                className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs uppercase text-white shrink-0 shadow-sm ${
-                  isBoss ? 'ring-1 ring-amber-400' : ''
+                className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs uppercase text-white shrink-0 shadow-xs ${
+                  isBoss ? 'ring-2 ring-amber-400' : ''
                 }`}
-                style={{ backgroundColor: currentUser?.avatar_color || (isBoss ? '#f59e0b' : '#10b981') }}
+                style={{ backgroundColor: currentUser?.avatar_color || (isBoss ? '#f59e0b' : '#4f46e5') }}
               >
                 {isBoss ? '👑' : currentUser?.name ? currentUser.name.slice(0, 2) : 'EM'}
               </div>
               <div className="text-left pr-1">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-semibold text-white max-w-[130px] truncate block">
+                  <span className="text-xs font-bold text-slate-800 max-w-[130px] truncate block">
                     {currentUser?.name || 'লগইন করুন'}
                   </span>
-                  <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-white/10 text-white/70">
+                  <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-slate-200/80 text-slate-700 font-semibold">
                     {currentUser?.employee_id || 'ID'}
                   </span>
                 </div>
-                <span
-                  className={`text-[10px] px-1.5 py-0.2 rounded-full border font-medium inline-block mt-0.5 ${
-                    roleDef?.badgeBg || 'bg-white/10'
-                  } ${roleDef?.badgeText || 'text-white/80'} ${
-                    roleDef?.badgeBorder || 'border-white/10'
-                  }`}
-                >
-                  {roleDef?.titleBn || 'রোল'}
+                <span className="text-[10px] px-1.5 py-0.2 rounded-full border border-indigo-200 bg-indigo-50 text-indigo-700 font-semibold inline-block mt-0.5">
+                  {currentUser?.role === 'accounts' ? 'ACCOUNTS' : roleDef?.titleBn || 'কর্মী'}
                 </span>
               </div>
 
@@ -156,7 +153,7 @@ export const Header: React.FC<HeaderProps> = ({
                 id="switch-user-btn"
                 onClick={onOpenLoginModal}
                 title="ব্যবহারকারী পরিবর্তন বা সাইন ইন করুন"
-                className="p-1.5 rounded-lg bg-white/5 hover:bg-white/15 text-[#8e9299] hover:text-white transition-colors"
+                className="p-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-500 hover:text-slate-800 border border-slate-200 transition-colors shadow-2xs"
               >
                 <ArrowRightLeft className="w-3.5 h-3.5" />
               </button>
@@ -171,17 +168,17 @@ export const Header: React.FC<HeaderProps> = ({
                   ? 'Supabase Database Connected'
                   : 'Supabase Offline (Using Local Cache). Click to configure.'
               }
-              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded text-xs uppercase tracking-wider font-semibold border transition-all ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
                 isSupabaseConnected
-                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20'
-                  : 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20'
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                  : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
               }`}
             >
               <Database className="w-3.5 h-3.5" />
-              <span>{isSupabaseConnected ? 'Supabase' : 'DB Offline'}</span>
+              <span>{isSupabaseConnected ? 'সুপাবেস ডাটাবেজ' : 'লোকাল মেমোরি'}</span>
               <span
                 className={`w-1.5 h-1.5 rounded-full ${
-                  isSupabaseConnected ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'
+                  isSupabaseConnected ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'
                 }`}
               />
             </button>
@@ -191,9 +188,9 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 id="manage-employees-btn"
                 onClick={onOpenEmployeeManager}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/15 text-white text-xs font-semibold rounded uppercase tracking-wider transition-colors border border-white/5"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg transition-colors border border-slate-200"
               >
-                <Users className="w-3.5 h-3.5 text-emerald-400" />
+                <Users className="w-3.5 h-3.5 text-indigo-600" />
                 <span>কর্মী ব্যবস্থাপনা</span>
               </button>
             )}
@@ -203,9 +200,9 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 id="task-manager-btn"
                 onClick={onOpenTaskManager}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/15 text-[#e5e5e5] hover:text-white text-xs font-semibold rounded uppercase tracking-wider transition-colors border border-white/5"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg transition-colors border border-slate-200"
               >
-                <SlidersHorizontal className="w-3.5 h-3.5 text-[#8e9299]" />
+                <SlidersHorizontal className="w-3.5 h-3.5 text-slate-500" />
                 <span>টাস্ক লিস্ট</span>
               </button>
             )}
@@ -215,9 +212,9 @@ export const Header: React.FC<HeaderProps> = ({
               id="daily-reset-btn"
               onClick={onDailyReset}
               title="আজকের কাজের স্ট্যাটাস ফ্রেশ করুন"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/15 text-[#e5e5e5] hover:text-white text-xs font-semibold rounded uppercase tracking-wider transition-colors border border-white/5"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg transition-colors border border-slate-200"
             >
-              <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+              <RotateCcw className="w-3.5 h-3.5 text-amber-600" />
               <span>রিসেট</span>
             </button>
 
@@ -225,32 +222,32 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               id="print-export-btn"
               onClick={onOpenPrintModal}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded uppercase tracking-wider shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-xs shadow-indigo-600/30 transition-all"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>রিপোর্ট প্রিন্ট</span>
+              <span>প্রিন্ট / রিপোর্ট</span>
             </button>
           </div>
         </div>
 
         {/* Middle row: Mode Switcher (For Boss or Supervisor) */}
         {isSupervisor && (
-          <div className="mt-3.5 pt-3 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2 p-1 rounded-xl bg-white/[0.04] border border-white/10">
+          <div className="mt-3 pt-3 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-slate-100 border border-slate-200">
               <button
                 onClick={() => onToggleViewMode('supervisor')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                   viewMode === 'supervisor'
                     ? isBoss
-                      ? 'bg-amber-500 text-black shadow-[0_0_12px_rgba(245,158,11,0.3)]'
-                      : 'bg-emerald-500 text-black shadow-md'
-                    : 'text-[#8e9299] hover:text-white'
+                      ? 'bg-amber-500 text-slate-950 shadow-xs'
+                      : 'bg-white text-indigo-700 shadow-xs border border-slate-200'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 {isBoss ? <Crown className="w-3.5 h-3.5" /> : <LayoutDashboard className="w-3.5 h-3.5" />}
                 <span>
                   {isBoss
-                    ? '👑 বস সেন্ট্রাল ড্যাশবোর্ড (উভয় ব্রাঞ্চ এক নজরে)'
+                    ? '👑 সেন্ট্রাল ড্যাশবোর্ড (উভয় ব্রাঞ্চ এক নজরে)'
                     : 'অফিস সহকারী ড্যাশবোর্ড (তুলনামূলক চিত্র ও এআই)'}
                 </span>
               </button>
@@ -259,28 +256,26 @@ export const Header: React.FC<HeaderProps> = ({
                 onClick={() => onToggleViewMode('checklist')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                   viewMode === 'checklist'
-                    ? isBoss
-                      ? 'bg-amber-500 text-black shadow-md'
-                      : 'bg-emerald-500 text-black shadow-md'
-                    : 'text-[#8e9299] hover:text-white'
+                    ? 'bg-white text-slate-900 shadow-xs border border-slate-200'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <CheckSquare className="w-3.5 h-3.5" />
-                <span>আমার ব্যক্তিগত চেকলিস্ট ও টাস্ক</span>
+                <CheckSquare className="w-3.5 h-3.5 text-indigo-600" />
+                <span>ওয়ার্কফ্লো ও কার্যতালিকা</span>
               </button>
             </div>
 
             {/* Quick Branch Switcher in Header for Boss */}
             {isBoss && onSelectBranch && (
-              <div className="flex items-center gap-1.5 bg-black/40 p-1 rounded-xl border border-white/10 text-xs">
-                <span className="text-[10px] text-[#8e9299] px-1 font-semibold uppercase tracking-wider">ব্রাঞ্চ:</span>
+              <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
+                <span className="text-[10px] text-slate-500 px-1 font-bold uppercase tracking-wider">ব্রাঞ্চ:</span>
                 <button
                   type="button"
                   onClick={() => onSelectBranch('all')}
                   className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
                     selectedBranch === 'all'
-                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                      : 'text-[#8e9299] hover:text-white'
+                      ? 'bg-white text-indigo-700 shadow-xs border border-slate-200'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   উভয় ব্রাঞ্চ
@@ -288,25 +283,25 @@ export const Header: React.FC<HeaderProps> = ({
                 <button
                   type="button"
                   onClick={() => onSelectBranch('chowrasta')}
-                  className={`px-2 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
                     selectedBranch === 'chowrasta'
-                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
-                      : 'text-[#8e9299] hover:text-emerald-300'
+                      ? 'bg-white text-emerald-700 shadow-xs border border-slate-200'
+                      : 'text-slate-600 hover:text-emerald-700'
                   }`}
                 >
-                  <Building2 className="w-3 h-3" />
+                  <Building2 className="w-3 h-3 text-emerald-600" />
                   <span>১। চৌরাস্তা</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => onSelectBranch('rajbari')}
-                  className={`px-2 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
                     selectedBranch === 'rajbari'
-                      ? 'bg-sky-500/20 text-sky-400 border border-sky-500/40'
-                      : 'text-[#8e9299] hover:text-sky-300'
+                      ? 'bg-white text-sky-700 shadow-xs border border-slate-200'
+                      : 'text-slate-600 hover:text-sky-700'
                   }`}
                 >
-                  <Landmark className="w-3 h-3" />
+                  <Landmark className="w-3 h-3 text-sky-600" />
                   <span>২। রাজবাড়ি</span>
                 </button>
               </div>
@@ -315,20 +310,20 @@ export const Header: React.FC<HeaderProps> = ({
         )}
 
         {/* Date Navigation Strip */}
-        <div className="mt-3 pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-3 text-sm">
+        <div className="mt-3 pt-3 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3 text-sm">
           <div className="flex items-center gap-2">
             <button
               id="prev-day-btn"
               onClick={handlePrevDay}
               aria-label="Previous day"
-              className="p-1 rounded bg-white/5 hover:bg-white/10 text-[#8e9299] hover:text-white border border-white/10 transition-colors"
+              className="p-1 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200 transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
 
-            <div className="flex items-center gap-2 px-3 py-1 rounded bg-black/40 border border-white/10">
-              <Calendar className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="text-sm font-medium text-white tracking-tight">
+            <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-slate-50 border border-slate-200 shadow-2xs">
+              <Calendar className="w-3.5 h-3.5 text-indigo-600" />
+              <span className="text-xs sm:text-sm font-bold text-slate-800 tracking-tight">
                 {formattedDisplay}
               </span>
             </div>
@@ -337,7 +332,7 @@ export const Header: React.FC<HeaderProps> = ({
               id="next-day-btn"
               onClick={handleNextDay}
               aria-label="Next day"
-              className="p-1 rounded bg-white/5 hover:bg-white/10 text-[#8e9299] hover:text-white border border-white/10 transition-colors"
+              className="p-1 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200 transition-colors"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -346,12 +341,12 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 id="jump-today-btn"
                 onClick={handleGoToday}
-                className="text-xs px-2.5 py-1 rounded bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 uppercase tracking-wider font-semibold transition-colors"
+                className="text-xs px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold transition-colors"
               >
                 আজকে যান (Today)
               </button>
             ) : (
-              <span className="text-[11px] uppercase tracking-widest text-emerald-500 font-bold ml-1">
+              <span className="text-[11px] uppercase tracking-wider text-emerald-600 font-bold px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 ml-1">
                 আজকের কার্যদিবস
               </span>
             )}
@@ -359,13 +354,13 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Quick Date Picker input */}
           <div className="flex items-center gap-2">
-            <span className="text-xs uppercase tracking-wider text-[#8e9299]">তারিখ নির্বাচন:</span>
+            <span className="text-xs font-semibold text-slate-500">তারিখ নির্বাচন:</span>
             <input
               id="date-picker-input"
               type="date"
               value={selectedDate}
               onChange={(e) => e.target.value && onDateChange(e.target.value)}
-              className="text-xs bg-black/40 border border-white/10 rounded px-2.5 py-1 text-[#e5e5e5] focus:outline-none focus:border-emerald-500"
+              className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-slate-800 font-medium focus:outline-none focus:border-indigo-500"
             />
           </div>
         </div>

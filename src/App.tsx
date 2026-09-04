@@ -36,6 +36,11 @@ import {
   INITIAL_EMPLOYEES,
 } from './types';
 import {
+  WORKFLOW_CATEGORIES,
+  ALL_WORKFLOW_TASKS,
+  WorkflowTask,
+} from './data/workflowData';
+import {
   fetchDailyLogsForEmployee,
   fetchTaskTemplates,
   upsertDailyLog,
@@ -61,6 +66,10 @@ import { SupervisorDashboard } from './components/SupervisorDashboard';
 import { LoginModal } from './components/LoginModal';
 import { EmployeeManagerModal } from './components/EmployeeManagerModal';
 import { EmployeeInspectionModal } from './components/EmployeeInspectionModal';
+import { WorkflowHeroBanner } from './components/WorkflowHeroBanner';
+import { WorkflowStatCards } from './components/WorkflowStatCards';
+import { WorkflowFilterBar } from './components/WorkflowFilterBar';
+import { WorkflowTaskTable } from './components/WorkflowTaskTable';
 
 export default function App() {
   const getTodayString = () => {
@@ -89,6 +98,12 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSupabaseConnected, setIsSupabaseConnected] = useState(false);
+
+  // Workflow 73-task state matching image.png
+  const [workflowTasks, setWorkflowTasks] = useState<WorkflowTask[]>(ALL_WORKFLOW_TASKS);
+  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+  const [priorityFilter, setPriorityFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
+  const [viewDensity, setViewDensity] = useState<'detailed' | 'compact'>('detailed');
 
   // Modals state
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -298,6 +313,143 @@ export default function App() {
     loadData(selectedDate, currentUser);
   };
 
+  // Mapping logs to quick lookup for 73-task workflow
+  const workflowLogsMap = useMemo(() => {
+    const map: Record<string, DailyLogItem> = {};
+    logs.forEach((log) => {
+      map[log.task_name] = log;
+    });
+    return map;
+  }, [logs]);
+
+  // Statistics for the 73 tasks workflow
+  const workflowStats = useMemo(() => {
+    const total = workflowTasks.length;
+    const done = workflowTasks.filter((t) => workflowLogsMap[t.name]?.status === 'done').length;
+    const pending = total - done;
+    const percentage = total > 0 ? Math.round((done / total) * 100) : 0;
+    return { total, done, pending, percentage };
+  }, [workflowTasks, workflowLogsMap]);
+
+  // Task count per category
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    WORKFLOW_CATEGORIES.forEach((cat) => {
+      counts[cat.id] = workflowTasks.filter((t) => t.category === cat.id).length;
+    });
+    return counts;
+  }, [workflowTasks]);
+
+  // Filtered 73 workflow tasks based on category, priority, and search
+  const filteredWorkflowTasks = useMemo(() => {
+    return workflowTasks.filter((task) => {
+      if (selectedCategory !== 'ALL' && task.category !== selectedCategory) {
+        return false;
+      }
+      if (priorityFilter !== 'all' && task.priority !== priorityFilter) {
+        return false;
+      }
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchName = task.name.toLowerCase().includes(q);
+        const matchCode = task.code.toLowerCase().includes(q);
+        const matchDetails = task.details.toLowerCase().includes(q);
+        const matchCat =
+          task.category.toLowerCase().includes(q) || task.categoryBn.toLowerCase().includes(q);
+        const log = workflowLogsMap[task.name];
+        const matchReason = log?.reason_for_pending?.toLowerCase().includes(q) || false;
+        return matchName || matchCode || matchDetails || matchCat || matchReason;
+      }
+      return true;
+    });
+  }, [workflowTasks, selectedCategory, priorityFilter, searchQuery, workflowLogsMap]);
+
+  // Toggle status for a workflow task
+  const handleToggleWorkflowStatus = async (taskName: string) => {
+    const existing = logs.find((l) => l.task_name === taskName);
+    const now = new Date().toISOString();
+    let updatedItem: DailyLogItem;
+
+    if (existing) {
+      const newStatus = existing.status === 'done' ? 'pending' : 'done';
+      const wasPending = existing.status === 'pending';
+      updatedItem = {
+        ...existing,
+        status: newStatus,
+        completed_at: newStatus === 'done' ? now : null,
+      };
+      const newLogs = logs.map((l) => (l.task_name === taskName ? updatedItem : l));
+      setLogs(newLogs);
+      await upsertDailyLog(updatedItem);
+      handleRefreshComparative();
+
+      const willBeDone = workflowTasks.filter((t) => {
+        if (t.name === taskName) return newStatus === 'done';
+        return workflowLogsMap[t.name]?.status === 'done';
+      }).length;
+
+      if (wasPending && willBeDone === workflowTasks.length && workflowTasks.length > 0) {
+        fireCelebration();
+      }
+    } else {
+      updatedItem = {
+        id: `log-${currentUser.employee_id}-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        date: selectedDate,
+        employee_id: currentUser.employee_id,
+        task_name: taskName,
+        status: 'done',
+        reason_for_pending: '',
+        order_index: 0,
+        completed_at: now,
+      };
+      const newLogs = [...logs, updatedItem];
+      setLogs(newLogs);
+      await upsertDailyLog(updatedItem);
+      handleRefreshComparative();
+
+      const willBeDone = workflowTasks.filter((t) => {
+        if (t.name === taskName) return true;
+        return workflowLogsMap[t.name]?.status === 'done';
+      }).length;
+
+      if (willBeDone === workflowTasks.length && workflowTasks.length > 0) {
+        fireCelebration();
+      }
+    }
+  };
+
+  // Update pending reason for a workflow task
+  const handleUpdateWorkflowReason = async (taskName: string, reason: string) => {
+    const existing = logs.find((l) => l.task_name === taskName);
+    const now = new Date().toISOString();
+    let updatedItem: DailyLogItem;
+
+    if (existing) {
+      updatedItem = {
+        ...existing,
+        reason_for_pending: reason,
+      };
+      const newLogs = logs.map((l) => (l.task_name === taskName ? updatedItem : l));
+      setLogs(newLogs);
+      await upsertDailyLog(updatedItem);
+    } else {
+      updatedItem = {
+        id: `log-${currentUser.employee_id}-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        date: selectedDate,
+        employee_id: currentUser.employee_id,
+        task_name: taskName,
+        status: 'pending',
+        reason_for_pending: reason,
+        order_index: 0,
+        completed_at: null,
+      };
+      const newLogs = [...logs, updatedItem];
+      setLogs(newLogs);
+      await upsertDailyLog(updatedItem);
+    }
+    handleRefreshComparative();
+  };
+
   // Filter & Search tasks
   const filteredLogs = useMemo(() => {
     return logs.filter((item) => {
@@ -316,7 +468,7 @@ export default function App() {
   const activeRoleDef = SYSTEM_ROLES.find((r) => r.id === currentUser?.role);
 
   return (
-    <div className="min-h-screen bg-[#0d0f12] text-[#f4f4f5] flex flex-col font-sans selection:bg-emerald-500/30 selection:text-emerald-300">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-indigo-500/20 selection:text-indigo-900">
       {/* Header */}
       <Header
         selectedDate={selectedDate}
@@ -336,7 +488,7 @@ export default function App() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-8 py-6 space-y-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         {/* If Supervisor View is Active, show the Executive Comparative Dashboard */}
         {isSupervisor && viewMode === 'supervisor' ? (
           <SupervisorDashboard
@@ -352,146 +504,75 @@ export default function App() {
             onInspectEmployee={handleInspectEmployee}
           />
         ) : (
-          /* Employee Checklist View */
+          /* Workflow Checklist View matching image.png */
           <div className="space-y-6">
-            {/* Employee Active Session Notice */}
-            <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xs uppercase text-white shrink-0 shadow-sm"
-                  style={{ backgroundColor: currentUser?.avatar_color || '#10b981' }}
-                >
-                  {currentUser?.name.slice(0, 2)}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-sm text-white">{currentUser?.name}</span>
-                    <span className="text-[11px] font-mono px-1.5 py-0.2 rounded bg-white/10 text-white/70">
-                      {currentUser?.employee_id}
-                    </span>
-                    <span
-                      className={`text-[11px] px-2 py-0.5 rounded-full border font-medium ${
-                        activeRoleDef?.badgeBg || 'bg-white/10'
-                      } ${activeRoleDef?.badgeText || 'text-white/80'} ${
-                        activeRoleDef?.badgeBorder || 'border-white/10'
-                      }`}
-                    >
-                      {activeRoleDef?.titleBn || currentUser?.role}
-                    </span>
-                  </div>
-                  <p className="text-xs text-[#8e9299] mt-0.5">
-                    আজকের কাজের তালিকা সম্পন্ন করুন। পেন্ডিং কাজের কারণ উল্লেখ করলে তা সরাসরি অফিস সহকারীর ড্যাশবোর্ডে প্রদর্শিত হবে।
-                  </p>
-                </div>
-              </div>
+            {/* 1. Hero Banner with Gradient & Quick Category Pills */}
+            <WorkflowHeroBanner
+              currentUser={currentUser}
+              totalCategories={WORKFLOW_CATEGORIES.length}
+              totalTasks={workflowTasks.length}
+              selectedCategory={selectedCategory}
+              onSelectCategory={setSelectedCategory}
+            />
 
-              <div className="flex items-center gap-2 self-end sm:self-center">
-                <button
-                  onClick={() => setIsLoginModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-[#8e9299] hover:text-white text-xs font-semibold rounded-lg border border-white/10 transition-colors"
-                >
-                  <ArrowRightLeft className="w-3.5 h-3.5" />
-                  <span>আইডি পরিবর্তন</span>
-                </button>
-              </div>
-            </div>
+            {/* 2. Top Summary Stat Cards matching image.png exactly */}
+            <WorkflowStatCards
+              totalCategories={WORKFLOW_CATEGORIES.length}
+              totalTasks={workflowStats.total}
+              doneTasks={workflowStats.done}
+              pendingTasks={workflowStats.pending}
+              remainingTasks={workflowStats.pending}
+              percentage={workflowStats.percentage}
+            />
 
-            {/* Sticky Progress Bar */}
-            <StickyProgressBar stats={stats} />
+            {/* 3. Action / Search / Filter Bar */}
+            <WorkflowFilterBar
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              selectedCategory={selectedCategory}
+              onCategoryChange={setSelectedCategory}
+              categoryCounts={categoryCounts}
+              totalTasks={workflowTasks.length}
+              onOpenNewTaskModal={() => setIsTaskManagerOpen(true)}
+              onOpenPrintModal={() => setIsPrintModalOpen(true)}
+              onResetDaily={() => setIsResetConfirmOpen(true)}
+              priorityFilter={priorityFilter}
+              onPriorityFilterChange={setPriorityFilter}
+              viewDensity={viewDensity}
+              onViewDensityChange={setViewDensity}
+            />
 
-            {/* Filter and Search Bar */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
-              <div className="flex items-center gap-1.5 p-1 rounded-lg bg-white/5 border border-white/10 self-start">
-                <button
-                  onClick={() => setFilter('all')}
-                  className={`px-3 py-1 rounded text-xs font-semibold transition-all ${
-                    filter === 'all'
-                      ? 'bg-emerald-500 text-black shadow-sm'
-                      : 'text-[#8e9299] hover:text-white'
-                  }`}
-                >
-                  সকল ({stats.total})
-                </button>
-                <button
-                  onClick={() => setFilter('pending')}
-                  className={`px-3 py-1 rounded text-xs font-semibold transition-all ${
-                    filter === 'pending'
-                      ? 'bg-amber-500 text-black shadow-sm'
-                      : 'text-[#8e9299] hover:text-white'
-                  }`}
-                >
-                  পেন্ডিং ({stats.pending})
-                </button>
-                <button
-                  onClick={() => setFilter('done')}
-                  className={`px-3 py-1 rounded text-xs font-semibold transition-all ${
-                    filter === 'done'
-                      ? 'bg-emerald-500 text-black shadow-sm'
-                      : 'text-[#8e9299] hover:text-white'
-                  }`}
-                >
-                  সম্পন্ন ({stats.done})
-                </button>
-              </div>
+            {/* 4. Main Workflow Tasks Table with Grouped Accordions */}
+            <WorkflowTaskTable
+              tasks={filteredWorkflowTasks}
+              dailyLogs={workflowLogsMap}
+              onToggleStatus={handleToggleWorkflowStatus}
+              onUpdateReason={handleUpdateWorkflowReason}
+              selectedCategory={selectedCategory}
+              viewDensity={viewDensity}
+            />
 
-              <div className="relative w-full sm:w-64">
-                <Search className="w-4 h-4 text-[#8e9299] absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="কাজ বা কারণ খুঁজুন..."
-                  className="w-full pl-9 pr-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-white placeholder-white/30 focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-            </div>
-
-            {/* Task Checklist Items */}
-            {isLoading ? (
-              <div className="py-20 text-center text-xs text-[#8e9299] space-y-2">
-                <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto" />
-                <p>চেকলিস্ট লোড হচ্ছে...</p>
-              </div>
-            ) : filteredLogs.length === 0 ? (
-              <div className="py-16 text-center text-xs text-[#8e9299] border border-dashed border-white/10 rounded-xl p-8 space-y-2">
-                <CheckCircle2 className="w-8 h-8 text-emerald-500/50 mx-auto" />
-                <p className="font-medium text-white">কোনো কাজ খুঁজে পাওয়া যায়নি</p>
-                <p>অনুসন্ধান ফিল্টার পরিবর্তন করে দেখুন অথবা নতুন কাজ যোগ করুন।</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {filteredLogs.map((item) => (
-                  <TaskItem
-                    key={item.id || item.task_name}
-                    item={item}
-                    onToggleStatus={() => handleToggleStatus(item.task_name)}
-                    onUpdateReason={(reason) => handleUpdateReason(item.task_name, reason)}
-                  />
-                ))}
-              </div>
-            )}
-
-            {/* 100% Completion Milestone Ribbon */}
-            {stats.total > 0 && stats.done === stats.total && (
-              <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-950/60 via-emerald-900/30 to-black border border-emerald-500/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+            {/* 100% Completion Milestone Banner */}
+            {workflowStats.total > 0 && workflowStats.done === workflowStats.total && (
+              <div className="p-5 rounded-2xl bg-emerald-50 border border-emerald-200 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-400">
-                    <Sparkles className="w-5 h-5" />
+                  <div className="p-2.5 rounded-xl bg-emerald-600 text-white shadow-xs">
+                    <Sparkles className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-white tracking-tight">
-                      আজকের সকল {stats.total}টি কাজ শতভাগ সম্পন্ন হয়েছে!
+                    <h3 className="text-base font-bold text-emerald-950 tracking-tight">
+                      অভিনন্দন! আজকের সকল {workflowStats.total}টি কাজ শতভাগ সম্পন্ন হয়েছে!
                     </h3>
-                    <p className="text-xs text-[#8e9299]">
-                      আপনার রিপোর্ট স্বয়ংক্রিয়ভাবে অফিস সহকারীর পর্যবেক্ষণে প্রস্তুত রয়েছে।
+                    <p className="text-xs text-emerald-800">
+                      আপনার কাজের বিবরণী কেন্দ্রীয় সার্বিক তত্ত্বাবধায়কের পর্যবেক্ষণে স্বয়ংক্রিয়ভাবে সংরক্ষিত হয়েছে।
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => setIsPrintModalOpen(true)}
-                  className="px-4 py-2 rounded text-xs uppercase tracking-widest font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-colors flex items-center gap-1.5 flex-shrink-0"
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors flex items-center gap-1.5 shrink-0"
                 >
-                  <Printer className="w-3.5 h-3.5" />
+                  <Printer className="w-4 h-4" />
                   রিপোর্ট প্রিন্ট করুন
                 </button>
               </div>
@@ -501,27 +582,27 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="px-6 sm:px-10 py-4 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center text-xs text-[#8e9299] shrink-0 gap-3">
-        <div>Quantum Gazipur cell • Raji sir Team Operations & Decision Management</div>
+      <footer className="bg-white border-t border-slate-200 px-6 sm:px-10 py-4 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 shrink-0 gap-3">
+        <div>কোয়ান্টাম গাজীপুর সেল • সার্বিক তত্ত্বাবধান ও সমন্বিত কর্মপরিচালনা ব্যবস্থা</div>
         <div className="flex flex-wrap items-center gap-4 sm:gap-6">
           <span>
             ডাটাবেজ:{' '}
-            <span className={isSupabaseConnected ? 'text-emerald-400 font-semibold' : 'text-amber-400 font-semibold'}>
-              {isSupabaseConnected ? 'Supabase Active' : 'Offline / Local'}
+            <span className={isSupabaseConnected ? 'text-emerald-600 font-semibold' : 'text-amber-600 font-semibold'}>
+              {isSupabaseConnected ? 'Supabase সংযুক্ত' : 'অফলাইন / লোকাল'}
             </span>
           </span>
-          <button onClick={() => setIsSupabaseModalOpen(true)} className="hover:text-white transition-colors">
+          <button onClick={() => setIsSupabaseModalOpen(true)} className="hover:text-indigo-600 transition-colors">
             ডাটাবেজ কনফিগ
           </button>
-          <button onClick={() => setIsLoginModalOpen(true)} className="hover:text-white transition-colors">
-            ইউজার সুইচ
+          <button onClick={() => setIsLoginModalOpen(true)} className="hover:text-indigo-600 transition-colors">
+            আইডি পরিবর্তন
           </button>
           {isSupervisor && (
-            <button onClick={() => setIsEmployeeManagerOpen(true)} className="hover:text-white transition-colors">
+            <button onClick={() => setIsEmployeeManagerOpen(true)} className="hover:text-indigo-600 transition-colors">
               কর্মী পদায়ন
             </button>
           )}
-          <button onClick={() => setIsPrintModalOpen(true)} className="hover:text-white transition-colors">
+          <button onClick={() => setIsPrintModalOpen(true)} className="hover:text-indigo-600 transition-colors">
             প্রিন্ট রিপোর্ট
           </button>
         </div>
@@ -580,35 +661,35 @@ export default function App() {
         onClose={() => setIsPrintModalOpen(false)}
         selectedDate={selectedDate}
         items={logs}
-        stats={stats}
+        stats={workflowStats}
       />
 
       {/* Daily Reset Confirmation Modal */}
       {isResetConfirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-md rounded-2xl bg-[#14161a] border border-white/10 p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-md rounded-2xl bg-white border border-slate-200 p-6 shadow-2xl space-y-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              <div className="p-2.5 rounded-xl bg-amber-50 text-amber-600 border border-amber-200">
                 <RotateCcw className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-base font-semibold text-white">আজকের চেকলিস্ট রিসেট করবেন?</h3>
-                <p className="text-xs text-[#8e9299]">তারিখ: {selectedDate}</p>
+                <h3 className="text-base font-bold text-slate-900">আজকের চেকলিস্ট রিসেট করবেন?</h3>
+                <p className="text-xs text-slate-500">তারিখ: {selectedDate}</p>
               </div>
             </div>
-            <p className="text-xs text-[#e5e5e5]/80 leading-relaxed">
+            <p className="text-xs text-slate-600 leading-relaxed">
               এটি <strong>{selectedDate}</strong> তারিখের <strong>{currentUser.name}</strong>-এর সকল টাস্কের স্ট্যাটাস পেন্ডিং অবস্থায় ফিরিয়ে আনবে। পূর্ববর্তী তারিখের ডেটা অপরিবর্তিত থাকবে।
             </p>
             <div className="flex items-center justify-end gap-2 pt-2">
               <button
                 onClick={() => setIsResetConfirmOpen(false)}
-                className="px-3.5 py-1.5 rounded-lg text-xs text-[#8e9299] hover:text-white"
+                className="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
               >
                 বাতিল
               </button>
               <button
                 onClick={handleConfirmDailyReset}
-                className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-amber-600 hover:bg-amber-500 text-white uppercase tracking-wider transition-colors"
+                className="px-4 py-1.5 rounded-lg text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white transition-colors shadow-xs"
               >
                 রিসেট নিশ্চিত করুন
               </button>

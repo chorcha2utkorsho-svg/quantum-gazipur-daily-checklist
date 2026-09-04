@@ -137,7 +137,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-[11px] px-2 py-0.5 rounded-full border border-amber-500/40 bg-amber-500/20 text-amber-200 font-semibold">
-                          মেইন বস • উভয় ব্রাঞ্চ সেন্ট্রাল পর্যবেক্ষণ
+                          সার্বিক তত্ত্বাবধায়ক • উভয় ব্রাঞ্চ সেন্ট্রাল পর্যবেক্ষণ
                         </span>
                       </div>
                     </div>

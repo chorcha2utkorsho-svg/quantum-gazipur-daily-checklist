@@ -198,10 +198,10 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">
-                  রাজি স্যারের সেন্ট্রাল কমান্ড সেন্টার (মেইন বস একাউন্ট)
+                  রাজি স্যারের সেন্ট্রাল কমান্ড সেন্টার (সার্বিক পর্যবেক্ষণ)
                 </h2>
                 <span className="text-[11px] px-2.5 py-0.5 bg-amber-500/20 text-amber-300 font-bold rounded-full border border-amber-500/40">
-                  Boss At-A-Glance
+                  Executive At-A-Glance
                 </span>
               </div>
               <p className="text-xs text-[#d4d4d8] mt-1 leading-relaxed max-w-2xl">
@@ -825,7 +825,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
               </div>
               <div>
                 <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <span>{isBoss ? 'মেইন বস রাজি স্যারের সেন্ট্রাল এআই সিদ্ধান্ত ও গাইডলাইন' : 'অফিস সহকারীর জন্য এআই কৌশলগত পরামর্শ'}</span>
+                  <span>{isBoss ? 'রাজি স্যারের সেন্ট্রাল এআই সিদ্ধান্ত ও গাইডলাইন' : 'অফিস সহকারীর জন্য এআই কৌশলগত পরামর্শ'}</span>
                   <span className="text-[10px] px-2 py-0.5 bg-amber-500/20 text-amber-300 font-semibold rounded-full border border-amber-500/30">
                     Gemini AI Strategy
                   </span>

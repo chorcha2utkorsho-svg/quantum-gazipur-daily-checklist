@@ -40,7 +40,7 @@ export const BRANCHES: BranchInfo[] = [
 ];
 
 export type UserRole =
-  | 'main_boss'            // রাজি স্যার (মেইন বস - উভয় ব্রাঞ্চের সার্বিক পর্যবেক্ষণ ও নীতি নির্ধারক)
+  | 'main_boss'            // রাজি স্যার (সার্বিক তত্ত্বাবধায়ক - উভয় ব্রাঞ্চের সার্বিক পর্যবেক্ষণ ও নীতি নির্ধারক)
   | 'office_assistant'     // অফিস সহকারী / ইনচার্জ (ব্রাঞ্চ কার্যক্রম তত্ত্বাবধান, রিপোর্ট তৈরি, নিয়োগ ও পদায়ন)
   | 'front_desk'            // ফ্রন্ট ডেস্ক ও সাধারণ কার্যক্রম
   | 'accounts'              // হিসাব ও ক্যাশ ব্যবস্থাপনা
@@ -62,8 +62,8 @@ export interface RoleInfo {
 export const SYSTEM_ROLES: RoleInfo[] = [
   {
     id: 'main_boss',
-    titleBn: 'মেইন বস (রাজি স্যার)',
-    titleEn: 'Main Boss / Central Director',
+    titleBn: 'রাজি স্যার (সার্বিক তত্ত্বাবধায়ক)',
+    titleEn: 'Central Director (Raji Sir)',
     description: 'চৌরাস্তা ও রাজবাড়ি উভয় ব্রাঞ্চের কেন্দ্রীয় নিয়ন্ত্রণ, এক নজরে সার্বিক তদারকি ও নির্বাহী সিদ্ধান্ত গ্রহণ।',
     badgeBg: 'bg-amber-500/20',
     badgeText: 'text-amber-300',
@@ -223,7 +223,7 @@ export interface AIAnalysisResult {
 export const BOSS_RAJI_SIR: Employee = {
   id: 'emp-raji-sir-boss',
   employee_id: 'RAJI_SIR',
-  name: 'রাজি স্যার (মেইন বস)',
+  name: 'রাজি স্যার',
   pin: '1234',
   role: 'main_boss',
   branch: 'all',
@@ -237,7 +237,7 @@ export const BOSS_RAJI_SIR: Employee = {
 export const DEFAULT_SUPERVISOR: Employee = BOSS_RAJI_SIR;
 
 export const INITIAL_EMPLOYEES: Employee[] = [
-  // মেইন বস (রাজি স্যার)
+  // সার্বিক তত্ত্বাবধায়ক (রাজি স্যার)
   BOSS_RAJI_SIR,
 
   // ১। চৌরাস্তা ব্রাঞ্চ টিম (Chowrasta Branch Staff)
@@ -266,6 +266,19 @@ export const INITIAL_EMPLOYEES: Employee[] = [
     joined_date: '2024-01-15',
     notes: 'চৌরাস্তা ব্রাঞ্চের ফ্রন্ট ডেস্ক ও রিসেপশন পরিচালনা।',
     avatar_color: '#38bdf8',
+  },
+  {
+    id: 'emp-jahid-akand',
+    employee_id: 'JAHID',
+    name: 'জাহিদ হাসান আকন্দ',
+    pin: '1234',
+    role: 'accounts',
+    branch: 'chowrasta',
+    is_active: true,
+    phone: '01711999888',
+    joined_date: '2024-01-01',
+    notes: 'একাউন্টস ও অপারেশনাল ওয়ার্কফ্লো — ৬টি ক্যাটাগরি ও ৭৩টি কার্যতালিকা বিশেষজ্ঞ।',
+    avatar_color: '#4f46e5',
   },
   {
     id: 'emp-chow-02',
