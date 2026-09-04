@@ -24,10 +24,26 @@ const SQL_SCHEMA_CONTENT = `-- Quantum Gazipur cell, Raji sir Team - Supabase Da
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- 1. Daily Logs Table (stores daily task status and accountability reasons)
+-- 1. Employees Table (Role-based Team Members)
+CREATE TABLE IF NOT EXISTS public.employees (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    employee_id TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    pin TEXT NOT NULL DEFAULT '1234',
+    role TEXT NOT NULL DEFAULT 'general_staff',
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    phone TEXT DEFAULT '',
+    joined_date DATE DEFAULT CURRENT_DATE,
+    notes TEXT DEFAULT '',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 2. Daily Logs Table (stores daily task status and accountability reasons per employee)
 CREATE TABLE IF NOT EXISTS public.daily_logs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     date DATE NOT NULL,
+    employee_id TEXT NOT NULL DEFAULT 'SUPERVISOR',
     task_name TEXT NOT NULL,
     status TEXT NOT NULL CHECK (status IN ('done', 'pending')) DEFAULT 'pending',
     reason_for_pending TEXT DEFAULT '',
@@ -35,10 +51,10 @@ CREATE TABLE IF NOT EXISTS public.daily_logs (
     completed_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-    CONSTRAINT unique_daily_task UNIQUE (date, task_name)
+    CONSTRAINT unique_daily_employee_task UNIQUE (date, employee_id, task_name)
 );
 
--- 2. Task Templates Table (for dynamic add/edit/delete of tasks)
+-- 3. Task Templates Table (for dynamic add/edit/delete of tasks)
 CREATE TABLE IF NOT EXISTS public.task_templates (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name TEXT NOT NULL UNIQUE,
@@ -49,20 +65,30 @@ CREATE TABLE IF NOT EXISTS public.task_templates (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 3. Indexes for fast lookup
-CREATE INDEX IF NOT EXISTS idx_daily_logs_date ON public.daily_logs(date);
-CREATE INDEX IF NOT EXISTS idx_daily_logs_status ON public.daily_logs(status);
+-- 4. Fast query indexes
+CREATE INDEX IF NOT EXISTS idx_daily_logs_date_emp ON public.daily_logs(date, employee_id);
+CREATE INDEX IF NOT EXISTS idx_employees_role ON public.employees(role);
 
--- 4. Enable Row Level Security (RLS) & Policies
+-- 5. Enable Row Level Security (RLS) & Policies
+ALTER TABLE public.employees ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.daily_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.task_templates ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Allow public read daily_logs" ON public.daily_logs FOR SELECT USING (true);
-CREATE POLICY "Allow public write daily_logs" ON public.daily_logs FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow public read task_templates" ON public.task_templates FOR SELECT USING (true);
-CREATE POLICY "Allow public write task_templates" ON public.task_templates FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow public all employees" ON public.employees FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow public all daily_logs" ON public.daily_logs FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow public all task_templates" ON public.task_templates FOR ALL USING (true) WITH CHECK (true);
 
--- 5. Seed Quantum Gazipur cell, Raji sir Team's 20 Core Tasks
+-- 6. Seed Default Employees (Supervisor & Cell Team)
+INSERT INTO public.employees (employee_id, name, pin, role, is_active, notes)
+VALUES
+    ('SUPERVISOR', 'অফিস সহকারী / সুপারভাইজার (Raji Sir Team)', '1234', 'office_assistant', true, 'সার্বিক সেল পরিচালনা ও সিদ্ধান্ত গ্রহণকারী কর্মকর্তা।'),
+    ('EMP-01', 'মিনা (Mina)', '1234', 'front_desk', true, 'ফ্রন্ট ডেস্ক ও দৈনন্দিন ২০টি প্রধান কাজের দায়িত্বপ্রাপ্ত কর্মী।'),
+    ('EMP-02', 'তানভীর আহমেদ', '1234', 'accounts', true, 'ক্যাশ ক্লোজিং, বিকাশ এমআর ও আর্থিক রেকর্ড ব্যবস্থাপক।'),
+    ('EMP-03', 'সাদিয়া তাসনিম', '1234', 'customer_service', true, 'সেলস আইটেম ও গ্রাহক যোগাযোগ তত্ত্বাবধায়ক।'),
+    ('EMP-04', 'মো. রফিকুল ইসলাম', '1234', 'logistics', true, 'অফিস চেক, গাছপালা যত্ন ও অফিস নিরাপত্তা রুটিন।')
+ON CONFLICT (employee_id) DO NOTHING;
+
+-- 7. Seed Quantum Gazipur cell, Raji sir Team's 20 Core Tasks
 INSERT INTO public.task_templates (name, order_index, category)
 VALUES
     ('Desk Set-up', 1, 'Morning Routine'),

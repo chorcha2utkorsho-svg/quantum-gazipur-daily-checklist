@@ -17,19 +17,37 @@ import {
   CheckCheck,
   AlertCircle,
   HelpCircle,
+  Users,
+  LayoutDashboard,
+  ShieldCheck,
+  UserCheck,
+  ArrowRightLeft,
 } from 'lucide-react';
 
-import { DailyLogItem, DailySummaryStats, TaskTemplate, PRE_SEEDED_TASKS } from './types';
 import {
-  fetchDailyLogs,
+  DailyLogItem,
+  DailySummaryStats,
+  Employee,
+  EmployeeDailyProgress,
+  SYSTEM_ROLES,
+  TaskTemplate,
+  DEFAULT_SUPERVISOR,
+  INITIAL_EMPLOYEES,
+} from './types';
+import {
+  fetchDailyLogsForEmployee,
   fetchTaskTemplates,
   upsertDailyLog,
   saveTemplate,
   deleteTemplate,
-  getLocalTemplates,
-  saveLocalTemplates,
-  saveLocalDailyLogs,
   getStoredSupabaseConfig,
+  fetchEmployees,
+  upsertEmployee,
+  toggleEmployeeStatus,
+  getStoredSession,
+  saveStoredSession,
+  fetchAllEmployeesComparative,
+  saveLocalDailyLogs,
 } from './lib/supabase';
 
 import { Header } from './components/Header';
@@ -38,9 +56,12 @@ import { TaskItem } from './components/TaskItem';
 import { TaskManagerModal } from './components/TaskManagerModal';
 import { SupabaseModal } from './components/SupabaseModal';
 import { PrintReportModal } from './components/PrintReportModal';
+import { SupervisorDashboard } from './components/SupervisorDashboard';
+import { LoginModal } from './components/LoginModal';
+import { EmployeeManagerModal } from './components/EmployeeManagerModal';
+import { EmployeeInspectionModal } from './components/EmployeeInspectionModal';
 
 export default function App() {
-  // Today's date formatted YYYY-MM-DD
   const getTodayString = () => {
     const d = new Date();
     const year = d.getFullYear();
@@ -50,18 +71,34 @@ export default function App() {
   };
 
   const [selectedDate, setSelectedDate] = useState<string>(getTodayString());
+  const [currentUser, setCurrentUser] = useState<Employee>(() => getStoredSession() || DEFAULT_SUPERVISOR);
+  const [employees, setEmployees] = useState<Employee[]>(INITIAL_EMPLOYEES);
   const [templates, setTemplates] = useState<TaskTemplate[]>([]);
   const [logs, setLogs] = useState<DailyLogItem[]>([]);
+  const [progressList, setProgressList] = useState<EmployeeDailyProgress[]>([]);
+
+  const isSupervisor = currentUser?.role === 'office_assistant';
+  const [viewMode, setViewMode] = useState<'supervisor' | 'checklist'>(() =>
+    isSupervisor ? 'supervisor' : 'checklist'
+  );
+
   const [filter, setFilter] = useState<'all' | 'pending' | 'done'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSupabaseConnected, setIsSupabaseConnected] = useState(false);
 
-  // Modals
+  // Modals state
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isEmployeeManagerOpen, setIsEmployeeManagerOpen] = useState(false);
   const [isTaskManagerOpen, setIsTaskManagerOpen] = useState(false);
   const [isSupabaseModalOpen, setIsSupabaseModalOpen] = useState(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
+
+  // Inspection modal state
+  const [inspectedEmployee, setInspectedEmployee] = useState<Employee | null>(null);
+  const [inspectedLogs, setInspectedLogs] = useState<DailyLogItem[]>([]);
+  const [isInspectionOpen, setIsInspectionOpen] = useState(false);
 
   // Check Supabase connection state
   const checkSupabaseStatus = useCallback(() => {
@@ -69,18 +106,36 @@ export default function App() {
     setIsSupabaseConnected(cfg.isConfigured);
   }, []);
 
-  // Initial load of templates & daily logs
-  const loadDataForDate = useCallback(
-    async (date: string, forceTemplates?: TaskTemplate[]) => {
+  // Synchronize viewMode whenever user changes
+  useEffect(() => {
+    if (currentUser?.role === 'office_assistant') {
+      setViewMode('supervisor');
+    } else {
+      setViewMode('checklist');
+    }
+  }, [currentUser]);
+
+  // Load all app data for selected date and user
+  const loadData = useCallback(
+    async (date: string, user: Employee) => {
       setIsLoading(true);
       try {
-        const activeTemplates = forceTemplates || (await fetchTaskTemplates());
-        setTemplates(activeTemplates);
+        const [loadedEmployees, loadedTemplates] = await Promise.all([
+          fetchEmployees(),
+          fetchTaskTemplates(),
+        ]);
+        setEmployees(loadedEmployees);
+        setTemplates(loadedTemplates);
 
-        const loadedLogs = await fetchDailyLogs(date, activeTemplates);
+        // Load logs for the currently active user
+        const loadedLogs = await fetchDailyLogsForEmployee(date, user.employee_id, loadedTemplates);
         setLogs(loadedLogs);
+
+        // Load comparative overview for supervisor
+        const comparative = await fetchAllEmployeesComparative(date, loadedEmployees, loadedTemplates);
+        setProgressList(comparative);
       } catch (err) {
-        console.error('Error loading checklist data:', err);
+        console.error('Error loading data:', err);
       } finally {
         setIsLoading(false);
       }
@@ -90,10 +145,52 @@ export default function App() {
 
   useEffect(() => {
     checkSupabaseStatus();
-    loadDataForDate(selectedDate);
-  }, [selectedDate, loadDataForDate, checkSupabaseStatus]);
+    loadData(selectedDate, currentUser);
+  }, [selectedDate, currentUser, loadData, checkSupabaseStatus]);
 
-  // Summary statistics
+  // Refresh comparative stats on demand
+  const handleRefreshComparative = async () => {
+    try {
+      const comparative = await fetchAllEmployeesComparative(selectedDate, employees, templates);
+      setProgressList(comparative);
+    } catch (err) {
+      console.error('Error refreshing comparative list:', err);
+    }
+  };
+
+  // User Login / Switch
+  const handleUserLogin = (user: Employee) => {
+    setCurrentUser(user);
+    saveStoredSession(user);
+    loadData(selectedDate, user);
+  };
+
+  // Save Employee (Hire or update role)
+  const handleSaveEmployee = async (emp: Employee) => {
+    const updated = await upsertEmployee(emp);
+    setEmployees(updated);
+    // Reload comparative stats
+    const comparative = await fetchAllEmployeesComparative(selectedDate, updated, templates);
+    setProgressList(comparative);
+  };
+
+  // Toggle Employee Active/Inactive
+  const handleToggleEmployeeStatus = async (employeeId: string, isActive: boolean) => {
+    const updated = await toggleEmployeeStatus(employeeId, isActive);
+    setEmployees(updated);
+    const comparative = await fetchAllEmployeesComparative(selectedDate, updated, templates);
+    setProgressList(comparative);
+  };
+
+  // Open Inspection modal for specific employee
+  const handleInspectEmployee = async (emp: Employee) => {
+    setInspectedEmployee(emp);
+    const employeeLogs = await fetchDailyLogsForEmployee(selectedDate, emp.employee_id, templates);
+    setInspectedLogs(employeeLogs);
+    setIsInspectionOpen(true);
+  };
+
+  // Summary statistics for active user's checklist
   const stats: DailySummaryStats = useMemo(() => {
     const total = logs.length;
     const done = logs.filter((l) => l.status === 'done').length;
@@ -102,7 +199,7 @@ export default function App() {
     return { total, done, pending, percentage };
   }, [logs]);
 
-  // Trigger celebration confetti when 100% is reached
+  // Celebration confetti when 100% is reached
   const fireCelebration = useCallback(() => {
     confetti({
       particleCount: 100,
@@ -112,7 +209,7 @@ export default function App() {
     });
   }, []);
 
-  // Toggle status of a task (done <-> pending)
+  // Toggle status of a task for active user
   const handleToggleStatus = async (taskName: string) => {
     const target = logs.find((l) => l.task_name === taskName);
     if (!target) return;
@@ -132,14 +229,17 @@ export default function App() {
     // Save to local & Supabase
     await upsertDailyLog(updatedItem);
 
-    // Check if newly reached 100%
+    // Update comparative state in background
+    handleRefreshComparative();
+
+    // Check 100% completion
     const willBeDone = newLogs.filter((l) => l.status === 'done').length;
     if (wasPending && willBeDone === newLogs.length && newLogs.length > 0) {
       fireCelebration();
     }
   };
 
-  // Update reason for pending
+  // Update pending reason
   const handleUpdateReason = async (taskName: string, reason: string) => {
     const target = logs.find((l) => l.task_name === taskName);
     if (!target) return;
@@ -153,95 +253,68 @@ export default function App() {
     setLogs(newLogs);
 
     await upsertDailyLog(updatedItem);
+    handleRefreshComparative();
   };
 
-  // Mark all as done
-  const handleMarkAllDone = async () => {
-    const now = new Date().toISOString();
-    const updated = logs.map((l) => ({
-      ...l,
-      status: 'done' as const,
-      completed_at: l.completed_at || now,
-    }));
-    setLogs(updated);
-    for (const item of updated) {
-      await upsertDailyLog(item);
-    }
-    fireCelebration();
-  };
-
-  // Daily Reset: reset all tasks for current date to pending
+  // Daily Reset confirmation
   const handleConfirmDailyReset = async () => {
     const resetLogs: DailyLogItem[] = logs.map((l) => ({
       ...l,
-      status: 'pending' as const,
+      status: 'pending',
       reason_for_pending: '',
       completed_at: null,
     }));
     setLogs(resetLogs);
-    saveLocalDailyLogs(selectedDate, resetLogs);
+    saveLocalDailyLogs(selectedDate, resetLogs, currentUser.employee_id);
 
-    // Sync all reset items
     for (const item of resetLogs) {
       await upsertDailyLog(item);
     }
+
     setIsResetConfirmOpen(false);
+    handleRefreshComparative();
   };
 
-  // Save Task Template (Add / Edit)
+  // Task Template Management
   const handleSaveTemplate = async (template: TaskTemplate) => {
     const updated = await saveTemplate(template);
     setTemplates(updated);
-    // Reload logs for current day so new task appears
-    await loadDataForDate(selectedDate, updated);
+    loadData(selectedDate, currentUser);
   };
 
-  // Delete Task Template
   const handleDeleteTemplate = async (id: string, name: string) => {
     const updated = await deleteTemplate(id, name);
     setTemplates(updated);
-    // Remove from current date view
-    const newLogs = logs.filter((l) => l.task_name !== name);
-    setLogs(newLogs);
-    saveLocalDailyLogs(selectedDate, newLogs);
+    loadData(selectedDate, currentUser);
   };
 
-  // Restore 20 default tasks
   const handleRestoreDefaults = async () => {
-    const defaults: TaskTemplate[] = PRE_SEEDED_TASKS.map((t) => ({
-      id: `template-${t.order}`,
-      name: t.name,
-      order_index: t.order,
-      is_active: true,
-      category: t.category,
-    }));
-    saveLocalTemplates(defaults);
-    setTemplates(defaults);
-    await loadDataForDate(selectedDate, defaults);
-    setIsTaskManagerOpen(false);
+    localStorage.removeItem('qgz_cell_templates');
+    const freshTemplates = await fetchTaskTemplates();
+    setTemplates(freshTemplates);
+    loadData(selectedDate, currentUser);
   };
 
-  // Filter and search tasks
+  // Filter & Search tasks
   const filteredLogs = useMemo(() => {
-    return logs
-      .filter((item) => {
-        if (filter === 'done') return item.status === 'done';
-        if (filter === 'pending') return item.status === 'pending';
-        return true;
-      })
-      .filter((item) => {
-        if (!searchQuery.trim()) return true;
+    return logs.filter((item) => {
+      if (filter === 'done' && item.status !== 'done') return false;
+      if (filter === 'pending' && item.status !== 'pending') return false;
+      if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        return (
-          item.task_name.toLowerCase().includes(q) ||
-          (item.reason_for_pending && item.reason_for_pending.toLowerCase().includes(q))
-        );
-      });
+        const matchName = item.task_name.toLowerCase().includes(q);
+        const matchReason = item.reason_for_pending.toLowerCase().includes(q);
+        return matchName || matchReason;
+      }
+      return true;
+    });
   }, [logs, filter, searchQuery]);
 
+  const activeRoleDef = SYSTEM_ROLES.find((r) => r.id === currentUser?.role);
+
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-[#e5e5e5] flex flex-col selection:bg-emerald-500 selection:text-white font-sans">
-      {/* 1. Main Navigation Header */}
+    <div className="min-h-screen bg-[#0d0f12] text-[#f4f4f5] flex flex-col font-sans selection:bg-emerald-500/30 selection:text-emerald-300">
+      {/* Header */}
       <Header
         selectedDate={selectedDate}
         onDateChange={setSelectedDate}
@@ -249,158 +322,229 @@ export default function App() {
         onOpenTaskManager={() => setIsTaskManagerOpen(true)}
         onOpenSupabaseModal={() => setIsSupabaseModalOpen(true)}
         onOpenPrintModal={() => setIsPrintModalOpen(true)}
+        onOpenLoginModal={() => setIsLoginModalOpen(true)}
+        onOpenEmployeeManager={() => setIsEmployeeManagerOpen(true)}
         isSupabaseConnected={isSupabaseConnected}
+        currentUser={currentUser}
+        viewMode={viewMode}
+        onToggleViewMode={setViewMode}
       />
 
-      {/* 2. Sticky Glassmorphism Progress Bar */}
-      <StickyProgressBar
-        stats={stats}
-        currentFilter={filter}
-        onFilterChange={setFilter}
-      />
-
-      {/* 3. Main Dashboard Body */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-6 sm:px-10 py-6 space-y-6">
-        {/* Quick Actions & Search Bar */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div className="relative flex-1 max-w-md">
-            <Search className="w-4 h-4 text-[#8e9299] absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search tasks or pending reasons..."
-              className="w-full text-xs pl-9 pr-8 py-2 rounded bg-black/40 border border-white/10 text-[#e5e5e5] placeholder:text-white/20 focus:outline-none focus:border-emerald-500/80 transition-colors"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-[#8e9299] hover:text-white"
-              >
-                Clear
-              </button>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2 self-end sm:self-auto">
-            {stats.pending > 0 && (
-              <button
-                onClick={handleMarkAllDone}
-                className="px-3 py-1.5 rounded text-xs uppercase tracking-wider font-semibold text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 flex items-center gap-1.5 transition-colors"
-              >
-                <CheckCheck className="w-3.5 h-3.5" />
-                Mark All Done
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Loading Skeleton or Task List */}
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-3">
-            {[1, 2, 3, 4, 5, 6].map((n) => (
-              <div
-                key={n}
-                className="h-14 rounded bg-white/[0.03] border border-white/5 animate-pulse"
-              />
-            ))}
-          </div>
-        ) : filteredLogs.length === 0 ? (
-          <div className="p-12 text-center rounded border border-white/10 bg-black/40 space-y-3">
-            <div className="w-10 h-10 rounded bg-white/5 flex items-center justify-center mx-auto text-[#8e9299]">
-              <Clock className="w-5 h-5" />
-            </div>
-            <h3 className="text-base font-semibold text-white">No Tasks Match Current Filter</h3>
-            <p className="text-xs text-[#8e9299] max-w-sm mx-auto">
-              {searchQuery
-                ? `No tasks or reasons matched "${searchQuery}".`
-                : filter === 'pending'
-                ? 'All clear! There are no pending tasks remaining for this date.'
-                : 'No tasks found. Click "Manage Tasks" to view or restore task templates.'}
-            </p>
-            <button
-              onClick={() => {
-                setFilter('all');
-                setSearchQuery('');
-              }}
-              className="text-xs text-emerald-400 hover:text-emerald-300 uppercase tracking-wider font-semibold"
-            >
-              Reset view filters
-            </button>
-          </div>
+      {/* Main Content Area */}
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-8 py-6 space-y-6">
+        {/* If Supervisor View is Active, show the Executive Comparative Dashboard */}
+        {isSupervisor && viewMode === 'supervisor' ? (
+          <SupervisorDashboard
+            selectedDate={selectedDate}
+            employees={employees}
+            progressList={progressList}
+            templates={templates}
+            onOpenEmployeeManager={() => setIsEmployeeManagerOpen(true)}
+            onRefreshData={handleRefreshComparative}
+            onInspectEmployee={handleInspectEmployee}
+          />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-3">
-            {filteredLogs.map((item, index) => (
-              <TaskItem
-                key={item.task_name}
-                item={item}
-                index={index}
-                onToggleStatus={handleToggleStatus}
-                onUpdateReason={handleUpdateReason}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Bottom completion callout if all tasks completed */}
-        {stats.percentage === 100 && stats.total > 0 && !isLoading && (
-          <div className="p-5 rounded bg-gradient-to-r from-emerald-950/30 via-black/40 to-black/60 border border-emerald-500/30 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-[0_0_20px_rgba(16,185,129,0.15)]">
-            <div className="flex items-center gap-3.5">
-              <div className="p-2.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                <Sparkles className="w-5 h-5" />
+          /* Employee Checklist View */
+          <div className="space-y-6">
+            {/* Employee Active Session Notice */}
+            <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xs uppercase text-white shrink-0 shadow-sm"
+                  style={{ backgroundColor: currentUser?.avatar_color || '#10b981' }}
+                >
+                  {currentUser?.name.slice(0, 2)}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-sm text-white">{currentUser?.name}</span>
+                    <span className="text-[11px] font-mono px-1.5 py-0.2 rounded bg-white/10 text-white/70">
+                      {currentUser?.employee_id}
+                    </span>
+                    <span
+                      className={`text-[11px] px-2 py-0.5 rounded-full border font-medium ${
+                        activeRoleDef?.badgeBg || 'bg-white/10'
+                      } ${activeRoleDef?.badgeText || 'text-white/80'} ${
+                        activeRoleDef?.badgeBorder || 'border-white/10'
+                      }`}
+                    >
+                      {activeRoleDef?.titleBn || currentUser?.role}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#8e9299] mt-0.5">
+                    আজকের কাজের তালিকা সম্পন্ন করুন। পেন্ডিং কাজের কারণ উল্লেখ করলে তা সরাসরি অফিস সহকারীর ড্যাশবোর্ডে প্রদর্শিত হবে।
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-sm font-bold text-white tracking-tight">
-                  Quantum Gazipur cell Checklist 100% Accomplished
-                </h3>
-                <p className="text-xs text-[#8e9299]">
-                  All {stats.total} daily operational tasks for {selectedDate} are confirmed and completed.
-                </p>
+
+              <div className="flex items-center gap-2 self-end sm:self-center">
+                <button
+                  onClick={() => setIsLoginModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-[#8e9299] hover:text-white text-xs font-semibold rounded-lg border border-white/10 transition-colors"
+                >
+                  <ArrowRightLeft className="w-3.5 h-3.5" />
+                  <span>আইডি পরিবর্তন</span>
+                </button>
               </div>
             </div>
-            <button
-              onClick={() => setIsPrintModalOpen(true)}
-              className="px-4 py-2 rounded text-xs uppercase tracking-widest font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-colors flex items-center gap-1.5 flex-shrink-0"
-            >
-              <Printer className="w-3.5 h-3.5" />
-              Sign-off Report
-            </button>
+
+            {/* Sticky Progress Bar */}
+            <StickyProgressBar stats={stats} />
+
+            {/* Filter and Search Bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+              <div className="flex items-center gap-1.5 p-1 rounded-lg bg-white/5 border border-white/10 self-start">
+                <button
+                  onClick={() => setFilter('all')}
+                  className={`px-3 py-1 rounded text-xs font-semibold transition-all ${
+                    filter === 'all'
+                      ? 'bg-emerald-500 text-black shadow-sm'
+                      : 'text-[#8e9299] hover:text-white'
+                  }`}
+                >
+                  সকল ({stats.total})
+                </button>
+                <button
+                  onClick={() => setFilter('pending')}
+                  className={`px-3 py-1 rounded text-xs font-semibold transition-all ${
+                    filter === 'pending'
+                      ? 'bg-amber-500 text-black shadow-sm'
+                      : 'text-[#8e9299] hover:text-white'
+                  }`}
+                >
+                  পেন্ডিং ({stats.pending})
+                </button>
+                <button
+                  onClick={() => setFilter('done')}
+                  className={`px-3 py-1 rounded text-xs font-semibold transition-all ${
+                    filter === 'done'
+                      ? 'bg-emerald-500 text-black shadow-sm'
+                      : 'text-[#8e9299] hover:text-white'
+                  }`}
+                >
+                  সম্পন্ন ({stats.done})
+                </button>
+              </div>
+
+              <div className="relative w-full sm:w-64">
+                <Search className="w-4 h-4 text-[#8e9299] absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="কাজ বা কারণ খুঁজুন..."
+                  className="w-full pl-9 pr-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-white placeholder-white/30 focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+            </div>
+
+            {/* Task Checklist Items */}
+            {isLoading ? (
+              <div className="py-20 text-center text-xs text-[#8e9299] space-y-2">
+                <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto" />
+                <p>চেকলিস্ট লোড হচ্ছে...</p>
+              </div>
+            ) : filteredLogs.length === 0 ? (
+              <div className="py-16 text-center text-xs text-[#8e9299] border border-dashed border-white/10 rounded-xl p-8 space-y-2">
+                <CheckCircle2 className="w-8 h-8 text-emerald-500/50 mx-auto" />
+                <p className="font-medium text-white">কোনো কাজ খুঁজে পাওয়া যায়নি</p>
+                <p>অনুসন্ধান ফিল্টার পরিবর্তন করে দেখুন অথবা নতুন কাজ যোগ করুন।</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredLogs.map((item) => (
+                  <TaskItem
+                    key={item.id || item.task_name}
+                    item={item}
+                    onToggleStatus={() => handleToggleStatus(item.task_name)}
+                    onUpdateReason={(reason) => handleUpdateReason(item.task_name, reason)}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* 100% Completion Milestone Ribbon */}
+            {stats.total > 0 && stats.done === stats.total && (
+              <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-950/60 via-emerald-900/30 to-black border border-emerald-500/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-400">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white tracking-tight">
+                      আজকের সকল {stats.total}টি কাজ শতভাগ সম্পন্ন হয়েছে!
+                    </h3>
+                    <p className="text-xs text-[#8e9299]">
+                      আপনার রিপোর্ট স্বয়ংক্রিয়ভাবে অফিস সহকারীর পর্যবেক্ষণে প্রস্তুত রয়েছে।
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsPrintModalOpen(true)}
+                  className="px-4 py-2 rounded text-xs uppercase tracking-widest font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-colors flex items-center gap-1.5 flex-shrink-0"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  রিপোর্ট প্রিন্ট করুন
+                </button>
+              </div>
+            )}
           </div>
         )}
       </main>
 
       {/* Footer */}
       <footer className="px-6 sm:px-10 py-4 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center text-xs text-[#8e9299] shrink-0 gap-3">
-        <div>Quantum Gazipur cell • Raji sir Team Operations Management System</div>
-        <div className="flex flex-wrap items-center gap-6">
+        <div>Quantum Gazipur cell • Raji sir Team Operations & Decision Management</div>
+        <div className="flex flex-wrap items-center gap-4 sm:gap-6">
           <span>
-            Database: Supabase (
-            <span className={isSupabaseConnected ? 'text-emerald-400' : 'text-amber-400'}>
-              {isSupabaseConnected ? 'Active' : 'Offline / Local'}
+            ডাটাবেজ:{' '}
+            <span className={isSupabaseConnected ? 'text-emerald-400 font-semibold' : 'text-amber-400 font-semibold'}>
+              {isSupabaseConnected ? 'Supabase Active' : 'Offline / Local'}
             </span>
-            )
           </span>
-          <span>Auto-save: Enabled</span>
-          <button
-            onClick={() => setIsSupabaseModalOpen(true)}
-            className="hover:text-white transition-colors"
-          >
-            Database Config
+          <button onClick={() => setIsSupabaseModalOpen(true)} className="hover:text-white transition-colors">
+            ডাটাবেজ কনফিগ
           </button>
-          <button
-            onClick={() => setIsTaskManagerOpen(true)}
-            className="hover:text-white transition-colors"
-          >
-            Task Templates
+          <button onClick={() => setIsLoginModalOpen(true)} className="hover:text-white transition-colors">
+            ইউজার সুইচ
           </button>
-          <button
-            onClick={() => setIsPrintModalOpen(true)}
-            className="hover:text-white transition-colors"
-          >
-            Print Report
+          {isSupervisor && (
+            <button onClick={() => setIsEmployeeManagerOpen(true)} className="hover:text-white transition-colors">
+              কর্মী পদায়ন
+            </button>
+          )}
+          <button onClick={() => setIsPrintModalOpen(true)} className="hover:text-white transition-colors">
+            প্রিন্ট রিপোর্ট
           </button>
         </div>
       </footer>
+
+      {/* User Login & Switcher Modal */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        employees={employees}
+        currentUserId={currentUser?.employee_id}
+        onLoginSuccess={handleUserLogin}
+      />
+
+      {/* Employee Manager Modal */}
+      <EmployeeManagerModal
+        isOpen={isEmployeeManagerOpen}
+        onClose={() => setIsEmployeeManagerOpen(false)}
+        employees={employees}
+        onSaveEmployee={handleSaveEmployee}
+        onToggleStatus={handleToggleEmployeeStatus}
+      />
+
+      {/* Employee Inspection Modal */}
+      <EmployeeInspectionModal
+        isOpen={isInspectionOpen}
+        onClose={() => setIsInspectionOpen(false)}
+        employee={inspectedEmployee}
+        date={selectedDate}
+        logs={inspectedLogs}
+      />
 
       {/* Task Manager Modal */}
       <TaskManagerModal
@@ -418,7 +562,7 @@ export default function App() {
         onClose={() => setIsSupabaseModalOpen(false)}
         onConfigSaved={() => {
           checkSupabaseStatus();
-          loadDataForDate(selectedDate);
+          loadData(selectedDate, currentUser);
         }}
       />
 
@@ -434,31 +578,31 @@ export default function App() {
       {/* Daily Reset Confirmation Modal */}
       {isResetConfirmOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-md rounded bg-[#0a0a0a] border border-white/10 p-6 shadow-2xl space-y-4">
+          <div className="w-full max-w-md rounded-2xl bg-[#14161a] border border-white/10 p-6 shadow-2xl space-y-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
                 <RotateCcw className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-base font-semibold text-white">Reset Today's Checklist?</h3>
-                <p className="text-xs text-[#8e9299]">Date: {selectedDate}</p>
+                <h3 className="text-base font-semibold text-white">আজকের চেকলিস্ট রিসেট করবেন?</h3>
+                <p className="text-xs text-[#8e9299]">তারিখ: {selectedDate}</p>
               </div>
             </div>
             <p className="text-xs text-[#e5e5e5]/80 leading-relaxed">
-              This will uncheck all tasks for <strong>{selectedDate}</strong> and clear their pending reasons so Mina can restart fresh. Previous days' records in Supabase remain untouched.
+              এটি <strong>{selectedDate}</strong> তারিখের <strong>{currentUser.name}</strong>-এর সকল টাস্কের স্ট্যাটাস পেন্ডিং অবস্থায় ফিরিয়ে আনবে। পূর্ববর্তী তারিখের ডেটা অপরিবর্তিত থাকবে।
             </p>
             <div className="flex items-center justify-end gap-2 pt-2">
               <button
                 onClick={() => setIsResetConfirmOpen(false)}
-                className="px-3.5 py-1.5 rounded text-xs text-[#8e9299] hover:text-white"
+                className="px-3.5 py-1.5 rounded-lg text-xs text-[#8e9299] hover:text-white"
               >
-                Cancel
+                বাতিল
               </button>
               <button
                 onClick={handleConfirmDailyReset}
-                className="px-4 py-1.5 rounded text-xs font-semibold bg-amber-600 hover:bg-amber-500 text-white uppercase tracking-wider transition-colors"
+                className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-amber-600 hover:bg-amber-500 text-white uppercase tracking-wider transition-colors"
               >
-                Reset Tasks
+                রিসেট নিশ্চিত করুন
               </button>
             </div>
           </div>

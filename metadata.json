@@ -1,6 +1,6 @@
 {
   "name": "Quantum Gazipur cell, Raji sir Team Daily Checklist",
-  "description": "Daily checklist and accountability tracking application for Quantum Gazipur cell, Raji sir Team, featuring 20 core operational tasks, pending reason logs, progress analytics, and Supabase database integration.",
+  "description": "Daily checklist, employee role management, and Office Assistant supervision system for Quantum Gazipur cell (Raji sir Team) with real-time comparative reporting, accountability logs, and AI strategic decision insights.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
