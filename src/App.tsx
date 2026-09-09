@@ -561,10 +561,10 @@ export default function App() {
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-emerald-950 tracking-tight">
-                      অভিনন্দন! আজকের সকল {workflowStats.total}টি কাজ শতভাগ সম্পন্ন হয়েছে!
+                      Congratulations! All {workflowStats.total} tasks completed 100% today!
                     </h3>
                     <p className="text-xs text-emerald-800">
-                      আপনার কাজের বিবরণী কেন্দ্রীয় সার্বিক তত্ত্বাবধায়কের পর্যবেক্ষণে স্বয়ংক্রিয়ভাবে সংরক্ষিত হয়েছে।
+                      Your operational progress has been recorded and synced to the central supervisor's audit log.
                     </p>
                   </div>
                 </div>
@@ -573,7 +573,7 @@ export default function App() {
                   className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors flex items-center gap-1.5 shrink-0"
                 >
                   <Printer className="w-4 h-4" />
-                  রিপোর্ট প্রিন্ট করুন
+                  Print Report
                 </button>
               </div>
             )}
@@ -583,27 +583,27 @@ export default function App() {
 
       {/* Footer */}
       <footer className="bg-white border-t border-slate-200 px-6 sm:px-10 py-4 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 shrink-0 gap-3">
-        <div>কোয়ান্টাম গাজীপুর সেল • সার্বিক তত্ত্বাবধান ও সমন্বিত কর্মপরিচালনা ব্যবস্থা</div>
+        <div>Quantum Gazipur Cell • Central Supervision &amp; Integrated Workflow Management</div>
         <div className="flex flex-wrap items-center gap-4 sm:gap-6">
           <span>
-            ডাটাবেজ:{' '}
+            Database:{' '}
             <span className={isSupabaseConnected ? 'text-emerald-600 font-semibold' : 'text-amber-600 font-semibold'}>
-              {isSupabaseConnected ? 'Supabase সংযুক্ত' : 'অফলাইন / লোকাল'}
+              {isSupabaseConnected ? 'Supabase Connected' : 'Offline / Local'}
             </span>
           </span>
           <button onClick={() => setIsSupabaseModalOpen(true)} className="hover:text-indigo-600 transition-colors">
-            ডাটাবেজ কনফিগ
+            Database Config
           </button>
           <button onClick={() => setIsLoginModalOpen(true)} className="hover:text-indigo-600 transition-colors">
-            আইডি পরিবর্তন
+            Switch User
           </button>
           {isSupervisor && (
             <button onClick={() => setIsEmployeeManagerOpen(true)} className="hover:text-indigo-600 transition-colors">
-              কর্মী পদায়ন
+              Staff Management
             </button>
           )}
           <button onClick={() => setIsPrintModalOpen(true)} className="hover:text-indigo-600 transition-colors">
-            প্রিন্ট রিপোর্ট
+            Print Report
           </button>
         </div>
       </footer>
@@ -673,25 +673,25 @@ export default function App() {
                 <RotateCcw className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-slate-900">আজকের চেকলিস্ট রিসেট করবেন?</h3>
-                <p className="text-xs text-slate-500">তারিখ: {selectedDate}</p>
+                <h3 className="text-base font-bold text-slate-900">Reset Today's Checklist?</h3>
+                <p className="text-xs text-slate-500">Date: {selectedDate}</p>
               </div>
             </div>
             <p className="text-xs text-slate-600 leading-relaxed">
-              এটি <strong>{selectedDate}</strong> তারিখের <strong>{currentUser.name}</strong>-এর সকল টাস্কের স্ট্যাটাস পেন্ডিং অবস্থায় ফিরিয়ে আনবে। পূর্ববর্তী তারিখের ডেটা অপরিবর্তিত থাকবে।
+              This will reset all task statuses for <strong>{currentUser.name}</strong> on <strong>{selectedDate}</strong> back to pending. Logs from other dates will remain unchanged.
             </p>
             <div className="flex items-center justify-end gap-2 pt-2">
               <button
                 onClick={() => setIsResetConfirmOpen(false)}
                 className="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
               >
-                বাতিল
+                Cancel
               </button>
               <button
                 onClick={handleConfirmDailyReset}
                 className="px-4 py-1.5 rounded-lg text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white transition-colors shadow-xs"
               >
-                রিসেট নিশ্চিত করুন
+                Confirm Reset
               </button>
             </div>
           </div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Employee, SYSTEM_ROLES, UserRole } from '../types';
+import { Employee, SYSTEM_ROLES } from '../types';
 import { KeyRound, LogIn, Shield, User, X, Check, ArrowRight } from 'lucide-react';
 
 interface LoginModalProps {
@@ -31,7 +31,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     const trimmedPin = pinInput.trim();
 
     if (!trimmedId || !trimmedPin) {
-      setErrorMsg('দয়া করে আইডি এবং পাসওয়ার্ড (PIN) প্রদান করুন।');
+      setErrorMsg('Please enter both Employee ID and PIN.');
       return;
     }
 
@@ -40,12 +40,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     );
 
     if (!matched) {
-      setErrorMsg('আইডি অথবা পাসওয়ার্ড ভুল হয়েছে। দয়া করে পুনরায় চেষ্টা করুন।');
+      setErrorMsg('Invalid Employee ID or PIN. Please try again.');
       return;
     }
 
     if (!matched.is_active) {
-      setErrorMsg('এই কর্মীর আইডি বর্তমানে নিষ্ক্রিয় বা বাতিল রয়েছে। অফিস সহকারীর সাথে যোগাযোগ করুন।');
+      setErrorMsg('This account is currently inactive. Please contact the administrator.');
       return;
     }
 
@@ -55,7 +55,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
   const handleQuickLogin = (emp: Employee) => {
     if (!emp.is_active) {
-      setErrorMsg('এই আইডিটি নিষ্ক্রিয় রয়েছে।');
+      setErrorMsg('This account is inactive.');
       return;
     }
     onLoginSuccess(emp);
@@ -77,9 +77,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               <Shield className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-white">ইউজার সাইন ইন / সুইচ করুন</h2>
+              <h2 className="text-base font-semibold text-white">User Sign In / Switch Account</h2>
               <p className="text-xs text-[#8e9299]">
-                অফিস সহকারী বা নিজ নিজ কর্মী আইডিতে প্রবেশ করুন
+                Sign in as supervisor, branch incharge, or team member
               </p>
             </div>
           </div>
@@ -103,7 +103,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <label className="block text-xs font-semibold text-[#8e9299] uppercase tracking-wider">
-                ১-ক্লিক কুইক সাইন ইন (ব্রাঞ্চ অনুযায়ী বাছাই)
+                1-Click Quick Sign In
               </label>
               <span className="text-[11px] text-amber-400 font-mono">PIN: 1234</span>
             </div>
@@ -137,7 +137,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-[11px] px-2 py-0.5 rounded-full border border-amber-500/40 bg-amber-500/20 text-amber-200 font-semibold">
-                          সার্বিক তত্ত্বাবধায়ক • উভয় ব্রাঞ্চ সেন্ট্রাল পর্যবেক্ষণ
+                          Central Director • Dual-Branch Supervision
                         </span>
                       </div>
                     </div>
@@ -146,11 +146,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                   <div className="shrink-0 flex items-center gap-2 text-xs font-bold text-amber-400">
                     {isSelected ? (
                       <span className="flex items-center gap-1">
-                        <Check className="w-4 h-4" /> অ্যাক্টিভ
+                        <Check className="w-4 h-4" /> Active
                       </span>
                     ) : (
                       <span className="flex items-center gap-1">
-                        প্রবেশ করুন <ArrowRight className="w-3.5 h-3.5" />
+                        Sign In <ArrowRight className="w-3.5 h-3.5" />
                       </span>
                     )}
                   </div>
@@ -158,16 +158,19 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               );
             })}
 
-            {/* Branch 1: Chowrasta */}
+            {/* Branch 1: Gazipur Branch */}
             <div className="space-y-1.5">
               <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 px-1 pt-1">
-                <span>🏢 ১। চৌরাস্তা ব্রাঞ্চ টিম</span>
+                <span>🏢 1. Gazipur Branch Team</span>
               </div>
               <div className="grid grid-cols-1 gap-1.5">
                 {activeEmployees
                   .filter(
                     (e) =>
-                      (e.branch === 'chowrasta' || e.employee_id.startsWith('CR-') || e.employee_id === 'SUP-CHOW') &&
+                      (e.branch === 'chowrasta' ||
+                        e.employee_id.startsWith('GB-') ||
+                        e.employee_id.startsWith('CR-') ||
+                        e.employee_id === 'SUP-CHOW') &&
                       e.role !== 'main_boss' &&
                       e.employee_id !== 'RAJI_SIR'
                   )
@@ -211,11 +214,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                                   roleDef?.badgeBorder || 'border-white/10'
                                 }`}
                               >
-                                {roleDef?.titleBn || emp.role}
+                                {roleDef?.titleEn || emp.role}
                               </span>
                               {isIncharge && (
                                 <span className="text-[10px] text-emerald-400 font-bold">
-                                  • ইনচার্জ
+                                  • Incharge
                                 </span>
                               )}
                             </div>
@@ -225,7 +228,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                         <div className="shrink-0 text-xs text-[#8e9299] group-hover:text-emerald-400">
                           {isSelected ? (
                             <span className="flex items-center gap-1 text-emerald-400 text-xs font-semibold">
-                              <Check className="w-3.5 h-3.5" /> অ্যাক্টিভ
+                              <Check className="w-3.5 h-3.5" /> Active
                             </span>
                           ) : (
                             <ArrowRight className="w-3.5 h-3.5" />
@@ -237,16 +240,20 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               </div>
             </div>
 
-            {/* Branch 2: Rajbari */}
+            {/* Branch 2: Gazipur Sadar Office */}
             <div className="space-y-1.5">
               <div className="flex items-center gap-2 text-xs font-bold text-sky-400 px-1 pt-1">
-                <span>🏛️ ২। রাজবাড়ি ব্রাঞ্চ টিম</span>
+                <span>🏛️ 2. Gazipur Sadar Office Team</span>
               </div>
               <div className="grid grid-cols-1 gap-1.5">
                 {activeEmployees
                   .filter(
                     (e) =>
-                      (e.branch === 'rajbari' || e.employee_id.startsWith('RB-') || e.employee_id === 'SUP-RAJB') &&
+                      (e.branch === 'rajbari' ||
+                        e.employee_id.startsWith('SO-') ||
+                        e.employee_id.startsWith('RB-') ||
+                        e.employee_id === 'SUP-RAJB' ||
+                        e.employee_id === 'JAHID') &&
                       e.role !== 'main_boss' &&
                       e.employee_id !== 'RAJI_SIR'
                   )
@@ -290,11 +297,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                                   roleDef?.badgeBorder || 'border-white/10'
                                 }`}
                               >
-                                {roleDef?.titleBn || emp.role}
+                                {roleDef?.titleEn || emp.role}
                               </span>
                               {isIncharge && (
                                 <span className="text-[10px] text-sky-400 font-bold">
-                                  • ইনচার্জ
+                                  • Incharge
                                 </span>
                               )}
                             </div>
@@ -304,7 +311,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                         <div className="shrink-0 text-xs text-[#8e9299] group-hover:text-sky-400">
                           {isSelected ? (
                             <span className="flex items-center gap-1 text-sky-400 text-xs font-semibold">
-                              <Check className="w-3.5 h-3.5" /> অ্যাক্টিভ
+                              <Check className="w-3.5 h-3.5" /> Active
                             </span>
                           ) : (
                             <ArrowRight className="w-3.5 h-3.5" />
@@ -320,7 +327,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           <div className="relative flex items-center justify-center">
             <div className="border-t border-white/10 w-full" />
             <span className="bg-[#14161a] px-3 text-[11px] uppercase tracking-wider text-[#8e9299] shrink-0">
-              অথবা আইডি ও পিন দিয়ে প্রবেশ করুন
+              Or sign in with ID and PIN
             </span>
           </div>
 
@@ -328,7 +335,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           <form onSubmit={handleCustomLogin} className="space-y-4">
             <div>
               <label className="block text-xs font-medium text-[#8e9299] mb-1.5">
-                এমপ্লয়ী আইডি (যেমন: SUPERVISOR, EMP-01)
+                Employee ID (e.g., SUPERVISOR, CR-01)
               </label>
               <div className="relative">
                 <User className="w-4 h-4 text-[#8e9299] absolute left-3 top-1/2 -translate-y-1/2" />
@@ -336,7 +343,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                   type="text"
                   value={employeeIdInput}
                   onChange={(e) => setEmployeeIdInput(e.target.value)}
-                  placeholder="EMP-01 অথবা SUPERVISOR"
+                  placeholder="CR-01 or SUPERVISOR"
                   className="w-full pl-9 pr-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-white/20 focus:outline-none focus:border-emerald-500/50"
                 />
               </div>
@@ -344,7 +351,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
             <div>
               <label className="block text-xs font-medium text-[#8e9299] mb-1.5">
-                পাসওয়ার্ড / PIN (ডিফল্ট: 1234)
+                Password / PIN (Default: 1234)
               </label>
               <div className="relative">
                 <KeyRound className="w-4 h-4 text-[#8e9299] absolute left-3 top-1/2 -translate-y-1/2" />
@@ -363,7 +370,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.25)]"
             >
               <LogIn className="w-4 h-4" />
-              <span>আইডিতে প্রবেশ করুন</span>
+              <span>Sign In to Account</span>
             </button>
           </form>
         </div>

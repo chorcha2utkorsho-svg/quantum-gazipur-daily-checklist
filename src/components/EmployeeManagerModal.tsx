@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Employee, SYSTEM_ROLES, UserRole, BRANCHES, BranchId } from '../types';
+import { Employee, SYSTEM_ROLES, UserRole, BranchId } from '../types';
 import {
   UserPlus,
   UserCheck,
@@ -11,7 +11,6 @@ import {
   Phone,
   Calendar,
   Save,
-  Trash2,
   Building2,
   Landmark,
 } from 'lucide-react';
@@ -72,15 +71,15 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
     if (!editingEmployee) return;
 
     if (!editingEmployee.name?.trim()) {
-      setErrorMsg('কর্মীর নাম প্রদান করা আবশ্যক।');
+      setErrorMsg('Employee name is required.');
       return;
     }
     if (!editingEmployee.employee_id?.trim()) {
-      setErrorMsg('কর্মীর আইডি (Login ID) আবশ্যক।');
+      setErrorMsg('Employee ID (Login ID) is required.');
       return;
     }
     if (!editingEmployee.pin?.trim()) {
-      setErrorMsg('পাসওয়ার্ড বা পিন (PIN) আবশ্যক।');
+      setErrorMsg('Password or PIN is required.');
       return;
     }
 
@@ -93,7 +92,14 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
     if (filter === 'active' && !e.is_active) return false;
     if (filter === 'inactive' && e.is_active) return false;
     if (branchFilter !== 'all') {
-      const b = e.branch || (e.employee_id.startsWith('RB-') || e.employee_id === 'SUP-RAJB' ? 'rajbari' : 'chowrasta');
+      const b =
+        e.branch ||
+        (e.employee_id.startsWith('SO-') ||
+        e.employee_id.startsWith('RB-') ||
+        e.employee_id === 'SUP-RAJB' ||
+        e.employee_id === 'JAHID'
+          ? 'rajbari'
+          : 'chowrasta');
       if (b !== branchFilter) return false;
     }
     return true;
@@ -112,9 +118,9 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
               <Briefcase className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-white">কর্মী ও পদায়ন ব্যবস্থাপনা</h2>
+              <h2 className="text-base font-semibold text-white">Staff & Role Management</h2>
               <p className="text-xs text-[#8e9299]">
-                নতুন কর্মী নিয়োগ, রোলে পদায়ন এবং কর্মী সক্রিয়/নিষ্ক্রিয় করুন
+                Register staff, assign workflow roles, and activate or deactivate accounts
               </p>
             </div>
           </div>
@@ -140,7 +146,7 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
                     filter === 'all' ? 'bg-white/20 text-white' : 'text-[#8e9299] hover:text-white'
                   }`}
                 >
-                  সকল ({employees.length})
+                  All ({employees.length})
                 </button>
                 <button
                   type="button"
@@ -149,7 +155,7 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
                     filter === 'active' ? 'bg-emerald-500/20 text-emerald-400' : 'text-[#8e9299] hover:text-white'
                   }`}
                 >
-                  সক্রিয় ({employees.filter((e) => e.is_active).length})
+                  Active ({employees.filter((e) => e.is_active).length})
                 </button>
                 <button
                   type="button"
@@ -158,13 +164,13 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
                     filter === 'inactive' ? 'bg-red-500/20 text-red-400' : 'text-[#8e9299] hover:text-white'
                   }`}
                 >
-                  বাতিল ({employees.filter((e) => !e.is_active).length})
+                  Inactive ({employees.filter((e) => !e.is_active).length})
                 </button>
               </div>
 
               {/* Branch Filter Tabs */}
               <div className="flex items-center gap-1.5 p-1 rounded-lg bg-white/[0.03] border border-white/10 text-xs">
-                <span className="text-[10px] text-[#8e9299] px-1 font-semibold">ব্রাঞ্চ:</span>
+                <span className="text-[10px] text-[#8e9299] px-1 font-semibold">Office:</span>
                 <button
                   type="button"
                   onClick={() => setBranchFilter('all')}
@@ -172,7 +178,7 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
                     branchFilter === 'all' ? 'bg-amber-500/20 text-amber-300' : 'text-[#8e9299] hover:text-white'
                   }`}
                 >
-                  উভয়
+                  Both
                 </button>
                 <button
                   type="button"
@@ -184,7 +190,7 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
                   }`}
                 >
                   <Building2 className="w-3 h-3" />
-                  <span>চৌরাস্তা</span>
+                  <span>Gazipur Branch</span>
                 </button>
                 <button
                   type="button"
@@ -196,7 +202,7 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
                   }`}
                 >
                   <Landmark className="w-3 h-3" />
-                  <span>রাজবাড়ি</span>
+                  <span>Sadar Office</span>
                 </button>
               </div>
 
@@ -205,7 +211,7 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
               >
                 <UserPlus className="w-4 h-4" />
-                <span>নতুন কর্মী নিয়োগ</span>
+                <span>Add New Staff</span>
               </button>
             </div>
           </div>
@@ -217,15 +223,15 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
                 <span className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-2">
                   <Shield className="w-3.5 h-3.5" />
                   {editingEmployee.id?.startsWith('emp-') && !employees.some((e) => e.id === editingEmployee.id)
-                    ? 'নতুন কর্মী নিবন্ধন ও পদায়ন'
-                    : 'কর্মী ও রোল তথ্য সম্পাদনা'}
+                    ? 'Register & Assign New Staff'
+                    : 'Edit Staff & Role Information'}
                 </span>
                 <button
                   type="button"
                   onClick={() => setEditingEmployee(null)}
                   className="text-xs text-[#8e9299] hover:text-white"
                 >
-                  বাতিল
+                  Cancel
                 </button>
               </div>
 
@@ -237,31 +243,31 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-[#8e9299] mb-1">কর্মীর পূর্ণ নাম *</label>
+                  <label className="block text-xs font-medium text-[#8e9299] mb-1">Full Name *</label>
                   <input
                     type="text"
                     value={editingEmployee.name || ''}
                     onChange={(e) => setEditingEmployee({ ...editingEmployee, name: e.target.value })}
-                    placeholder="যেমন: মো. রহিম উদ্দিন"
+                    placeholder="e.g., Mohammad Rahim"
                     className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-[#8e9299] mb-1">ব্রাঞ্চ নির্ধারণ *</label>
+                  <label className="block text-xs font-medium text-[#8e9299] mb-1">Assign Office *</label>
                   <select
                     value={editingEmployee.branch || 'chowrasta'}
                     onChange={(e) => setEditingEmployee({ ...editingEmployee, branch: e.target.value as 'chowrasta' | 'rajbari' })}
                     className="w-full px-3 py-2 bg-[#1c1f24] border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500"
                   >
-                    <option value="chowrasta">🏢 ১। চৌরাস্তা ব্রাঞ্চ (Chowrasta Branch)</option>
-                    <option value="rajbari">🏛️ ২। রাজবাড়ি ব্রাঞ্চ (Rajbari Branch)</option>
+                    <option value="chowrasta">🏢 1. Gazipur Branch</option>
+                    <option value="rajbari">🏛️ 2. Gazipur Sadar Office</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-[#8e9299] mb-1">পদায়ন / রোল নির্বাচন করুন *</label>
+                  <label className="block text-xs font-medium text-[#8e9299] mb-1">Select Workflow Role *</label>
                   <select
                     value={editingEmployee.role || 'general_staff'}
                     onChange={(e) => setEditingEmployee({ ...editingEmployee, role: e.target.value as UserRole })}
@@ -269,26 +275,26 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
                   >
                     {SYSTEM_ROLES.map((role) => (
                       <option key={role.id} value={role.id}>
-                        {role.titleBn} ({role.titleEn})
+                        {role.titleEn}
                       </option>
                     ))}
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-[#8e9299] mb-1">এমপ্লয়ী আইডি (Login ID) *</label>
+                  <label className="block text-xs font-medium text-[#8e9299] mb-1">Employee ID (Login ID) *</label>
                   <input
                     type="text"
                     value={editingEmployee.employee_id || ''}
                     onChange={(e) => setEditingEmployee({ ...editingEmployee, employee_id: e.target.value.toUpperCase() })}
-                    placeholder="CR-05 বা RB-05"
+                    placeholder="CR-05 or RB-05"
                     className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white uppercase focus:outline-none focus:border-emerald-500"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-[#8e9299] mb-1">লগইন পিন / পাসওয়ার্ড (PIN) *</label>
+                  <label className="block text-xs font-medium text-[#8e9299] mb-1">Login PIN / Password *</label>
                   <input
                     type="text"
                     value={editingEmployee.pin || ''}
@@ -300,7 +306,7 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-[#8e9299] mb-1">ফোন নম্বর</label>
+                  <label className="block text-xs font-medium text-[#8e9299] mb-1">Phone Number</label>
                   <input
                     type="text"
                     value={editingEmployee.phone || ''}
@@ -311,7 +317,7 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-[#8e9299] mb-1">যোগদানের তারিখ</label>
+                  <label className="block text-xs font-medium text-[#8e9299] mb-1">Joining Date</label>
                   <input
                     type="date"
                     value={editingEmployee.joined_date || ''}
@@ -322,12 +328,12 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-[#8e9299] mb-1">মন্তব্য বা কাজের পরিধি (Notes)</label>
+                <label className="block text-xs font-medium text-[#8e9299] mb-1">Notes & Responsibilities</label>
                 <input
                   type="text"
                   value={editingEmployee.notes || ''}
                   onChange={(e) => setEditingEmployee({ ...editingEmployee, notes: e.target.value })}
-                  placeholder="যেমন: ফ্রন্ট ডেস্ক তত্ত্বাবধান ও কাস্টমার কোঅর্ডিনেশন"
+                  placeholder="e.g., Front desk coordination and donor reception"
                   className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500"
                 />
               </div>
@@ -338,14 +344,14 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
                   onClick={() => setEditingEmployee(null)}
                   className="px-3 py-1.5 text-xs text-[#8e9299] hover:text-white"
                 >
-                  বাতিল
+                  Cancel
                 </button>
                 <button
                   type="submit"
                   className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg shadow-sm"
                 >
                   <Save className="w-3.5 h-3.5" />
-                  <span>সংরক্ষণ ও পদায়ন করুন</span>
+                  <span>Save & Assign Staff</span>
                 </button>
               </div>
             </form>
@@ -381,11 +387,11 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
                         </span>
                         {emp.is_active ? (
                           <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400 font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-                            <UserCheck className="w-3 h-3" /> সক্রিয়
+                            <UserCheck className="w-3 h-3" /> Active
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 text-[10px] text-red-400 font-semibold px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/20">
-                            <UserX className="w-3 h-3" /> বাতিল / নিষ্ক্রিয়
+                            <UserX className="w-3 h-3" /> Inactive
                           </span>
                         )}
                       </div>
@@ -398,21 +404,21 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
                             roleDef?.badgeBorder || 'border-white/10'
                           }`}
                         >
-                          {roleDef?.titleBn || emp.role}
+                          {roleDef?.titleEn || emp.role}
                         </span>
 
                         {/* Branch badge */}
                         {emp.role === 'main_boss' || emp.employee_id === 'RAJI_SIR' ? (
                           <span className="text-xs px-2 py-0.5 rounded-md border font-bold bg-amber-500/15 text-amber-300 border-amber-500/30 flex items-center gap-1">
-                            👑 উভয় ব্রাঞ্চ (সেন্ট্রাল)
+                            👑 Both Offices (Central)
                           </span>
-                        ) : (emp.branch === 'rajbari' || emp.employee_id.startsWith('RB-') || emp.employee_id === 'SUP-RAJB') ? (
+                        ) : (emp.branch === 'rajbari' || emp.employee_id.startsWith('SO-') || emp.employee_id.startsWith('RB-') || emp.employee_id === 'SUP-RAJB' || emp.employee_id === 'JAHID') ? (
                           <span className="text-xs px-2 py-0.5 rounded-md border font-bold bg-sky-500/15 text-sky-400 border-sky-500/30 flex items-center gap-1">
-                            <Landmark className="w-3 h-3" /> রাজবাড়ি ব্রাঞ্চ
+                            <Landmark className="w-3 h-3" /> Gazipur Sadar Office
                           </span>
                         ) : (
                           <span className="text-xs px-2 py-0.5 rounded-md border font-bold bg-emerald-500/15 text-emerald-400 border-emerald-500/30 flex items-center gap-1">
-                            <Building2 className="w-3 h-3" /> চৌরাস্তা ব্রাঞ্চ
+                            <Building2 className="w-3 h-3" /> Gazipur Branch
                           </span>
                         )}
 
@@ -439,11 +445,11 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
                     <button
                       type="button"
                       onClick={() => setEditingEmployee(emp)}
-                      title="কর্মী বা পদায়ন সম্পাদনা করুন"
+                      title="Edit staff or role assignment"
                       className="p-1.5 text-xs text-[#8e9299] hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-colors flex items-center gap-1"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
-                      <span className="sm:hidden">এডিট</span>
+                      <span className="sm:hidden">Edit</span>
                     </button>
 
                     {!isSupervisor && (
@@ -459,12 +465,12 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
                         {emp.is_active ? (
                           <>
                             <UserX className="w-3 h-3" />
-                            <span>বাতিল / নিষ্ক্রিয়</span>
+                            <span>Deactivate</span>
                           </>
                         ) : (
                           <>
                             <UserCheck className="w-3 h-3" />
-                            <span>পুনরায় সক্রিয়</span>
+                            <span>Reactivate</span>
                           </>
                         )}
                       </button>

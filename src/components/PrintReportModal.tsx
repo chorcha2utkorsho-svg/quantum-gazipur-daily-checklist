@@ -107,9 +107,9 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({
               <Printer className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900 tracking-tight">দৈনিক রিপোর্ট ও প্রিন্ট ভিউ</h2>
+              <h2 className="text-base font-bold text-slate-900 tracking-tight">Daily Report & Print View</h2>
               <p className="text-xs text-slate-500">
-                {formattedDate} — সম্পূর্ণ কার্যবিবরণী ও হিসাব
+                {formattedDate} — Operational Manifest & Accounting
               </p>
             </div>
           </div>
@@ -136,7 +136,7 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({
               className="px-4 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs shadow-indigo-600/30 flex items-center gap-1.5 transition-colors"
             >
               <Printer className="w-3.5 h-3.5" />
-              প্রিন্ট করুন
+              Print Report
             </button>
             <button
               onClick={onClose}

@@ -17,10 +17,10 @@ export interface BranchInfo {
 export const BRANCHES: BranchInfo[] = [
   {
     id: 'chowrasta',
-    nameBn: '১। চৌরাস্তা ব্রাঞ্চ',
-    nameEn: 'Chowrasta Branch',
-    locationBn: 'গাজীপুর চৌরাস্তা মোড়',
-    tag: 'Chowrasta',
+    nameBn: '1. Gazipur Branch',
+    nameEn: 'Gazipur Branch',
+    locationBn: 'Gazipur',
+    tag: 'Gazipur Branch',
     color: '#10b981', // emerald
     badgeBg: 'bg-emerald-500/10',
     badgeText: 'text-emerald-400',
@@ -28,10 +28,10 @@ export const BRANCHES: BranchInfo[] = [
   },
   {
     id: 'rajbari',
-    nameBn: '২। রাজবাড়ি ব্রাঞ্চ',
-    nameEn: 'Rajbari Branch',
-    locationBn: 'গাজীপুর রাজবাড়ি রোড',
-    tag: 'Rajbari',
+    nameBn: '2. Gazipur Sadar Office',
+    nameEn: 'Gazipur Sadar Office',
+    locationBn: 'Gazipur Sadar',
+    tag: 'Sadar Office',
     color: '#0ea5e9', // sky
     badgeBg: 'bg-sky-500/10',
     badgeText: 'text-sky-400',
@@ -40,14 +40,14 @@ export const BRANCHES: BranchInfo[] = [
 ];
 
 export type UserRole =
-  | 'main_boss'            // রাজি স্যার (সার্বিক তত্ত্বাবধায়ক - উভয় ব্রাঞ্চের সার্বিক পর্যবেক্ষণ ও নীতি নির্ধারক)
-  | 'office_assistant'     // অফিস সহকারী / ইনচার্জ (ব্রাঞ্চ কার্যক্রম তত্ত্বাবধান, রিপোর্ট তৈরি, নিয়োগ ও পদায়ন)
-  | 'front_desk'            // ফ্রন্ট ডেস্ক ও সাধারণ কার্যক্রম
-  | 'accounts'              // হিসাব ও ক্যাশ ব্যবস্থাপনা
-  | 'customer_service'      // গ্রাহক সেবা ও সেলস
-  | 'logistics'             // লজিস্টিকস ও অফিস রক্ষণাবেক্ষণ
-  | 'field_coordinator'     // মাঠ সমন্বয়কারী
-  | 'general_staff';        // সাধারণ ডেস্ক কর্মকর্তা
+  | 'main_boss'            // Raji Sir (Central Director - Overall monitoring & policy maker for both branches)
+  | 'office_assistant'     // Office Assistant / Branch In-charge (Operation oversight, reports, recruitment & deployment)
+  | 'front_desk'           // Front desk & general operations
+  | 'accounts'             // Accounts & cash management
+  | 'customer_service'     // Customer relations & sales
+  | 'logistics'            // Logistics & facility care
+  | 'field_coordinator'    // Field coordinator
+  | 'general_staff';       // General desk officer
 
 export interface RoleInfo {
   id: UserRole;
@@ -62,72 +62,72 @@ export interface RoleInfo {
 export const SYSTEM_ROLES: RoleInfo[] = [
   {
     id: 'main_boss',
-    titleBn: 'রাজি স্যার (সার্বিক তত্ত্বাবধায়ক)',
+    titleBn: 'Raji Sir (Central Director)',
     titleEn: 'Central Director (Raji Sir)',
-    description: 'চৌরাস্তা ও রাজবাড়ি উভয় ব্রাঞ্চের কেন্দ্রীয় নিয়ন্ত্রণ, এক নজরে সার্বিক তদারকি ও নির্বাহী সিদ্ধান্ত গ্রহণ।',
+    description: 'Central administration of 1. Gazipur Branch and 2. Gazipur Sadar Office, unified executive monitoring and strategic decisions.',
     badgeBg: 'bg-amber-500/20',
     badgeText: 'text-amber-300',
     badgeBorder: 'border-amber-500/40',
   },
   {
     id: 'office_assistant',
-    titleBn: 'অফিস সহকারী / ব্রাঞ্চ ইনচার্জ',
+    titleBn: 'Office Assistant / Branch In-charge',
     titleEn: 'Office Assistant / Branch In-charge',
-    description: 'সম্পূর্ণ কার্যক্রম তত্ত্বাবধান, কর্মীদের পদায়ন/নিয়োগ, সিদ্ধান্ত গ্রহণ ও ব্রাঞ্চ রিপোর্ট।',
+    description: 'Comprehensive operational oversight, staff assignment/recruitment, decision making, and branch reporting.',
     badgeBg: 'bg-emerald-500/10',
     badgeText: 'text-emerald-400',
     badgeBorder: 'border-emerald-500/30',
   },
   {
     id: 'front_desk',
-    titleBn: 'ফ্রন্ট ডেস্ক ও অপারেশনস',
+    titleBn: 'Front Desk & Operations',
     titleEn: 'Front Desk & Operations',
-    description: 'ডেস্ক সেটআপ, সকালের পরিকল্পনা, ভিজিটর ও প্রাথমিক অভ্যর্থনা কার্যক্রম।',
+    description: 'Desk setup, morning schedule, visitors and front office reception management.',
     badgeBg: 'bg-sky-500/10',
     badgeText: 'text-sky-400',
     badgeBorder: 'border-sky-500/30',
   },
   {
     id: 'accounts',
-    titleBn: 'হিসাব ও ক্যাশ সহকারী',
+    titleBn: 'Accounts & Cashier',
     titleEn: 'Accounts & Cashier',
-    description: 'বিকাশ এমআর, মোবাইল ব্যালেন্স, পেটিক্যাশ, অনুদান ও দিনের ক্যাশ ক্লোজিং।',
+    description: 'bKash MR, mobile balance, petty cash, donations, and daily cash closing.',
     badgeBg: 'bg-amber-500/10',
     badgeText: 'text-amber-400',
     badgeBorder: 'border-amber-500/30',
   },
   {
     id: 'customer_service',
-    titleBn: 'গ্রাহক সেবা ও সেলস',
+    titleBn: 'Customer Relations & Sales',
     titleEn: 'Customer Relations & Sales',
-    description: 'সেলস আইটেম, যোগাযোগ তালিকা, ইমেইল ও গ্রাহক অনুসন্ধান ফলোআপ।',
+    description: 'Sales items, communication lists, emails, and customer inquiry follow-ups.',
     badgeBg: 'bg-violet-500/10',
     badgeText: 'text-violet-400',
     badgeBorder: 'border-violet-500/30',
   },
   {
     id: 'logistics',
-    titleBn: 'লজিস্টিকস ও অফিস কেয়ার',
+    titleBn: 'Logistics & Facility Care',
     titleEn: 'Logistics & Facility Care',
-    description: 'অফিস চেক, গাছপালা যত্ন, ইকুইপমেন্ট নিরাপত্তা ও দিনশেষে লক-আপ রুটিন।',
+    description: 'Office check, plant care, equipment safety, and end-of-day lock-up routine.',
     badgeBg: 'bg-teal-500/10',
     badgeText: 'text-teal-400',
     badgeBorder: 'border-teal-500/30',
   },
   {
     id: 'field_coordinator',
-    titleBn: 'মাঠ সমন্বয়কারী',
+    titleBn: 'Field Coordinator',
     titleEn: 'Field Coordinator',
-    description: 'মাঠ পর্যায়ের যোগাযোগ, কিউএমআইএস আপডেট ও আউটরিচ সাপোর্ট।',
+    description: 'Field coordination, QMIS updates, and outreach support.',
     badgeBg: 'bg-orange-500/10',
     badgeText: 'text-orange-400',
     badgeBorder: 'border-orange-500/30',
   },
   {
     id: 'general_staff',
-    titleBn: 'সাধারণ কর্মী / অ্যাসিস্ট্যান্ট',
+    titleBn: 'General Staff',
     titleEn: 'General Staff',
-    description: 'সাধারণ দৈনন্দিন কার্যক্রম ও অ্যাসাইনকৃত টাস্ক সম্পাদন।',
+    description: 'General daily tasks and assigned operational workflows.',
     badgeBg: 'bg-zinc-500/10',
     badgeText: 'text-zinc-300',
     badgeBorder: 'border-zinc-500/30',
@@ -223,168 +223,90 @@ export interface AIAnalysisResult {
 export const BOSS_RAJI_SIR: Employee = {
   id: 'emp-raji-sir-boss',
   employee_id: 'RAJI_SIR',
-  name: 'রাজি স্যার',
+  name: 'Raji Sir',
   pin: '1234',
   role: 'main_boss',
   branch: 'all',
   is_active: true,
   phone: '01700000000',
   joined_date: '2023-01-01',
-  notes: 'কোয়ান্টাম গাজীপুর সেল: চৌরাস্তা ও রাজবাড়ি উভয় ব্রাঞ্চের সার্বিক প্রধান ও নীতিনির্ধারক।',
+  notes: 'Quantum Gazipur Cell: Central Director & Policy Maker for both Gazipur Branch and Gazipur Sadar Office.',
   avatar_color: '#f59e0b',
 };
 
 export const DEFAULT_SUPERVISOR: Employee = BOSS_RAJI_SIR;
 
 export const INITIAL_EMPLOYEES: Employee[] = [
-  // সার্বিক তত্ত্বাবধায়ক (রাজি স্যার)
+  // Central Director (Raji Sir)
   BOSS_RAJI_SIR,
 
-  // ১। চৌরাস্তা ব্রাঞ্চ টিম (Chowrasta Branch Staff)
+  // 1. Gazipur Branch Staff (2 people)
   {
-    id: 'emp-chow-sup',
-    employee_id: 'SUP-CHOW',
-    name: 'মিজানুর রহমান (ইনচার্জ - চৌরাস্তা)',
+    id: 'emp-chow-anjuman',
+    employee_id: 'GB-01',
+    name: 'Anjuman Khan',
     pin: '1234',
     role: 'office_assistant',
     branch: 'chowrasta',
     is_active: true,
     phone: '01711000001',
     joined_date: '2023-05-01',
-    notes: 'চৌরাস্তা ব্রাঞ্চের সার্বিক কার্যক্রম পরিচালনা ও তত্ত্বাবধান।',
+    notes: 'Gazipur Branch: Operations and in-charge coordination.',
     avatar_color: '#10b981',
   },
   {
-    id: 'emp-chow-01',
-    employee_id: 'CR-01',
-    name: 'মিনা (Mina - ফ্রন্ট ডেস্ক)',
+    id: 'emp-chow-mustakim',
+    employee_id: 'GB-02',
+    name: 'Mustakim Hossain',
     pin: '1234',
-    role: 'front_desk',
+    role: 'accounts',
     branch: 'chowrasta',
     is_active: true,
     phone: '01711000002',
     joined_date: '2024-01-15',
-    notes: 'চৌরাস্তা ব্রাঞ্চের ফ্রন্ট ডেস্ক ও রিসেপশন পরিচালনা।',
+    notes: 'Gazipur Branch: Accounts, reconciliation, and logistics.',
     avatar_color: '#38bdf8',
   },
+
+  // 2. Gazipur Sadar Office Staff (3 people)
   {
     id: 'emp-jahid-akand',
     employee_id: 'JAHID',
-    name: 'জাহিদ হাসান আকন্দ',
+    name: 'Jahid Hasan',
     pin: '1234',
     role: 'accounts',
-    branch: 'chowrasta',
+    branch: 'rajbari',
     is_active: true,
     phone: '01711999888',
     joined_date: '2024-01-01',
-    notes: 'একাউন্টস ও অপারেশনাল ওয়ার্কফ্লো — ৬টি ক্যাটাগরি ও ৭৩টি কার্যতালিকা বিশেষজ্ঞ।',
+    notes: 'Gazipur Sadar Office: 6 categories & 73 operational workflow tasks (BILL WORK, FUND, DONATION, PROGRAM-Inside, PROGRAM-Outside, EXPLORATION).',
     avatar_color: '#4f46e5',
   },
   {
-    id: 'emp-chow-02',
-    employee_id: 'CR-02',
-    name: 'তানভীর আহমেদ (হিসাব)',
-    pin: '1234',
-    role: 'accounts',
-    branch: 'chowrasta',
-    is_active: true,
-    phone: '01711000003',
-    joined_date: '2024-02-01',
-    notes: 'চৌরাস্তা ব্রাঞ্চের ক্যাশ ক্লোজিং, বিকাশ এমআর ও হিসাব রেকর্ড।',
-    avatar_color: '#fbbf24',
-  },
-  {
-    id: 'emp-chow-03',
-    employee_id: 'CR-03',
-    name: 'সাদিয়া তাসনিম (কাস্টমার সার্ভিস)',
-    pin: '1234',
-    role: 'customer_service',
-    branch: 'chowrasta',
-    is_active: true,
-    phone: '01711000004',
-    joined_date: '2024-03-01',
-    notes: 'চৌরাস্তা ব্রাঞ্চের সেলস আইটেম ও গ্রাহক যোগাযোগ তত্ত্বাবধায়ক।',
-    avatar_color: '#a78bfa',
-  },
-  {
-    id: 'emp-chow-04',
-    employee_id: 'CR-04',
-    name: 'মো. রফিকুল ইসলাম (লজিস্টিকস)',
-    pin: '1234',
-    role: 'logistics',
-    branch: 'chowrasta',
-    is_active: true,
-    phone: '01711000005',
-    joined_date: '2024-03-15',
-    notes: 'চৌরাস্তা ব্রাঞ্চের অফিস চেক, গাছপালা ও নিরাপত্তা ব্যবস্থাপনা।',
-    avatar_color: '#34d399',
-  },
-
-  // ২। রাজবাড়ি ব্রাঞ্চ টিম (Rajbari Branch Staff)
-  {
-    id: 'emp-rajb-sup',
-    employee_id: 'SUP-RAJB',
-    name: 'ফারহানা ইয়াসমিন (ইনচার্জ - রাজবাড়ি)',
-    pin: '1234',
-    role: 'office_assistant',
-    branch: 'rajbari',
-    is_active: true,
-    phone: '01722000001',
-    joined_date: '2023-06-01',
-    notes: 'রাজবাড়ি ব্রাঞ্চের সার্বিক কার্যক্রম পরিচালনা ও তত্ত্বাবধান।',
-    avatar_color: '#0ea5e9',
-  },
-  {
-    id: 'emp-rajb-01',
-    employee_id: 'RB-01',
-    name: 'কবীর হোসেন (ফ্রন্ট ডেস্ক)',
+    id: 'emp-rajb-tanjina',
+    employee_id: 'SO-01',
+    name: 'Tanzina Akter',
     pin: '1234',
     role: 'front_desk',
     branch: 'rajbari',
     is_active: true,
-    phone: '01722000002',
-    joined_date: '2024-01-20',
-    notes: 'রাজবাড়ি ব্রাঞ্চের ফ্রন্ট ডেস্ক ও ভিজিটর অভ্যর্থনা।',
-    avatar_color: '#60a5fa',
+    phone: '01722000001',
+    joined_date: '2024-02-01',
+    notes: 'Gazipur Sadar Office: Wel-O (20 tasks) & COMMUNICATION (12 tasks) operational workflows.',
+    avatar_color: '#ec4899',
   },
   {
-    id: 'emp-rajb-02',
-    employee_id: 'RB-02',
-    name: 'নুসরাত জাহান (হিসাব)',
-    pin: '1234',
-    role: 'accounts',
-    branch: 'rajbari',
-    is_active: true,
-    phone: '01722000003',
-    joined_date: '2024-02-10',
-    notes: 'রাজবাড়ি ব্রাঞ্চের ক্যাশ ক্লোজিং, অনুদান ও ব্যালেন্স ফলোআপ।',
-    avatar_color: '#f59e0b',
-  },
-  {
-    id: 'emp-rajb-03',
-    employee_id: 'RB-03',
-    name: 'আলমগীর কবীর (কাস্টমার সার্ভিস)',
-    pin: '1234',
-    role: 'customer_service',
-    branch: 'rajbari',
-    is_active: true,
-    phone: '01722000004',
-    joined_date: '2024-03-05',
-    notes: 'রাজবাড়ি সেলস আইটেম, কো-অর্ডিনেশন ও যোগাযোগ লিস্ট।',
-    avatar_color: '#c084fc',
-  },
-  {
-    id: 'emp-rajb-04',
-    employee_id: 'RB-04',
-    name: 'শরিফুল ইসলাম (লজিস্টিকস)',
+    id: 'emp-rajb-pronoy',
+    employee_id: 'SO-02',
+    name: 'Pronoy Das',
     pin: '1234',
     role: 'logistics',
     branch: 'rajbari',
     is_active: true,
-    phone: '01722000005',
-    joined_date: '2024-03-20',
-    notes: 'রাজবাড়ি ব্রাঞ্চের ইকুইপমেন্ট সুরক্ষা ও অফিস ফ্যাসিলিটি কেয়ার।',
-    avatar_color: '#2dd4bf',
+    phone: '01722000002',
+    joined_date: '2024-03-01',
+    notes: 'Gazipur Sadar Office: Logistics, facility management, and asset coordination.',
+    avatar_color: '#0ea5e9',
   },
 ];
 

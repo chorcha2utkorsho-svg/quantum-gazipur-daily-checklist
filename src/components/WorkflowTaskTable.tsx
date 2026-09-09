@@ -6,12 +6,11 @@ import {
   Clock,
   AlertCircle,
   MessageSquare,
-  Sparkles,
   Maximize2,
   Minimize2,
   FolderOpen,
 } from 'lucide-react';
-import { WorkflowCategory, WorkflowTask, WORKFLOW_CATEGORIES } from '../data/workflowData';
+import { WorkflowTask, WORKFLOW_CATEGORIES } from '../data/workflowData';
 import { DailyLogItem } from '../types';
 
 interface WorkflowTaskTableProps {
@@ -24,11 +23,11 @@ interface WorkflowTaskTableProps {
 }
 
 const COMMON_REASONS = [
-  'ক্লায়েন্ট উত্তরের অপেক্ষায়',
-  'বিকেলে সম্পন্ন করা হবে',
-  'টেকনিক্যাল বা সার্ভার জটিলতা',
-  'উর্ধ্বতন অনুমোদনের অপেক্ষায়',
-  'আজ প্রযোজ্য নয়',
+  'Awaiting client response',
+  'Will be completed this afternoon',
+  'Technical / system issue',
+  'Awaiting supervisor approval',
+  'Not applicable today',
 ];
 
 export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
@@ -37,16 +36,14 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
   onToggleStatus,
   onUpdateReason,
   selectedCategory,
-  viewDensity = 'detailed',
 }) => {
   // Category expanded state (default all open)
-  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
-    'BILL WORK': true,
-    'FUND': true,
-    'DONATION': true,
-    'PROGRAM-Sadak': true,
-    'EXPLORATION': true,
-    'PROGRAM-Gazidin': true,
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {};
+    WORKFLOW_CATEGORIES.forEach((c) => {
+      initial[c.id] = true;
+    });
+    return initial;
   });
 
   const [activeReasonInput, setActiveReasonInput] = useState<string | null>(null);
@@ -89,9 +86,9 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
         <div className="flex items-center gap-2">
           <div className="w-2.5 h-2.5 rounded-full bg-indigo-600 animate-pulse" />
           <h2 className="text-sm sm:text-base font-bold text-slate-800 tracking-tight">
-            ক্যাটাগরি ওয়ার্কফ্লো ও একাউন্টিং টেবিল{' '}
+            Workflow & Accountability Table{' '}
             <span className="text-xs font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200 ml-1">
-              ({totalVisibleTasks} টি কাজ প্রদর্শিত)
+              ({totalVisibleTasks} Tasks Displayed)
             </span>
           </h2>
         </div>
@@ -103,7 +100,7 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200 transition-colors"
           >
             <Maximize2 className="w-3 h-3 text-slate-500" />
-            <span>সব উন্মোচন [Expand All]</span>
+            <span>Expand All</span>
           </button>
           <button
             type="button"
@@ -111,7 +108,7 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200 transition-colors"
           >
             <Minimize2 className="w-3 h-3 text-slate-500" />
-            <span>সব সংক্ষেপ [Collapse All]</span>
+            <span>Collapse All</span>
           </button>
         </div>
       </div>
@@ -123,13 +120,13 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
           <thead>
             <tr className="bg-slate-100/80 text-slate-700 font-bold border-b border-slate-200 text-[11px] uppercase tracking-wider select-none">
               <th className="py-2.5 px-3 w-10 text-center">✓</th>
-              <th className="py-2.5 px-2 w-12 text-center">ক্রম</th>
-              <th className="py-2.5 px-2.5 w-20">কোড (ID)</th>
-              <th className="py-2.5 px-3">কাজের বিবরণ [TASK DETAILS]</th>
-              <th className="py-2.5 px-3 w-40 hidden md:table-cell">কাজের ক্যাটাগরি / বিভাগ</th>
-              <th className="py-2.5 px-3 w-28 text-center">অগ্রাধিকার</th>
-              <th className="py-2.5 px-3 w-28 text-center">স্ট্যাটাস</th>
-              <th className="py-2.5 px-3 w-48 hidden lg:table-cell">নোট / কারণ</th>
+              <th className="py-2.5 px-2 w-12 text-center">No.</th>
+              <th className="py-2.5 px-2.5 w-20">Code</th>
+              <th className="py-2.5 px-3">Task Details</th>
+              <th className="py-2.5 px-3 w-44 hidden md:table-cell">Category / Sector</th>
+              <th className="py-2.5 px-3 w-28 text-center">Priority</th>
+              <th className="py-2.5 px-3 w-28 text-center">Status</th>
+              <th className="py-2.5 px-3 w-48 hidden lg:table-cell">Notes / Reason</th>
             </tr>
           </thead>
 
@@ -170,20 +167,17 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
                           <span className="font-extrabold text-xs sm:text-sm text-slate-900">
                             {cat.name}
                           </span>
-                          <span className="text-slate-500 font-medium text-xs">
-                            ({cat.nameBn})
-                          </span>
                           <span
                             className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${cat.badgeBg} ${cat.badgeText} ${cat.badgeBorder}`}
                           >
-                            {totalCount}টি টাস্ক
+                            {totalCount} Tasks
                           </span>
                         </div>
 
                         {/* Progress Tracker on the right */}
                         <div className="flex items-center gap-3">
                           <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-600">
-                            <span>অগ্রগতি:</span>
+                            <span>Progress:</span>
                             <span className="font-mono text-indigo-700">
                               {doneCount}/{totalCount}
                             </span>
@@ -198,7 +192,7 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
                             </span>
                           </div>
                           <span className="text-[10px] text-slate-400 hidden sm:inline">
-                            {isExpanded ? 'সংক্ষেপ করুন' : 'সম্প্রসারণ করুন'}
+                            {isExpanded ? 'Collapse' : 'Expand'}
                           </span>
                         </div>
                       </div>
@@ -207,7 +201,7 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
 
                   {/* Task Items under this Category */}
                   {isExpanded &&
-                    categoryTasks.map((task, idx) => {
+                    categoryTasks.map((task) => {
                       const log = dailyLogs[task.name];
                       const isDone = log?.status === 'done';
                       const reason = log?.reason_for_pending || '';
@@ -264,18 +258,18 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
                               </div>
                             </div>
 
-                            {/* Inline Reason expansion on mobile or click */}
+                            {/* Inline Reason expansion */}
                             {!isDone && (isReasonOpen || reason) && (
                               <div className="mt-2 pt-2 border-t border-amber-100 bg-amber-50/60 p-2 rounded-lg text-xs">
                                 <div className="flex items-center gap-1.5 text-amber-800 font-semibold text-[11px] mb-1">
                                   <AlertCircle className="w-3 h-3 text-amber-600" />
-                                  <span>পেন্ডিং থাকার কারণ:</span>
+                                  <span>Reason for pending:</span>
                                 </div>
                                 <input
                                   type="text"
                                   value={reason}
                                   onChange={(e) => onUpdateReason(task.name, e.target.value)}
-                                  placeholder="কারণ লিখুন (যেমন: অনুমোদন পেন্ডিং)..."
+                                  placeholder="Enter reason (e.g., awaiting supervisor confirmation)..."
                                   className="w-full px-2.5 py-1 text-xs bg-white border border-amber-200 rounded text-slate-800 focus:outline-none focus:border-amber-400"
                                 />
                                 <div className="flex flex-wrap gap-1 mt-1.5">
@@ -298,7 +292,7 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
                             )}
                           </td>
 
-                          {/* Category Column (Hidden on mobile) */}
+                          {/* Category Column */}
                           <td className="py-2.5 px-3 hidden md:table-cell">
                             <span
                               className={`inline-block text-[11px] px-2 py-0.5 rounded-full border font-semibold ${cat.badgeBg} ${cat.badgeText} ${cat.badgeBorder}`}
@@ -312,17 +306,17 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
                             {task.priority === 'high' ? (
                               <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 shadow-2xs">
                                 <span className="w-1.5 h-1.5 rounded-full bg-rose-600" />
-                                <span>উচ্চ [High]</span>
+                                <span>High</span>
                               </span>
                             ) : task.priority === 'medium' ? (
                               <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
                                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                                <span>মাঝারি [Med]</span>
+                                <span>Medium</span>
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
                                 <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                                <span>সাধারণ [Low]</span>
+                                <span>Low</span>
                               </span>
                             )}
                           </td>
@@ -341,22 +335,22 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
                               {isDone ? (
                                 <>
                                   <Check className="w-3.5 h-3.5 text-emerald-600" />
-                                  <span>সম্পন্ন</span>
+                                  <span>Done</span>
                                 </>
                               ) : (
                                 <>
                                   <Clock className="w-3 h-3 text-slate-500" />
-                                  <span>পেন্ডিং ▼</span>
+                                  <span>Pending ▼</span>
                                 </>
                               )}
                             </button>
                           </td>
 
-                          {/* Notes / Reason Column (Hidden on smaller screens) */}
+                          {/* Notes / Reason Column */}
                           <td className="py-2.5 px-3 hidden lg:table-cell">
                             {isDone ? (
                               <span className="text-[11px] text-slate-400 italic">
-                                সম্পন্ন {log?.completed_at ? new Date(log.completed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                                Completed {log?.completed_at ? new Date(log.completed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                               </span>
                             ) : (
                               <div className="flex items-center gap-1.5">
@@ -379,7 +373,7 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
                                     className="text-[11px] text-slate-400 hover:text-indigo-600 flex items-center gap-1 underline"
                                   >
                                     <MessageSquare className="w-3 h-3" />
-                                    <span>কারণ যোগ করুন</span>
+                                    <span>Add reason</span>
                                   </button>
                                 )}
                               </div>

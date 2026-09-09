@@ -81,11 +81,11 @@ CREATE POLICY "Allow public all task_templates" ON public.task_templates FOR ALL
 -- 6. Seed Default Employees (Supervisor & Cell Team)
 INSERT INTO public.employees (employee_id, name, pin, role, is_active, notes)
 VALUES
-    ('SUPERVISOR', 'অফিস সহকারী / সুপারভাইজার (Raji Sir Team)', '1234', 'office_assistant', true, 'সার্বিক সেল পরিচালনা ও সিদ্ধান্ত গ্রহণকারী কর্মকর্তা।'),
-    ('EMP-01', 'মিনা (Mina)', '1234', 'front_desk', true, 'ফ্রন্ট ডেস্ক ও দৈনন্দিন ২০টি প্রধান কাজের দায়িত্বপ্রাপ্ত কর্মী।'),
-    ('EMP-02', 'তানভীর আহমেদ', '1234', 'accounts', true, 'ক্যাশ ক্লোজিং, বিকাশ এমআর ও আর্থিক রেকর্ড ব্যবস্থাপক।'),
-    ('EMP-03', 'সাদিয়া তাসনিম', '1234', 'customer_service', true, 'সেলস আইটেম ও গ্রাহক যোগাযোগ তত্ত্বাবধায়ক।'),
-    ('EMP-04', 'মো. রফিকুল ইসলাম', '1234', 'logistics', true, 'অফিস চেক, গাছপালা যত্ন ও অফিস নিরাপত্তা রুটিন।')
+    ('SUPERVISOR', 'Office Assistant / Supervisor (Raji Sir Team)', '1234', 'office_assistant', true, 'Overall cell operations and supervisory incharge.'),
+    ('EMP-01', 'Mina', '1234', 'front_desk', true, 'Front desk and daily 20 core operational checklist tasks.'),
+    ('EMP-02', 'Tanvir Ahmed', '1234', 'accounts', true, 'Cash closing, bKash MR, and financial record manager.'),
+    ('EMP-03', 'Sadia Tasnim', '1234', 'customer_service', true, 'Sales item and donor relations coordinator.'),
+    ('EMP-04', 'Md. Rafiqul Islam', '1234', 'logistics', true, 'Facility check, plant care, and office security routine.')
 ON CONFLICT (employee_id) DO NOTHING;
 
 -- 7. Seed Quantum Gazipur cell, Raji sir Team's 20 Core Tasks
@@ -247,17 +247,17 @@ export const SupabaseModal: React.FC<SupabaseModalProps> = ({
           {/* TAB 1: Config */}
           {activeTab === 'config' && (
             <div className="space-y-4">
-              {/* Bengali quick instruction banner */}
+              {/* Quick instruction banner */}
               <div className="p-3.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-xs text-[#e5e5e5] space-y-1.5">
                 <div className="font-semibold text-emerald-400 flex items-center gap-1.5">
                   <Database className="w-4 h-4" />
-                  সুপাবেস (Supabase) ডাটাবেস যুক্ত করার ধাপসমূহ:
+                  Steps to connect Supabase Cloud Database:
                 </div>
                 <ol className="list-decimal list-inside text-xs text-[#8e9299] space-y-1 leading-relaxed">
-                  <li><strong className="text-white">Supabase Dashboard</strong> (supabase.com) এ লগইন করে আপনার প্রজেক্ট ওপেন করুন।</li>
-                  <li><strong className="text-white">Project Settings &gt; API</strong> থেকে <strong>Project URL</strong> এবং <strong>anon (public) key</strong> কপি করুন।</li>
-                  <li>নিচের ঘরে বসিয়ে <strong className="text-emerald-400">"Test &amp; Connect"</strong> বাটনে ক্লিক করুন।</li>
-                  <li>উপরে <strong>"SQL Migration Schema"</strong> ট্যাবে গিয়ে কোড কপি করে Supabase SQL Editor-এ রান করে নিন।</li>
+                  <li>Log in to the <strong className="text-white">Supabase Dashboard</strong> (supabase.com) and open your project.</li>
+                  <li>Go to <strong className="text-white">Project Settings &gt; API</strong> and copy your <strong>Project URL</strong> and <strong>anon (public) key</strong>.</li>
+                  <li>Paste both values below and click <strong className="text-emerald-400">"Test &amp; Connect"</strong>.</li>
+                  <li>Switch to the <strong className="text-emerald-400">"SQL Migration Schema"</strong> tab above, copy the SQL, and execute it in your Supabase SQL Editor.</li>
                 </ol>
               </div>
 

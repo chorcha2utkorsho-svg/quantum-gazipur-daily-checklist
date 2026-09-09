@@ -8,6 +8,7 @@ import {
   TaskTemplate,
   UserRole,
 } from '../types';
+import { ALL_WORKFLOW_TASKS } from '../data/workflowData';
 
 // Default Supabase project configuration for Quantum Gazipur cell
 const DEFAULT_SUPABASE_URL = 'https://wftxugyhmtfwljtddmt.supabase.co';
@@ -102,33 +103,31 @@ const STORAGE_PREFIX = 'qgz_cell_';
 
 export function getLocalEmployees(): Employee[] {
   if (typeof window === 'undefined') return INITIAL_EMPLOYEES;
-  const stored = localStorage.getItem(`${STORAGE_PREFIX}employees_v2`);
+  const stored = localStorage.getItem(`${STORAGE_PREFIX}employees_v3`);
   if (stored) {
     try {
       const parsed = JSON.parse(stored);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        // Ensure Raji Sir is present
+        // Ensure Raji Sir and Anjuman Khan are present in the current schema
         const hasRajiSir = parsed.some((e) => e.employee_id === 'RAJI_SIR');
-        if (!hasRajiSir) {
-          const merged = [INITIAL_EMPLOYEES[0], ...parsed];
-          localStorage.setItem(`${STORAGE_PREFIX}employees_v2`, JSON.stringify(merged));
-          return merged;
+        const hasAnjuman = parsed.some((e) => e.name && e.name.toLowerCase().includes('anjuman'));
+        if (hasRajiSir && hasAnjuman) {
+          return parsed;
         }
-        return parsed;
       }
     } catch {
       // fallback
     }
   }
 
-  // Fallback to initial multi-branch roster with Raji Sir
-  localStorage.setItem(`${STORAGE_PREFIX}employees_v2`, JSON.stringify(INITIAL_EMPLOYEES));
+  // Set to official 2-person Gazipur Branch + 3-person Sadar Office roster (+ Raji Sir)
+  localStorage.setItem(`${STORAGE_PREFIX}employees_v3`, JSON.stringify(INITIAL_EMPLOYEES));
   return INITIAL_EMPLOYEES;
 }
 
 export function saveLocalEmployees(employees: Employee[]) {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(`${STORAGE_PREFIX}employees_v2`, JSON.stringify(employees));
+  localStorage.setItem(`${STORAGE_PREFIX}employees_v3`, JSON.stringify(employees));
 }
 
 export function getLocalTemplates(): TaskTemplate[] {
@@ -185,10 +184,14 @@ export function saveLocalDailyLogs(date: string, logs: DailyLogItem[], employeeI
 // Active session user in local storage
 export function getStoredSession(): Employee | null {
   if (typeof window === 'undefined') return null;
-  const stored = localStorage.getItem(`${STORAGE_PREFIX}active_user_v2`);
+  const stored = localStorage.getItem(`${STORAGE_PREFIX}active_user_v3`);
   if (stored) {
     try {
-      return JSON.parse(stored);
+      const user = JSON.parse(stored);
+      if (user && user.employee_id) {
+        const valid = INITIAL_EMPLOYEES.find((e) => e.employee_id === user.employee_id);
+        if (valid) return valid;
+      }
     } catch {
       // fallback
     }
@@ -200,9 +203,9 @@ export function getStoredSession(): Employee | null {
 export function saveStoredSession(user: Employee | null) {
   if (typeof window === 'undefined') return;
   if (user) {
-    localStorage.setItem(`${STORAGE_PREFIX}active_user_v2`, JSON.stringify(user));
+    localStorage.setItem(`${STORAGE_PREFIX}active_user_v3`, JSON.stringify(user));
   } else {
-    localStorage.removeItem(`${STORAGE_PREFIX}active_user_v2`);
+    localStorage.removeItem(`${STORAGE_PREFIX}active_user_v3`);
   }
 }
 
@@ -394,6 +397,41 @@ export async function fetchDailyLogsForEmployee(
     loadedLogs = getLocalDailyLogs(date, employeeId);
   }
 
+  // If Jahid Hasan Akand (73 operational workflow tasks)
+  if (employeeId === 'JAHID') {
+    if (loadedLogs.length === 0) {
+      loadedLogs = ALL_WORKFLOW_TASKS.map((task) => ({
+        id: `${date}-${employeeId}-${task.id || task.code}`,
+        date,
+        employee_id: employeeId,
+        task_name: task.name,
+        status: 'pending',
+        reason_for_pending: '',
+        order_index: task.order,
+        completed_at: null,
+      }));
+      saveLocalDailyLogs(date, loadedLogs, employeeId);
+    } else {
+      const existingNames = new Set(loadedLogs.map((l) => l.task_name));
+      const missingTasks = ALL_WORKFLOW_TASKS.filter((t) => !existingNames.has(t.name));
+      if (missingTasks.length > 0) {
+        const addedLogs: DailyLogItem[] = missingTasks.map((task) => ({
+          id: `${date}-${employeeId}-${task.id || task.code}`,
+          date,
+          employee_id: employeeId,
+          task_name: task.name,
+          status: 'pending',
+          reason_for_pending: '',
+          order_index: task.order,
+          completed_at: null,
+        }));
+        loadedLogs = [...loadedLogs, ...addedLogs].sort((a, b) => a.order_index - b.order_index);
+        saveLocalDailyLogs(date, loadedLogs, employeeId);
+      }
+    }
+    return loadedLogs;
+  }
+
   // If still empty, initialize from active templates
   if (loadedLogs.length === 0) {
     const activeTemplates = templates.filter((t) => t.is_active);
@@ -526,31 +564,31 @@ export async function requestAiAnalysis(payload: {
     .flatMap((e: any) => (e.pendingReasons || []).map((r: any) => `**${e.name} (${e.role})**: ${r.task} — _${r.reason}_`))
     .slice(0, 6);
 
-  return `### 📊 সার্বিক কার্যকারিতা ও তুলনামূলক চিত্র
-- **তারিখ**: ${payload.date}
-- **টিমের সার্বিক অগ্রগতি**: গড়ে **${avg}%** কাজ সম্পন্ন হয়েছে।
-- **উপস্থিত ও কর্মক্ষম কর্মী**: মোট ${payload.teamStats?.activeStaff || payload.employeesSummary.length} জন সক্রিয় কর্মী দায়িত্ব পালন করছেন।
+  return `### 📊 Overall Operational Performance & Overview
+- **Date**: ${payload.date}
+- **Team Overall Progress**: On average **${avg}%** completed across the active scope.
+- **Active Personnel**: Total ${payload.teamStats?.activeStaff || payload.employeesSummary.length} active staff on duty.
 
 ---
 
-### ⚠️ চিহ্নিত ঝুঁকি ও বিলম্বের কারণসমূহ (Critical Bottlenecks)
-- টিমের সর্বমোট **${pendingCount}টি টাস্ক** এখনো পেন্ডিং অবস্থায় রয়েছে।
+### ⚠️ Critical Bottlenecks & Pending Accountability
+- Total **${pendingCount} task(s)** currently pending across assigned roles.
 ${
   issues.length > 0
     ? issues.map((i: string) => `- 🔍 ${i}`).join('\n')
-    : '- কোনো কর্মী বিলম্বিত কারণ নথিভুক্ত করেননি, তবে কিছু টাস্ক সম্পন্ন হওয়া বাকি।'
+    : '- No specific delay reasons documented, though some tasks remain in progress.'
 }
 
 ---
 
-### 🎯 অফিস সহকারীর পরবর্তী করণীয় সিদ্ধান্ত (Actionable Directives)
-1. **তাত্ক্ষণিক পর্যালোচনা**: যেসব কর্মীর প্রগ্রেস ৭০%-এর কম, তাদের সাথে এখনই কথা বলে প্রয়োজনীয় রিসোর্স সাপোর্ট দিন।
-2. **ক্যাশ ও রিপোর্ট লক**: বিকাল ৫টার মধ্যে ক্যাশ ক্লোজিং, বিকাশ এমআর ও ডেইলি রিপোর্ট নিশ্চিত করুন যাতে পরবর্তী দিনের কাজে জটলা না বাধে।
-3. **কাজের বাধা দূরীকরণ**: কর্মীদের উল্লেখ করা কারণগুলোর মধ্যে কোনটি সিস্টেমের কারণে বিলম্বিত আর কোনটি ব্যক্তিগত—তা চিহ্নিত করে সমাধান দিন।
+### 🎯 Actionable Supervisory Directives
+1. **Immediate Follow-up**: Conduct rapid check-ins with team members whose completion is under 70% to unblock bottlenecks.
+2. **Reconciliation & Lock**: Ensure cash closing, bKash MR, and daily receipts are reconciled by 5:00 PM to avoid carrying work into the next shift.
+3. **Barrier Resolution**: Differentiate between system-dependent blockers and workload volume issues to allocate immediate support.
 
 ---
 
-### 🔄 কর্মী পদায়ন ও দায়িত্ব পুনর্বণ্টন পরামর্শ
-- **অতিরিক্ত কাজের চাপ লাঘব**: হিসাব ও ফ্রন্ট ডেস্কে কাজের চাপ বেশি থাকলে জেনারেল স্টাফ থেকে একজন কর্মীকে সহায়তা প্রদান করুন।
-- **রোল ভিত্তিক দক্ষতা বৃদ্ধি**: যেসকল কর্মী নিয়মিত ৯০%+ সম্পাদন করছেন, তাদের আরো দায়িত্বশীল প্রজেক্টে বা সিনিয়র কোঅর্ডিনেটরে পদায়িত করার বিষয়টি বিবেচনা করুন।`;
+### 🔄 Role Allocation & Workload Balancing
+- **Workload Balancing**: If accounting or front desk traffic is unusually heavy, cross-assign general assistants for prompt clearance.
+- **Role Optimization**: Team members consistently logging 90%+ completion should be positioned for critical tasks and operational coordination.`;
 }

@@ -7,9 +7,9 @@ import {
   HeartHandshake,
   CalendarCheck,
   Compass,
-  CheckCircle2,
+  Home,
 } from 'lucide-react';
-import { WORKFLOW_CATEGORIES, WorkflowCategory } from '../data/workflowData';
+import { WORKFLOW_CATEGORIES } from '../data/workflowData';
 import { Employee } from '../types';
 
 interface WorkflowHeroBannerProps {
@@ -28,10 +28,12 @@ const getCategoryIcon = (iconName: string) => {
       return <Wallet className="w-4 h-4 text-emerald-300" />;
     case 'HeartHandshake':
       return <HeartHandshake className="w-4 h-4 text-amber-300" />;
+    case 'Home':
+      return <Home className="w-4 h-4 text-cyan-300" />;
     case 'CalendarCheck':
-      return <CalendarCheck className="w-4 h-4 text-cyan-300" />;
+      return <CalendarCheck className="w-4 h-4 text-violet-300" />;
     case 'Compass':
-      return <Compass className="w-4 h-4 text-purple-300" />;
+      return <Compass className="w-4 h-4 text-rose-300" />;
     case 'Sparkles':
       return <Sparkles className="w-4 h-4 text-rose-300" />;
     default:
@@ -46,8 +48,8 @@ export const WorkflowHeroBanner: React.FC<WorkflowHeroBannerProps> = ({
   selectedCategory,
   onSelectCategory,
 }) => {
-  const userName = currentUser?.name || 'জাহিদ হাসান আকন্দ';
-  const roleName = currentUser?.role === 'accounts' ? 'একাউন্টস ও অপারেশনাল ওয়ার্কফ্লো' : 'অপারেশনাল ওয়ার্কফ্লো';
+  const userName = currentUser?.name || 'Staff Member';
+  const roleName = currentUser?.role === 'accounts' ? 'Accounts & Operational Workflow' : 'Operational Workflow';
 
   return (
     <div className="relative rounded-2xl overflow-hidden p-5 sm:p-7 text-white shadow-xl border border-indigo-900/40 bg-gradient-to-r from-[#171838] via-[#1a1b4b] to-[#10172a]">
@@ -60,7 +62,7 @@ export const WorkflowHeroBanner: React.FC<WorkflowHeroBannerProps> = ({
         <div className="space-y-2.5 max-w-3xl">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/15 border border-amber-400/30 text-amber-300 text-xs font-semibold">
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>ক্যাটাগরি ওয়াইজ ওয়ার্কফ্লো</span>
+            <span>Category-Wise Workflow</span>
           </div>
 
           <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-white">
@@ -68,39 +70,39 @@ export const WorkflowHeroBanner: React.FC<WorkflowHeroBannerProps> = ({
           </h1>
 
           <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-            আপনার জন্য সম্পূর্ণ দিনভিত্তিক কার্যপদ্ধতির প্রস্তুতি ও ধারাবাহিকতা অনুযায়ী মোট{' '}
-            <strong className="text-amber-300 font-semibold">{totalCategories}টি ক্যাটাগরি</strong> রয়েছে।{' '}
-            প্রতিটি ক্যাটাগরি <strong className="text-amber-300 font-semibold">সুনির্দিষ্ট ধাপে সাজানো হয়েছে।</strong>
+            Structured daily operational management divided across{' '}
+            <strong className="text-amber-300 font-semibold">{totalCategories} categories</strong>.{' '}
+            Each category is organized into <strong className="text-amber-300 font-semibold">systematic sequential tasks</strong>.
           </p>
 
           <div className="pt-1 flex items-center gap-2 text-xs text-slate-400">
             <span className="text-[11px] font-medium text-slate-300">
               {currentUser?.branch === 'chowrasta'
-                ? '১। চৌরাস্তা ব্রাঞ্চ'
+                ? '1. Gazipur Branch'
                 : currentUser?.branch === 'rajbari'
-                ? '২। রাজবাড়ি ব্রাঞ্চ'
-                : 'গাজীপুর সেল'}
+                ? '2. Gazipur Sadar Office'
+                : 'Gazipur Cell'}
             </span>
             <span>•</span>
             <span className="text-[11px] text-slate-400 font-mono">{currentUser?.employee_id}</span>
           </div>
         </div>
 
-        {/* Right Glass Card (Matching Screenshot Box) */}
+        {/* Right Glass Card */}
         <div className="shrink-0 flex items-center justify-center">
           <div className="rounded-xl border border-white/15 bg-white/10 backdrop-blur-md px-6 py-4 text-center min-w-[170px] shadow-lg">
-            <p className="text-xs font-medium text-indigo-200 mb-0.5">ক্যাটাগরি বিবরণ</p>
+            <p className="text-xs font-medium text-indigo-200 mb-0.5">Workflow Overview</p>
             <div className="text-3xl sm:text-4xl font-black text-white tracking-tight my-1">
-              {totalCategories} টি খাত
+              {totalCategories} Sectors
             </div>
             <p className="text-xs text-slate-300 font-medium">
-              {totalTasks}টি কার্যতালিকা
+              {totalTasks} Total Tasks
             </p>
           </div>
         </div>
       </div>
 
-      {/* Category Shortcut Cards Grid (Matching Bottom Section in Screenshot) */}
+      {/* Category Shortcut Cards Grid */}
       <div className="relative z-10 mt-6 pt-5 border-t border-white/10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
         {WORKFLOW_CATEGORIES.map((cat) => {
           const isSelected = selectedCategory === cat.id;
@@ -120,7 +122,7 @@ export const WorkflowHeroBanner: React.FC<WorkflowHeroBannerProps> = ({
                   {getCategoryIcon(cat.iconName)}
                 </div>
                 <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/10 text-slate-300 font-mono">
-                  {cat.taskCount}টি
+                  {cat.taskCount} tasks
                 </span>
               </div>
               <div>

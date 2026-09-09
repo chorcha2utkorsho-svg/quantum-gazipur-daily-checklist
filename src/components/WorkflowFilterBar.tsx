@@ -3,11 +3,8 @@ import {
   Search,
   Plus,
   Printer,
-  RotateCcw,
   Grid,
   List,
-  SlidersHorizontal,
-  Layers,
   ChevronDown,
 } from 'lucide-react';
 import { WORKFLOW_CATEGORIES } from '../data/workflowData';
@@ -37,7 +34,6 @@ export const WorkflowFilterBar: React.FC<WorkflowFilterBarProps> = ({
   totalTasks,
   onOpenNewTaskModal,
   onOpenPrintModal,
-  onResetDaily,
   priorityFilter,
   onPriorityFilterChange,
   viewDensity,
@@ -54,7 +50,7 @@ export const WorkflowFilterBar: React.FC<WorkflowFilterBarProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="কার্যতালিকা বা টাস্ক খুঁজুন (যেমন: BILL, Cash, SMS)..."
+            placeholder="Search workflow tasks (e.g., BILL, Cash, SMS)..."
             className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all"
           />
           {searchQuery && (
@@ -78,7 +74,7 @@ export const WorkflowFilterBar: React.FC<WorkflowFilterBarProps> = ({
                 : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
             }`}
           >
-            সকল উইং
+            All Wings
           </button>
 
           <div className="relative inline-block">
@@ -87,10 +83,10 @@ export const WorkflowFilterBar: React.FC<WorkflowFilterBarProps> = ({
               onChange={(e) => onPriorityFilterChange(e.target.value as any)}
               className="appearance-none bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-semibold px-3 py-1.5 pr-7 rounded-lg cursor-pointer focus:outline-none focus:border-indigo-500"
             >
-              <option value="all">অগ্রাধিকার: সকল</option>
-              <option value="high">উচ্চ অগ্রাধিকার [High]</option>
-              <option value="medium">মাঝারি [Medium]</option>
-              <option value="low">সাধারণ [Low]</option>
+              <option value="all">Priority: All</option>
+              <option value="high">High Priority</option>
+              <option value="medium">Medium Priority</option>
+              <option value="low">Low Priority</option>
             </select>
             <ChevronDown className="w-3 h-3 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
@@ -102,7 +98,7 @@ export const WorkflowFilterBar: React.FC<WorkflowFilterBarProps> = ({
               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-all"
             >
               <Printer className="w-3.5 h-3.5 text-slate-500" />
-              <span>প্রিন্ট / রিপোর্ট</span>
+              <span>Print / Report</span>
             </button>
           )}
 
@@ -113,7 +109,7 @@ export const WorkflowFilterBar: React.FC<WorkflowFilterBarProps> = ({
               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-xs shadow-indigo-600/30 transition-all"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>নতুন টাস্ক</span>
+              <span>New Task</span>
             </button>
           )}
         </div>
@@ -131,10 +127,10 @@ export const WorkflowFilterBar: React.FC<WorkflowFilterBarProps> = ({
               : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'
           }`}
         >
-          সব ক্যাটাগরি ({totalTasks})
+          All Categories ({totalTasks})
         </button>
 
-        {/* 6 Category Pills matching the exact colors from image.png */}
+        {/* Category Pills */}
         {WORKFLOW_CATEGORIES.map((cat) => {
           const count = categoryCounts[cat.id] || cat.taskCount;
           const isSelected = selectedCategory === cat.id;
@@ -166,14 +162,14 @@ export const WorkflowFilterBar: React.FC<WorkflowFilterBarProps> = ({
       {/* Bottom Sub-row: Dropdown & View Mode */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-slate-100 text-xs text-slate-500">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-slate-600">দৈনিক ফিল্টার:</span>
+          <span className="font-semibold text-slate-600">Category Filter:</span>
           <div className="relative inline-block">
             <select
               value={selectedCategory}
               onChange={(e) => onCategoryChange(e.target.value)}
               className="appearance-none bg-slate-50 hover:bg-slate-100 text-slate-800 font-medium px-2.5 py-1 pr-6 rounded-md border border-slate-200 focus:outline-none cursor-pointer"
             >
-              <option value="ALL">সকল ক্যাটাগরি ({totalTasks})</option>
+              <option value="ALL">All Categories ({totalTasks})</option>
               {WORKFLOW_CATEGORIES.map((cat) => (
                 <option key={cat.id} value={cat.id}>
                   {cat.name} ({cat.nameBn})
@@ -185,7 +181,7 @@ export const WorkflowFilterBar: React.FC<WorkflowFilterBarProps> = ({
         </div>
 
         <div className="flex items-center gap-2 self-end sm:self-center">
-          <span className="font-semibold text-slate-600">টাস্ক ভিউ:</span>
+          <span className="font-semibold text-slate-600">Task View:</span>
           <div className="inline-flex p-0.5 rounded-lg bg-slate-100 border border-slate-200">
             <button
               type="button"
@@ -197,7 +193,7 @@ export const WorkflowFilterBar: React.FC<WorkflowFilterBarProps> = ({
               }`}
             >
               <Grid className="w-3 h-3" />
-              <span>বিস্তারিত [Grid]</span>
+              <span>Detailed [Grid]</span>
             </button>
             <button
               type="button"
@@ -209,7 +205,7 @@ export const WorkflowFilterBar: React.FC<WorkflowFilterBarProps> = ({
               }`}
             >
               <List className="w-3 h-3" />
-              <span>কমপ্যাক্ট</span>
+              <span>Compact [List]</span>
             </button>
           </div>
         </div>

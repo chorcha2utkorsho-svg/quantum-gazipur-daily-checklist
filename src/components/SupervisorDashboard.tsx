@@ -98,10 +98,19 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
   const activeStaff = progressList.filter((p) => p.employee.is_active);
 
   const chowrastaStaff = activeStaff.filter(
-    (p) => p.employee.branch === 'chowrasta' || p.employee.employee_id.startsWith('CR-') || p.employee.employee_id === 'SUP-CHOW'
+    (p) =>
+      p.employee.branch === 'chowrasta' ||
+      p.employee.employee_id.startsWith('GB-') ||
+      p.employee.employee_id.startsWith('CR-') ||
+      p.employee.employee_id === 'SUP-CHOW'
   );
   const rajbariStaff = activeStaff.filter(
-    (p) => p.employee.branch === 'rajbari' || p.employee.employee_id.startsWith('RB-') || p.employee.employee_id === 'SUP-RAJB'
+    (p) =>
+      p.employee.branch === 'rajbari' ||
+      p.employee.employee_id.startsWith('SO-') ||
+      p.employee.employee_id.startsWith('RB-') ||
+      p.employee.employee_id === 'SUP-RAJB' ||
+      p.employee.employee_id === 'JAHID'
   );
 
   const getBranchStats = (staff: EmployeeDailyProgress[]) => {
@@ -120,10 +129,21 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
   const branchFilteredStaff = activeStaff.filter((p) => {
     if (selectedBranch === 'all') return true;
     if (selectedBranch === 'chowrasta') {
-      return p.employee.branch === 'chowrasta' || p.employee.employee_id.startsWith('CR-') || p.employee.employee_id === 'SUP-CHOW';
+      return (
+        p.employee.branch === 'chowrasta' ||
+        p.employee.employee_id.startsWith('GB-') ||
+        p.employee.employee_id.startsWith('CR-') ||
+        p.employee.employee_id === 'SUP-CHOW'
+      );
     }
     if (selectedBranch === 'rajbari') {
-      return p.employee.branch === 'rajbari' || p.employee.employee_id.startsWith('RB-') || p.employee.employee_id === 'SUP-RAJB';
+      return (
+        p.employee.branch === 'rajbari' ||
+        p.employee.employee_id.startsWith('SO-') ||
+        p.employee.employee_id.startsWith('RB-') ||
+        p.employee.employee_id === 'SUP-RAJB' ||
+        p.employee.employee_id === 'JAHID'
+      );
     }
     return true;
   });
@@ -149,7 +169,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
         isBossView: isBoss,
         employeesSummary: activeStaff.map((p) => ({
           name: p.employee.name,
-          role: SYSTEM_ROLES.find((r) => r.id === p.employee.role)?.titleBn || p.employee.role,
+          role: SYSTEM_ROLES.find((r) => r.id === p.employee.role)?.titleEn || p.employee.role,
           branch: p.employee.branch || (p.employee.employee_id.startsWith('RB-') ? 'rajbari' : 'chowrasta'),
           completionRate: p.completionRate,
           totalTasks: p.totalTasks,
@@ -198,14 +218,14 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">
-                  রাজি স্যারের সেন্ট্রাল কমান্ড সেন্টার (সার্বিক পর্যবেক্ষণ)
+                  Raji Sir's Central Command Center (Executive Supervision)
                 </h2>
                 <span className="text-[11px] px-2.5 py-0.5 bg-amber-500/20 text-amber-300 font-bold rounded-full border border-amber-500/40">
                   Executive At-A-Glance
                 </span>
               </div>
               <p className="text-xs text-[#d4d4d8] mt-1 leading-relaxed max-w-2xl">
-                গাজীপুরের দুটো ব্রাঞ্চ—<strong>১। চৌরাস্তা ব্রাঞ্চ</strong> ও <strong>২। রাজবাড়ি ব্রাঞ্চ</strong>—এর সার্বিক অগ্রগতি এক নজরে পর্যবেক্ষণ করুন, সমস্যাগুলো চিহ্নিত করুন এবং প্রয়োজনীয় নির্বাহী সিদ্ধান্ত ও পরামর্শ প্রদান করুন।
+                Supervise cross-branch operations across <strong>1. Gazipur Branch</strong> and <strong>2. Gazipur Sadar Office</strong> at a glance, identify operational bottlenecks, and issue directives.
               </p>
             </div>
           </div>
@@ -216,7 +236,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
               className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white/10 hover:bg-white/15 text-white text-xs font-semibold rounded-xl border border-white/10 transition-colors"
             >
               <UserPlus className="w-3.5 h-3.5 text-amber-400" />
-              <span>কর্মী ও পদায়ন</span>
+              <span>Staff &amp; Roles</span>
             </button>
 
             <button
@@ -225,7 +245,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
               className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-400 text-black text-xs font-bold rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all disabled:opacity-50"
             >
               <Sparkles className={`w-4 h-4 ${isGeneratingAi ? 'animate-spin' : ''}`} />
-              <span>{isGeneratingAi ? 'বিশ্লেষণ তৈরি হচ্ছে...' : 'রাজি স্যারের এআই সিদ্ধান্ত ও পরামর্শ'}</span>
+              <span>{isGeneratingAi ? 'Generating Analysis...' : 'Executive AI Directives & Strategy'}</span>
             </button>
           </div>
         </div>
@@ -238,14 +258,14 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-bold text-white tracking-tight">
-                  অফিস সহকারী সামগ্রিক পর্যবেক্ষণ ড্যাশবোর্ড
+                  Central Operations Supervision Dashboard
                 </h2>
                 <span className="text-[11px] px-2 py-0.5 bg-emerald-500/20 text-emerald-400 font-semibold rounded-full border border-emerald-500/30">
                   Supervisor View
                 </span>
               </div>
               <p className="text-xs text-[#a1a1aa] mt-1 leading-relaxed max-w-2xl">
-                কর্মীদের দৈনন্দিন কাজের অগ্রগতি, পেন্ডিং কারণ পর্যালোচনা করুন এবং পরবর্তী সিদ্ধান্ত গ্রহণের জন্য এআই কৌশলগত পরামর্শ গ্রহণ করুন।
+                Review team progress, audit pending accountability records, and leverage AI strategic guidance for operational excellence.
               </p>
             </div>
           </div>
@@ -256,7 +276,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
               className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white/10 hover:bg-white/15 text-white text-xs font-semibold rounded-xl border border-white/10 transition-colors"
             >
               <UserPlus className="w-3.5 h-3.5 text-emerald-400" />
-              <span>কর্মী ও পদায়ন</span>
+              <span>Staff &amp; Roles</span>
             </button>
 
             <button
@@ -265,15 +285,15 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
               className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all disabled:opacity-50"
             >
               <Sparkles className={`w-4 h-4 ${isGeneratingAi ? 'animate-spin' : ''}`} />
-              <span>{isGeneratingAi ? 'বিশ্লেষণ প্রস্তুত হচ্ছে...' : 'এআই পরামর্শ ও সিদ্ধান্ত'}</span>
+              <span>{isGeneratingAi ? 'Generating Analysis...' : 'AI Strategic Recommendations'}</span>
             </button>
           </div>
         </div>
       )}
 
-      {/* DUAL-BRANCH "AT-A-GLANCE" COMPARATIVE CARDS (Chowrasta vs Rajbari) */}
+      {/* DUAL-BRANCH "AT-A-GLANCE" COMPARATIVE CARDS (Gazipur Branch vs Sadar Office) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Card 1: ১। চৌরাস্তা ব্রাঞ্চ */}
+        {/* Card 1: 1. Gazipur Branch */}
         <div
           onClick={() => onSelectBranch('chowrasta')}
           className={`cursor-pointer p-4 rounded-2xl border transition-all duration-200 relative overflow-hidden ${
@@ -289,19 +309,19 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-base font-bold text-white">১। চৌরাস্তা ব্রাঞ্চ</h3>
+                  <h3 className="text-base font-bold text-white">1. Gazipur Branch</h3>
                   <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                    Chowrasta
+                    Gazipur Branch
                   </span>
                 </div>
-                <p className="text-[11px] text-[#8e9299]">গাজীপুর চৌরাস্তা মোড় • ইনচার্জ: মিজানুর রহমান</p>
+                <p className="text-[11px] text-[#8e9299]">Gazipur Branch • 2 Personnel (Anjuman Khan, Mustakim Hossain)</p>
               </div>
             </div>
 
             {/* Completion Percentage Ring */}
             <div className="text-right">
               <div className="text-xl font-extrabold text-emerald-400">{chowrastaStats.rate}%</div>
-              <div className="text-[10px] text-[#8e9299]">অগ্রগতি</div>
+              <div className="text-[10px] text-[#8e9299]">Progress</div>
             </div>
           </div>
 
@@ -316,28 +336,28 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
           {/* Quick Metrics */}
           <div className="grid grid-cols-3 gap-2 mt-3.5 pt-3 border-t border-white/5 text-center">
             <div className="p-1.5 rounded-lg bg-white/[0.02]">
-              <span className="text-[10px] text-[#8e9299] block">সক্রিয় কর্মী</span>
-              <span className="text-xs font-bold text-white">{chowrastaStaff.length} জন</span>
+              <span className="text-[10px] text-[#8e9299] block">Active Staff</span>
+              <span className="text-xs font-bold text-white">{chowrastaStaff.length} staff</span>
             </div>
             <div className="p-1.5 rounded-lg bg-white/[0.02]">
-              <span className="text-[10px] text-[#8e9299] block">সম্পন্ন টাস্ক</span>
+              <span className="text-[10px] text-[#8e9299] block">Done Tasks</span>
               <span className="text-xs font-bold text-emerald-400">{chowrastaStats.totalDone} / {chowrastaStats.totalTasks}</span>
             </div>
             <div className="p-1.5 rounded-lg bg-white/[0.02]">
-              <span className="text-[10px] text-[#8e9299] block">পেন্ডিং কারণ</span>
-              <span className="text-xs font-bold text-amber-400">{chowrastaStats.pendingIssuesCount} টি ইস্যু</span>
+              <span className="text-[10px] text-[#8e9299] block">Pending Issues</span>
+              <span className="text-xs font-bold text-amber-400">{chowrastaStats.pendingIssuesCount} issues</span>
             </div>
           </div>
 
           <div className="flex items-center justify-between mt-3 text-[11px] text-[#8e9299]">
             <span className="text-emerald-400/90 font-medium">
-              {selectedBranch === 'chowrasta' ? '✓ বর্তমান ভিউ ফিল্টার সক্রিয়' : 'ক্লিক করে শুধু চৌরাস্তা ফিল্টার করুন'}
+              {selectedBranch === 'chowrasta' ? '✓ Filter Active' : 'Click to filter Gazipur Branch'}
             </span>
             <ChevronRight className="w-3.5 h-3.5 text-emerald-400" />
           </div>
         </div>
 
-        {/* Card 2: ২। রাজবাড়ি ব্রাঞ্চ */}
+        {/* Card 2: 2. Gazipur Sadar Office */}
         <div
           onClick={() => onSelectBranch('rajbari')}
           className={`cursor-pointer p-4 rounded-2xl border transition-all duration-200 relative overflow-hidden ${
@@ -353,19 +373,19 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-base font-bold text-white">২। রাজবাড়ি ব্রাঞ্চ</h3>
+                  <h3 className="text-base font-bold text-white">2. Gazipur Sadar Office</h3>
                   <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-sky-500/15 text-sky-400 border border-sky-500/30">
-                    Rajbari
+                    Sadar Office
                   </span>
                 </div>
-                <p className="text-[11px] text-[#8e9299]">গাজীপুর রাজবাড়ি রোড • ইনচার্জ: ফারহানা ইয়াসমিন</p>
+                <p className="text-[11px] text-[#8e9299]">Gazipur Sadar • 3 Personnel (Jahid Hasan, Tanzina Akter, Pronoy Das)</p>
               </div>
             </div>
 
             {/* Completion Percentage Ring */}
             <div className="text-right">
               <div className="text-xl font-extrabold text-sky-400">{rajbariStats.rate}%</div>
-              <div className="text-[10px] text-[#8e9299]">অগ্রগতি</div>
+              <div className="text-[10px] text-[#8e9299]">Progress</div>
             </div>
           </div>
 
@@ -380,22 +400,22 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
           {/* Quick Metrics */}
           <div className="grid grid-cols-3 gap-2 mt-3.5 pt-3 border-t border-white/5 text-center">
             <div className="p-1.5 rounded-lg bg-white/[0.02]">
-              <span className="text-[10px] text-[#8e9299] block">সক্রিয় কর্মী</span>
-              <span className="text-xs font-bold text-white">{rajbariStaff.length} জন</span>
+              <span className="text-[10px] text-[#8e9299] block">Active Staff</span>
+              <span className="text-xs font-bold text-white">{rajbariStaff.length} staff</span>
             </div>
             <div className="p-1.5 rounded-lg bg-white/[0.02]">
-              <span className="text-[10px] text-[#8e9299] block">সম্পন্ন টাস্ক</span>
+              <span className="text-[10px] text-[#8e9299] block">Done Tasks</span>
               <span className="text-xs font-bold text-sky-400">{rajbariStats.totalDone} / {rajbariStats.totalTasks}</span>
             </div>
             <div className="p-1.5 rounded-lg bg-white/[0.02]">
-              <span className="text-[10px] text-[#8e9299] block">পেন্ডিং কারণ</span>
-              <span className="text-xs font-bold text-amber-400">{rajbariStats.pendingIssuesCount} টি ইস্যু</span>
+              <span className="text-[10px] text-[#8e9299] block">Pending Issues</span>
+              <span className="text-xs font-bold text-amber-400">{rajbariStats.pendingIssuesCount} issues</span>
             </div>
           </div>
 
           <div className="flex items-center justify-between mt-3 text-[11px] text-[#8e9299]">
             <span className="text-sky-400/90 font-medium">
-              {selectedBranch === 'rajbari' ? '✓ বর্তমান ভিউ ফিল্টার সক্রিয়' : 'ক্লিক করে শুধু রাজবাড়ি ফিল্টার করুন'}
+              {selectedBranch === 'rajbari' ? '✓ Filter Active' : 'Click to filter Sadar Office'}
             </span>
             <ChevronRight className="w-3.5 h-3.5 text-sky-400" />
           </div>
@@ -411,11 +431,11 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-xs font-bold text-amber-300">
               <MessageSquareQuote className="w-4 h-4 text-amber-400" />
-              <span>আজকের নির্বাহী আদেশ ও বিশেষ পর্যবেক্ষণ (রাজি স্যারের নির্দেশনাবলী)</span>
+              <span>Today's Executive Directives &amp; Notes (Raji Sir's Orders)</span>
             </div>
             {savedDirectiveMsg && (
               <span className="text-[11px] text-emerald-400 font-semibold animate-pulse">
-                ✓ নির্দেশ সংরক্ষিত হয়েছে!
+                ✓ Directives Saved!
               </span>
             )}
           </div>
@@ -424,7 +444,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
               type="text"
               value={bossDirective}
               onChange={(e) => setBossDirective(e.target.value)}
-              placeholder="যেমন: চৌরাস্তা ইনচার্জ ৫টার মধ্যে ক্যাশ অডিট রিপোর্ট জমা দিন, রাজবাড়ি ফ্রন্ট ডেস্ক সেলস আপডেট শেষ করুন..."
+              placeholder="e.g., Gazipur Branch incharge submit cash reconciliation by 5 PM, Sadar front desk finalize donor updates..."
               className="flex-1 px-3.5 py-2 bg-black/40 border border-white/10 rounded-lg text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500"
             />
             <button
@@ -432,7 +452,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
               className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold rounded-lg transition-colors shrink-0 flex items-center gap-1.5"
             >
               <Send className="w-3 h-3" />
-              <span>নির্দেশ জারি করুন</span>
+              <span>Post Directive</span>
             </button>
           </div>
         </form>
@@ -446,11 +466,11 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
           </div>
           <div>
             <span className="text-[11px] font-semibold text-[#8e9299] uppercase tracking-wider block">
-              {selectedBranch === 'all' ? 'উভয় ব্রাঞ্চের কর্মী' : selectedBranch === 'chowrasta' ? 'চৌরাস্তা কর্মী' : 'রাজবাড়ি কর্মী'}
+              {selectedBranch === 'all' ? 'All Assigned Staff' : selectedBranch === 'chowrasta' ? 'Gazipur Branch Staff' : 'Sadar Office Staff'}
             </span>
             <div className="flex items-baseline gap-1.5 mt-0.5">
               <span className="text-xl font-bold text-white">{currentViewStaff.length}</span>
-              <span className="text-xs text-[#8e9299]">জন দায়িত্বে</span>
+              <span className="text-xs text-[#8e9299]">On Duty</span>
             </div>
           </div>
         </div>
@@ -461,11 +481,11 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
           </div>
           <div>
             <span className="text-[11px] font-semibold text-[#8e9299] uppercase tracking-wider block">
-              গড় অগ্রগতি
+              Average Progress
             </span>
             <div className="flex items-baseline gap-1.5 mt-0.5">
               <span className="text-xl font-bold text-emerald-400">{avgCompletion}%</span>
-              <span className="text-xs text-[#8e9299]">সম্পন্ন হয়েছে</span>
+              <span className="text-xs text-[#8e9299]">Completed</span>
             </div>
           </div>
         </div>
@@ -476,11 +496,11 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
           </div>
           <div>
             <span className="text-[11px] font-semibold text-[#8e9299] uppercase tracking-wider block">
-              মোট সম্পন্ন কাজ
+              Total Completed
             </span>
             <div className="flex items-baseline gap-1.5 mt-0.5">
               <span className="text-xl font-bold text-white">{totalDone}</span>
-              <span className="text-xs text-[#8e9299]">/ {totalTasks} টি টাস্ক</span>
+              <span className="text-xs text-[#8e9299]">/ {totalTasks} Tasks</span>
             </div>
           </div>
         </div>
@@ -491,11 +511,11 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
           </div>
           <div>
             <span className="text-[11px] font-semibold text-[#8e9299] uppercase tracking-wider block">
-              পেন্ডিং / বাকি টাস্ক
+              Pending Tasks
             </span>
             <div className="flex items-baseline gap-1.5 mt-0.5">
               <span className="text-xl font-bold text-amber-400">{totalPending}</span>
-              <span className="text-xs text-[#8e9299]">টি টাস্ক</span>
+              <span className="text-xs text-[#8e9299]">Tasks</span>
             </div>
           </div>
         </div>
@@ -514,7 +534,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
             }`}
           >
             <TrendingUp className="w-3.5 h-3.5" />
-            <span>টিম তুলনামূলক চিত্র</span>
+            <span>Team Overview</span>
           </button>
 
           <button
@@ -526,7 +546,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
             }`}
           >
             <AlertCircle className="w-3.5 h-3.5" />
-            <span>পেন্ডিং ও জবাবদিহিতা ({staffWithPendingReasons.length})</span>
+            <span>Pending &amp; Accountability ({staffWithPendingReasons.length})</span>
           </button>
 
           <button
@@ -541,7 +561,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
             }`}
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>{isBoss ? 'রাজি স্যারের এআই সিদ্ধান্ত' : 'এআই পরামর্শ'} {aiReport ? '✓' : ''}</span>
+            <span>{isBoss ? 'Executive AI Directives' : 'AI Strategic Insights'} {aiReport ? '✓' : ''}</span>
           </button>
         </div>
 
@@ -555,7 +575,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                 : 'text-[#8e9299] hover:text-white'
             }`}
           >
-            উভয় ব্রাঞ্চ (এক নজরে)
+            Both Offices
           </button>
           <button
             onClick={() => onSelectBranch('chowrasta')}
@@ -566,7 +586,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
             }`}
           >
             <Building2 className="w-3 h-3" />
-            <span>১। চৌরাস্তা</span>
+            <span>1. Gazipur Branch</span>
           </button>
           <button
             onClick={() => onSelectBranch('rajbari')}
@@ -577,7 +597,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
             }`}
           >
             <Landmark className="w-3 h-3" />
-            <span>২। রাজবাড়ি</span>
+            <span>2. Sadar Office</span>
           </button>
         </div>
       </div>
@@ -587,23 +607,23 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2">
             <Filter className="w-3.5 h-3.5 text-[#8e9299]" />
-            <span className="text-[#8e9299]">রোল অনুযায়ী ফিল্টার:</span>
+            <span className="text-[#8e9299]">Filter by Role:</span>
             <select
               value={selectedRoleFilter}
               onChange={(e) => setSelectedRoleFilter(e.target.value)}
               className="px-2.5 py-1 bg-[#1a1d22] border border-white/10 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-500"
             >
-              <option value="all">সকল পদায়ন ({currentViewStaff.length})</option>
+              <option value="all">All Roles ({currentViewStaff.length})</option>
               {SYSTEM_ROLES.filter((r) => r.id !== 'main_boss').map((r) => (
                 <option key={r.id} value={r.id}>
-                  {r.titleBn}
+                  {r.titleEn}
                 </option>
               ))}
             </select>
           </div>
 
           <span className="text-[11px] text-[#8e9299]">
-            প্রদর্শিত হচ্ছে: <strong className="text-white">{filteredStaff.length}</strong> জন কর্মী
+            Showing: <strong className="text-white">{filteredStaff.length}</strong> staff members
           </span>
         </div>
       )}
@@ -615,9 +635,10 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
             const roleDef = SYSTEM_ROLES.find((r) => r.id === p.employee.role);
             const isChowrasta =
               p.employee.branch === 'chowrasta' ||
+              p.employee.employee_id.startsWith('GB-') ||
               p.employee.employee_id.startsWith('CR-') ||
               p.employee.employee_id === 'SUP-CHOW';
-            const branchTag = isChowrasta ? '১। চৌরাস্তা ব্রাঞ্চ' : '২। রাজবাড়ি ব্রাঞ্চ';
+            const branchTag = isChowrasta ? '1. Gazipur Branch' : '2. Gazipur Sadar Office';
             const branchBadgeColor = isChowrasta
               ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
               : 'bg-sky-500/15 text-sky-400 border-sky-500/30';
@@ -658,7 +679,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                             roleDef?.badgeBorder || 'border-white/10'
                           }`}
                         >
-                          {roleDef?.titleBn || p.employee.role}
+                          {roleDef?.titleEn || p.employee.role}
                         </span>
                       </div>
                     </div>
@@ -678,7 +699,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                       {p.completionRate}%
                     </span>
                     <span className="block text-[10px] text-[#8e9299]">
-                      {p.doneTasks}/{p.totalTasks} সম্পন্ন
+                      {p.doneTasks}/{p.totalTasks} Done
                     </span>
                   </div>
                 </div>
@@ -701,7 +722,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                 {hasPending ? (
                   <div className="p-2.5 rounded-lg bg-amber-500/[0.04] border border-amber-500/20 text-xs space-y-1">
                     <span className="text-[11px] font-semibold text-amber-400 flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" /> পেন্ডিং কারণসমূহ ({p.pendingReasons.length}টি):
+                      <AlertCircle className="w-3 h-3" /> Pending Issues ({p.pendingReasons.length}):
                     </span>
                     <ul className="space-y-0.5 text-zinc-300 text-[11px]">
                       {p.pendingReasons.slice(0, 2).map((item, idx) => (
@@ -711,7 +732,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                       ))}
                       {p.pendingReasons.length > 2 && (
                         <li className="text-[10px] text-amber-400/80">
-                          + আরও {p.pendingReasons.length - 2}টি কারণ নথিভুক্ত রয়েছে...
+                          + {p.pendingReasons.length - 2} more documented reasons...
                         </li>
                       )}
                     </ul>
@@ -719,21 +740,21 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                 ) : (
                   <div className="p-2 rounded-lg bg-emerald-500/[0.03] border border-emerald-500/10 text-xs text-emerald-400/90 flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                    <span>সকল দায়িত্ব যথাসময়ে সম্পন্ন হচ্ছে</span>
+                    <span>All responsibilities completed on schedule</span>
                   </div>
                 )}
 
                 {/* Action: Inspect Employee Sheet */}
                 <div className="pt-2 border-t border-white/5 flex items-center justify-between">
                   <span className="text-[11px] text-[#8e9299]">
-                    যোগদান: {p.employee.joined_date || 'N/A'}
+                    Joined: {p.employee.joined_date || 'N/A'}
                   </span>
                   <button
                     type="button"
                     onClick={() => onInspectEmployee(p.employee)}
                     className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition-colors"
                   >
-                    <span>সম্পূর্ণ রিপোর্ট দেখুন</span>
+                    <span>View Full Report</span>
                     <ChevronRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -749,18 +770,18 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-white flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-amber-400" />
-              <span>কর্মীদের নথিভুক্ত পেন্ডিং কারণ ও জবাবদিহিতা ({selectedDate})</span>
+              <span>Staff Pending Explanations &amp; Accountability ({selectedDate})</span>
             </h3>
             <span className="text-xs text-[#8e9299]">
-              মোট {staffWithPendingReasons.length} জন কর্মীর কাজে অসম্পূর্ণতা রয়েছে
+              {staffWithPendingReasons.length} staff member(s) have pending checklist items
             </span>
           </div>
 
           {staffWithPendingReasons.length === 0 ? (
             <div className="py-12 text-center text-zinc-400 space-y-2">
               <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto" />
-              <p className="text-sm font-medium text-white">আজকে কোনো কর্মীর কাজ পেন্ডিং নেই!</p>
-              <p className="text-xs text-[#8e9299]">নির্বাচিত ব্রাঞ্চের সকল কর্মী দায়িত্ব সফলভাবে সম্পন্ন করেছেন।</p>
+              <p className="text-sm font-medium text-white">No pending tasks recorded for today!</p>
+              <p className="text-xs text-[#8e9299]">All team members in the selected scope have completed their responsibilities.</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -768,9 +789,10 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                 const roleDef = SYSTEM_ROLES.find((r) => r.id === p.employee.role);
                 const isChowrasta =
                   p.employee.branch === 'chowrasta' ||
+                  p.employee.employee_id.startsWith('GB-') ||
                   p.employee.employee_id.startsWith('CR-') ||
                   p.employee.employee_id === 'SUP-CHOW';
-                const branchLabel = isChowrasta ? '১। চৌরাস্তা ব্রাঞ্চ' : '২। রাজবাড়ি ব্রাঞ্চ';
+                const branchLabel = isChowrasta ? '1. Gazipur Branch' : '2. Gazipur Sadar Office';
 
                 return (
                   <div key={p.employee.id} className="p-4 rounded-xl bg-white/[0.02] border border-amber-500/20 space-y-3">
@@ -784,14 +806,14 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                           {branchLabel}
                         </span>
                         <span className={`text-[11px] px-2 py-0.5 rounded-full border ${roleDef?.badgeBg} ${roleDef?.badgeText} ${roleDef?.badgeBorder}`}>
-                          {roleDef?.titleBn}
+                          {roleDef?.titleEn || p.employee.role}
                         </span>
                       </div>
                       <button
                         onClick={() => onInspectEmployee(p.employee)}
                         className="text-xs text-emerald-400 hover:underline flex items-center gap-1"
                       >
-                        চেকলিস্ট দেখুন <ExternalLink className="w-3 h-3" />
+                        View Checklist <ExternalLink className="w-3 h-3" />
                       </button>
                     </div>
 
@@ -825,15 +847,15 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
               </div>
               <div>
                 <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <span>{isBoss ? 'রাজি স্যারের সেন্ট্রাল এআই সিদ্ধান্ত ও গাইডলাইন' : 'অফিস সহকারীর জন্য এআই কৌশলগত পরামর্শ'}</span>
+                  <span>{isBoss ? "Raji Sir's Central AI Directives & Guidelines" : 'Operational AI Strategy & Guidance'}</span>
                   <span className="text-[10px] px-2 py-0.5 bg-amber-500/20 text-amber-300 font-semibold rounded-full border border-amber-500/30">
                     Gemini AI Strategy
                   </span>
                 </h3>
                 <p className="text-xs text-[#8e9299]">
                   {isBoss
-                    ? '১। চৌরাস্তা ও ২। রাজবাড়ি উভয় ব্রাঞ্চের ডেটা পর্যালোচনা করে এক্সিকিউটিভ সমাহার'
-                    : 'টিমের কার্যক্রম মূল্যায়ন করে পরবর্তী করণীয় পদক্ষেপ নির্ধারণ'}
+                    ? 'Cross-branch data synthesis across Gazipur Branch and Gazipur Sadar Office'
+                    : 'Performance evaluation and next operational steps for staff'}
                 </p>
               </div>
             </div>
@@ -841,19 +863,19 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
             <div className="flex items-center gap-2">
               <button
                 onClick={handleCopyAi}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/15 text-white text-xs font-semibold rounded-lg transition-colors border border-white/10"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white/10 hover:bg-white/15 text-white text-xs font-semibold rounded-lg transition-colors border border-white/10"
               >
                 {copiedAi ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copiedAi ? 'কপি হয়েছে' : 'রিপোর্ট কপি'}</span>
+                <span>{copiedAi ? 'Copied' : 'Copy Report'}</span>
               </button>
 
               <button
                 onClick={handleGenerateAiSuggestions}
                 disabled={isGeneratingAi}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold rounded-lg transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold rounded-lg transition-colors disabled:opacity-50"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isGeneratingAi ? 'animate-spin' : ''}`} />
-                <span>পুনরায় বিশ্লেষণ</span>
+                <span>Re-analyze</span>
               </button>
             </div>
           </div>
@@ -862,10 +884,10 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
             <div className="py-16 text-center space-y-3">
               <Sparkles className="w-8 h-8 text-amber-400 animate-spin mx-auto" />
               <p className="text-sm font-semibold text-white">
-                চৌরাস্তা ও রাজবাড়ি উভয় ব্রাঞ্চের রিপোর্ট ও অগ্রগতি বিশ্লেষণ করা হচ্ছে...
+                Analyzing progress and reports across Gazipur Branch and Gazipur Sadar Office...
               </p>
               <p className="text-xs text-[#8e9299]">
-                {isBoss ? 'রাজি স্যারের এক্সিকিউটিভ সিদ্ধান্তের জন্য সুপারিশমালা তৈরি হচ্ছে' : 'অফিস সহকারীর সিদ্ধান্ত গ্রহণের জন্য সুনির্দিষ্ট নির্দেশনা তৈরি হচ্ছে'}
+                {isBoss ? 'Drafting executive directives and strategic guidance for Raji Sir' : 'Synthesizing operational guidance for supervisors and branch teams'}
               </p>
             </div>
           ) : aiReport ? (
@@ -876,13 +898,13 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
             <div className="py-12 text-center space-y-3">
               <Sparkles className="w-10 h-10 text-amber-400/50 mx-auto" />
               <p className="text-sm text-white font-medium">
-                এখনো কোনো এআই কৌশলগত পরামর্শ জেনারেট করা হয়নি।
+                No AI strategic analysis generated yet.
               </p>
               <button
                 onClick={handleGenerateAiSuggestions}
                 className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold rounded-lg transition-all shadow-md"
               >
-                {isBoss ? 'রাজি স্যারের এআই বিশ্লেষণ শুরু করুন' : 'এআই বিশ্লেষণ শুরু করুন'}
+                {isBoss ? 'Generate Executive AI Directives' : 'Generate AI Recommendations'}
               </button>
             </div>
           )}

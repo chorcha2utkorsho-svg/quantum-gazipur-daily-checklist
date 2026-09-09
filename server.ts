@@ -32,36 +32,36 @@ async function startServer() {
       const rajbariStaff = (employeesSummary || []).filter((e: any) => e.branch === 'rajbari');
 
       const promptData = `
-তারিখ: ${date || 'আজ'}
-ভিউ মোড: ${isBossView ? 'মেইন বস রাজি স্যারের সেন্ট্রাল ড্যাশবোর্ড (দুটো ব্রাঞ্চ যৌথ চিত্র)' : 'ব্রাঞ্চ সুপারভাইজার ড্যাশবোর্ড'}
-মোট সক্রিয় কর্মী: ${teamStats?.activeStaff || employeesSummary?.length || 0} জন
-গড় টাস্ক সম্পন্ন হার: ${teamStats?.averageCompletion || 0}%
-মোট অনিষ্পন্ন/পেন্ডিং কাজ: ${teamStats?.totalPendingItems || 0} টি
+Date: ${date || 'Today'}
+View Mode: ${isBossView ? "Central Command Dashboard (Dual Office Overview)" : 'Branch Supervisor Dashboard'}
+Total Active Personnel: ${teamStats?.activeStaff || employeesSummary?.length || 0}
+Average Task Completion: ${teamStats?.averageCompletion || 0}%
+Total Pending Items: ${teamStats?.totalPendingItems || 0}
 
-[১। চৌরাস্তা ব্রাঞ্চ (Chowrasta Branch)]:
-- কর্মী সংখ্যা: ${chowrastaStaff.length} জন
-- কর্মী বিবরণ ও প্রগ্রেস:
+[1. Gazipur Branch]:
+- Staff Count: ${chowrastaStaff.length}
+- Staff Breakdown & Progress:
 ${chowrastaStaff
   .map(
     (emp: any) =>
-      `  * ${emp.name} (${emp.role}): সম্পন্ন ${emp.doneTasks}/${emp.totalTasks} (${emp.completionRate}%); পেন্ডিং: ${
+      `  * ${emp.name} (${emp.role}): Completed ${emp.doneTasks}/${emp.totalTasks} (${emp.completionRate}%); Pending: ${
         emp.pendingReasons && emp.pendingReasons.length > 0
           ? emp.pendingReasons.map((p: any) => `"${p.task}": ${p.reason}`).join('; ')
-          : 'সব সম্পন্ন'
+          : 'All Completed'
       }`
   )
   .join('\n')}
 
-[২। রাজবাড়ি ব্রাঞ্চ (Rajbari Branch)]:
-- কর্মী সংখ্যা: ${rajbariStaff.length} জন
-- কর্মী বিবরণ ও প্রগ্রেস:
+[2. Gazipur Sadar Office]:
+- Staff Count: ${rajbariStaff.length}
+- Staff Breakdown & Progress:
 ${rajbariStaff
   .map(
     (emp: any) =>
-      `  * ${emp.name} (${emp.role}): সম্পন্ন ${emp.doneTasks}/${emp.totalTasks} (${emp.completionRate}%); পেন্ডিং: ${
+      `  * ${emp.name} (${emp.role}): Completed ${emp.doneTasks}/${emp.totalTasks} (${emp.completionRate}%); Pending: ${
         emp.pendingReasons && emp.pendingReasons.length > 0
           ? emp.pendingReasons.map((p: any) => `"${p.task}": ${p.reason}`).join('; ')
-          : 'সব সম্পন্ন'
+          : 'All Completed'
       }`
   )
   .join('\n')}
@@ -70,21 +70,21 @@ ${rajbariStaff
       if (apiKey) {
         try {
           const ai = new GoogleGenAI({ apiKey });
-          const systemInstruction = `You are a world-class organizational executive and strategic advisor advising Mr. Raji ("রাজি স্যার"), the Main Boss & Central Director of "Quantum Gazipur Cell", supervising two branches:
-1. চৌরাস্তা ব্রাঞ্চ (Chowrasta Branch)
-2. রাজবাড়ি ব্রাঞ্চ (Rajbari Branch)
+          const systemInstruction = `You are a world-class organizational executive and strategic advisor advising Mr. Raji ("Raji Sir"), the Main Boss & Central Director of "Quantum Gazipur Cell", supervising two offices:
+1. 1. Gazipur Branch
+2. 2. Gazipur Sadar Office
 
-Both branches run the exact same daily management framework and 20 core operational tasks.
+Both offices run the exact same daily management framework and 20 core operational tasks.
 
-Analyze the dual-branch daily performance, compare Chowrasta vs Rajbari, and provide actionable, respectful, and authoritative strategic counsel in dignified Bengali (বাংলা).
+Analyze the dual-office daily performance, compare Gazipur Branch vs Gazipur Sadar Office, and provide actionable, respectful, and authoritative strategic counsel in English.
 
 Structure your response using the following 4 Markdown sections:
-1. 👑 **রাজি স্যারের এক্সিকিউটিভ সামারি (উভয় ব্রাঞ্চের এক নজরে চিত্র)**: চৌরাস্তা ও রাজবাড়ি ব্রাঞ্চের পারফরম্যান্সের তুলনামূলক চিত্র, কোন ব্রাঞ্চ এগিয়ে এবং সার্বিক সেল স্বাস্থ্য।
-2. 🏢 **ব্রাঞ্চভিত্তিক পর্যবেক্ষণ ও চিহ্নিত জটিলতা (Chowrasta vs Rajbari Issues)**: চৌরাস্তা ও রাজবাড়ি ব্রাঞ্চের নির্দিষ্ট কর্মী ও পেন্ডিং কাজের কারণসমূহের বিশ্লেষণ।
-3. 🎯 **রাজি স্যারের তাৎক্ষণিক সিদ্ধান্ত ও দুই ব্রাঞ্চ ইনচার্জকে নির্দেশনা**: রাজি স্যার আজকেই চৌরাস্তা ইনচার্জ এবং রাজবাড়ি ইনচার্জকে কী কী সুনির্দিষ্ট নির্দেশ দেবেন।
-4. 🔄 **কর্মী পদায়ন ও সম্পদ সমন্বয় পরামর্শ**: দুই ব্রাঞ্চের কাজের চাপ সামলাতে কর্মী দায়িত্ব পুনর্বণ্টন বা আন্তঃব্রাঞ্চ সহায়তার কৌশল।
+1. 👑 **Executive Summary (Dual-Office Overview)**: Comparative synthesis between Gazipur Branch and Gazipur Sadar Office, identifying which office is ahead and overall operational health.
+2. 🏢 **Branch-Specific Observations & Identified Bottlenecks**: Analysis of specific staff members and pending task causes in Gazipur Branch vs Gazipur Sadar Office.
+3. 🎯 **Immediate Directives & Orders for Branch Incharges**: Specific actionable instructions for Raji Sir to issue today to the Gazipur Branch Incharge and Sadar Office Incharge.
+4. 🔄 **Personnel Allocation & Cross-Branch Optimization**: Strategies for reallocating duties or cross-office logistics to handle workload surges.
 
-Keep the tone constructive, authoritative, empathetic, and highly executive.`;
+Keep the tone constructive, authoritative, empathetic, and executive-ready.`;
 
           const response = await ai.models.generateContent({
             model: 'gemini-3.8-flash',
@@ -93,7 +93,7 @@ Keep the tone constructive, authoritative, empathetic, and highly executive.`;
                 role: 'user',
                 parts: [
                   {
-                    text: `রাজি স্যারের বস একাউন্টের জন্য গাজীপুরের দুটো ব্রাঞ্চের (১। চৌরাস্তা ব্রাঞ্চ, ২। রাজবাড়ি ব্রাঞ্চ) আজকের কর্মতৎপরতার তুলনামূলক বিশ্লেষণ ও পরামর্শ প্রস্তুত করুন:\n\n${promptData}`,
+                    text: `Generate an executive comparative analysis and actionable strategic counsel for Raji Sir across the two offices (1. Gazipur Branch, 2. Gazipur Sadar Office):\n\n${promptData}`,
                   },
                 ],
               },
@@ -115,44 +115,44 @@ Keep the tone constructive, authoritative, empathetic, and highly executive.`;
       const lowPerformers = (employeesSummary || []).filter((e: any) => e.completionRate < 70);
       const highPerformers = (employeesSummary || []).filter((e: any) => e.completionRate >= 90);
       const allPendingReasons = (employeesSummary || []).flatMap((e: any) =>
-        (e.pendingReasons || []).map((r: any) => `${e.name} (${e.role} - ${e.branch === 'chowrasta' ? 'চৌরাস্তা' : 'রাজবাড়ি'}): ${r.task} - ${r.reason}`)
+        (e.pendingReasons || []).map((r: any) => `${e.name} (${e.role} - ${e.branch === 'chowrasta' ? 'Gazipur Branch' : 'Gazipur Sadar Office'}): ${r.task} - ${r.reason}`)
       );
 
-      const fallbackAnalysis = `### 👑 রাজি স্যারের এক্সিকিউটিভ সামারি (উভয় ব্রাঞ্চের এক নজরে চিত্র)
-- **তারিখ**: ${date || 'চলতি কার্যদিবস'}
-- **সেন্ট্রাল পর্যবেক্ষণ**: গাজীপুর সেলের অধীন **১। চৌরাস্তা ব্রাঞ্চ** এবং **২। রাজবাড়ি ব্রাঞ্চ**-এর মোট সক্রিয় কর্মীদের সার্বিক গড় সম্পন্ন হার **${teamStats?.averageCompletion || 0}%**।
-- **উভয় ব্রাঞ্চের তুলনামূলক অবস্থা**: 
-  - **চৌরাস্তা ব্রাঞ্চ**: মোট ${chowrastaStaff.length} জন সক্রিয় কর্মী কার্যক্রম পরিচালনা করছেন।
-  - **রাজবাড়ি ব্রাঞ্চ**: মোট ${rajbariStaff.length} জন সক্রিয় কর্মী কার্যক্রম পরিচালনা করছেন।
-- **শীর্ষ পারফর্মার কর্মী**: ${
+      const fallbackAnalysis = `### 👑 Executive Summary (Dual-Office Overview)
+- **Date**: ${date || 'Current Working Day'}
+- **Central Observation**: Across the two centers of Quantum Gazipur Cell (**1. Gazipur Branch** and **2. Gazipur Sadar Office**), overall average task completion is **${teamStats?.averageCompletion || 0}%**.
+- **Comparative State**:
+  - **Gazipur Branch**: ${chowrastaStaff.length} active staff on duty.
+  - **Gazipur Sadar Office**: ${rajbariStaff.length} active staff on duty.
+- **Top Performers**: ${
         highPerformers.length > 0
           ? highPerformers.map((e: any) => `${e.name} (${e.completionRate}%)`).slice(0, 4).join(', ')
-          : 'উভয় ব্রাঞ্চের কর্মীদের কাজে স্বাভাবিক গতি রয়েছে।'
+          : 'Staff performance is progressing steadily across both branches.'
       }
 
 ---
 
-### 🏢 ব্রাঞ্চভিত্তিক পর্যবেক্ষণ ও চিহ্নিত জটিলতা (Bottlenecks)
-- পুরো সেলে সর্বমোট **${teamStats?.totalPendingItems || 0}টি টাস্ক** পেন্ডিং রয়েছে।
+### 🏢 Branch-Specific Observations & Bottlenecks
+- A total of **${teamStats?.totalPendingItems || 0} task(s)** are currently pending across both offices.
 ${
   allPendingReasons.length > 0
     ? allPendingReasons.slice(0, 6).map((r: string) => `- 🔍 ${r}`).join('\n')
-    : '- কোনো কর্মী বিলম্বের বড় কোনো কারণ উল্লেখ করেননি; রুটিন ক্লোজিং বাকি।'
+    : '- No critical roadblocks reported; routine end-of-day closing is in progress.'
 }
-- **বিশেষ ঝুঁকি সতর্কতা**: দিনের শেষভাগে ক্যাশ ক্লোজিং, বিকাশ এমআর এবং কিউএমআইএস আপডেট উভয় ব্রাঞ্চেই সময়মতো সম্পন্ন হচ্ছে কিনা তা নিশ্চিত করা প্রয়োজন।
+- **Critical Risk Alert**: Verify that cash closing, bKash MR reconciliations, and QMIS sync are completed before 5:30 PM at both locations.
 
 ---
 
-### 🎯 রাজি স্যারের তাৎক্ষণিক সিদ্ধান্ত ও ইনচার্জদের নির্দেশনা
-1. **চৌরাস্তা ব্রাঞ্চ ইনচার্জকে নির্দেশনা**: ফ্রন্ট ডেস্ক ও রিসেপশন কার্যক্রম শতভাগ সম্পন্ন নিশ্চিত করে অপরাহ্ন ৫টার মধ্যে ক্যাশ ও এমআর ব্যালেন্স ফাইনাল করার আদেশ দিন।
-2. **রাজবাড়ি ব্রাঞ্চ ইনচার্জকে নির্দেশনা**: গ্রাহক যোগাযোগ ও সেলস ফলোআপের তালিকা দ্রুত আপডেট করে পেন্ডিং কাজের সুরাহা করতে বলুন।
-3. **সেন্ট্রাল ক্লোজিং নিশ্চিতকরণ**: রাজি স্যারের টেবিলে উভয় ব্রাঞ্চের দৈনিক চেকলিস্ট ও লগ রিপোর্ট সন্ধ্যা ৬টার মধ্যে স্বাক্ষরিত আকারে জমা দেওয়ার স্থায়ী নির্দেশনা জারি রাখুন।
+### 🎯 Immediate Directives for Branch Incharges
+1. **Gazipur Branch Incharge Directive**: Ensure 100% completion of front desk reconciliations and lock cash and MR reports by 5:00 PM.
+2. **Gazipur Sadar Office Incharge Directive**: Rapidly clear pending donor interactions and complete sales follow-up documentation.
+3. **Central Closing Mandate**: Submit verified daily checklist logs to Raji Sir's executive desk by 6:00 PM.
 
 ---
 
-### 🔄 কর্মী পদায়ন ও আন্তঃব্রাঞ্চ সমন্বয় পরামর্শ
-- **ভারসাম্য রক্ষা**: কোনো ব্রাঞ্চে হঠাৎ অডিট বা বিশেষ ইভেন্ট থাকলে অপর ব্রাঞ্চের অতিরিক্ত লজিস্টিকস বা কো-অর্ডিনেটর কর্মীকে অস্থায়ীভাবে সমন্বয় করা যেতে পারে।
-- **মাসিক পর্যালোচনা**: মাসের শেষে চৌরাস্তা ও রাজবাড়ি ব্রাঞ্চের কর্মীদের মধ্যে স্বাস্থ্যকর প্রতিযোগিতার লক্ষ্যে শ্রেষ্ঠ পারফরমার পুরস্কার প্রবর্তন বিবেচনা করতে পারেন।`;
+### 🔄 Personnel Allocation & Cross-Branch Optimization
+- **Workload Balancing**: In the event of audits, heavy visitor footfall, or special programs, temporarily assign mobile coordinator support between branches.
+- **Monthly Recognition**: Introduce a monthly performance badge to encourage healthy, collaborative excellence between Gazipur Branch and Gazipur Sadar Office.`;
 
       return res.json({ success: true, analysis: fallbackAnalysis, source: 'executive-rule-engine' });
     } catch (err: any) {
