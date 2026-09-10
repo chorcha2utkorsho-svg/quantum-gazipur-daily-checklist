@@ -314,7 +314,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                     Gazipur Branch
                   </span>
                 </div>
-                <p className="text-[11px] text-[#8e9299]">Gazipur Branch • 2 Personnel (Anjuman Khan, Mustakim Hossain)</p>
+                <p className="text-[11px] text-[#8e9299]">Gazipur Branch • 2 Personnel (Anjuman Khan, Mustakim Hosen)</p>
               </div>
             </div>
 

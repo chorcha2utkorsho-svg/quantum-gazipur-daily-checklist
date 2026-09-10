@@ -8,7 +8,7 @@ import {
   TaskTemplate,
   UserRole,
 } from '../types';
-import { ALL_WORKFLOW_TASKS } from '../data/workflowData';
+import { ALL_WORKFLOW_TASKS, getWorkflowForEmployee } from '../data/workflowData';
 
 // Default Supabase project configuration for Quantum Gazipur cell
 const DEFAULT_SUPABASE_URL = 'https://wftxugyhmtfwljtddmt.supabase.co';
@@ -103,15 +103,19 @@ const STORAGE_PREFIX = 'qgz_cell_';
 
 export function getLocalEmployees(): Employee[] {
   if (typeof window === 'undefined') return INITIAL_EMPLOYEES;
-  const stored = localStorage.getItem(`${STORAGE_PREFIX}employees_v3`);
+  const stored = localStorage.getItem(`${STORAGE_PREFIX}employees_v4`);
   if (stored) {
     try {
       const parsed = JSON.parse(stored);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        // Ensure Raji Sir and Anjuman Khan are present in the current schema
+      if (Array.isArray(parsed) && parsed.length === INITIAL_EMPLOYEES.length) {
+        // Ensure all key staff are present
         const hasRajiSir = parsed.some((e) => e.employee_id === 'RAJI_SIR');
+        const hasMustakim = parsed.some((e) => e.name && e.name.toLowerCase().includes('mustakim'));
         const hasAnjuman = parsed.some((e) => e.name && e.name.toLowerCase().includes('anjuman'));
-        if (hasRajiSir && hasAnjuman) {
+        const hasJahid = parsed.some((e) => e.name && e.name.toLowerCase().includes('jahid'));
+        const hasTanzina = parsed.some((e) => e.name && (e.name.toLowerCase().includes('tanzina') || e.name.toLowerCase().includes('tanjina')));
+        const hasPronoy = parsed.some((e) => e.name && e.name.toLowerCase().includes('pronoy'));
+        if (hasRajiSir && hasMustakim && hasAnjuman && hasJahid && hasTanzina && hasPronoy) {
           return parsed;
         }
       }
@@ -121,13 +125,13 @@ export function getLocalEmployees(): Employee[] {
   }
 
   // Set to official 2-person Gazipur Branch + 3-person Sadar Office roster (+ Raji Sir)
-  localStorage.setItem(`${STORAGE_PREFIX}employees_v3`, JSON.stringify(INITIAL_EMPLOYEES));
+  localStorage.setItem(`${STORAGE_PREFIX}employees_v4`, JSON.stringify(INITIAL_EMPLOYEES));
   return INITIAL_EMPLOYEES;
 }
 
 export function saveLocalEmployees(employees: Employee[]) {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(`${STORAGE_PREFIX}employees_v3`, JSON.stringify(employees));
+  localStorage.setItem(`${STORAGE_PREFIX}employees_v4`, JSON.stringify(employees));
 }
 
 export function getLocalTemplates(): TaskTemplate[] {
@@ -397,10 +401,13 @@ export async function fetchDailyLogsForEmployee(
     loadedLogs = getLocalDailyLogs(date, employeeId);
   }
 
-  // If Jahid Hasan Akand (73 operational workflow tasks)
-  if (employeeId === 'JAHID') {
+  // Initialize workflow tasks tailored specifically to each employee
+  const employeeWorkflow = getWorkflowForEmployee(employeeId);
+  const targetTasks = employeeWorkflow.tasks;
+
+  if (targetTasks && targetTasks.length > 0) {
     if (loadedLogs.length === 0) {
-      loadedLogs = ALL_WORKFLOW_TASKS.map((task) => ({
+      loadedLogs = targetTasks.map((task) => ({
         id: `${date}-${employeeId}-${task.id || task.code}`,
         date,
         employee_id: employeeId,
@@ -413,7 +420,7 @@ export async function fetchDailyLogsForEmployee(
       saveLocalDailyLogs(date, loadedLogs, employeeId);
     } else {
       const existingNames = new Set(loadedLogs.map((l) => l.task_name));
-      const missingTasks = ALL_WORKFLOW_TASKS.filter((t) => !existingNames.has(t.name));
+      const missingTasks = targetTasks.filter((t) => !existingNames.has(t.name));
       if (missingTasks.length > 0) {
         const addedLogs: DailyLogItem[] = missingTasks.map((task) => ({
           id: `${date}-${employeeId}-${task.id || task.code}`,

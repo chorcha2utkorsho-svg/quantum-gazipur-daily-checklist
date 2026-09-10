@@ -257,14 +257,14 @@ export const INITIAL_EMPLOYEES: Employee[] = [
   {
     id: 'emp-chow-mustakim',
     employee_id: 'GB-02',
-    name: 'Mustakim Hossain',
+    name: 'Mustakim Hosen',
     pin: '1234',
     role: 'accounts',
     branch: 'chowrasta',
     is_active: true,
     phone: '01711000002',
     joined_date: '2024-01-15',
-    notes: 'Gazipur Branch: Accounts, reconciliation, and logistics.',
+    notes: 'Gazipur Branch: 7 categories & 90 tasks (MATIR BANK, ETIMAN, SADAKAION & PROGGA, OFFICE MANAGEMENT, BANKING, OUTSIDE CAMPAIGN, SHONGHODHAN).',
     avatar_color: '#38bdf8',
   },
 

@@ -10,7 +10,7 @@ import {
   Minimize2,
   FolderOpen,
 } from 'lucide-react';
-import { WorkflowTask, WORKFLOW_CATEGORIES } from '../data/workflowData';
+import { WorkflowTask, WORKFLOW_CATEGORIES, WorkflowCategory } from '../data/workflowData';
 import { DailyLogItem } from '../types';
 
 interface WorkflowTaskTableProps {
@@ -20,6 +20,7 @@ interface WorkflowTaskTableProps {
   onUpdateReason: (taskName: string, reason: string) => void;
   selectedCategory: string;
   viewDensity?: 'detailed' | 'compact';
+  categories?: WorkflowCategory[];
 }
 
 const COMMON_REASONS = [
@@ -36,11 +37,12 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
   onToggleStatus,
   onUpdateReason,
   selectedCategory,
+  categories = WORKFLOW_CATEGORIES,
 }) => {
   // Category expanded state (default all open)
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
-    WORKFLOW_CATEGORIES.forEach((c) => {
+    categories.forEach((c) => {
       initial[c.id] = true;
     });
     return initial;
@@ -57,7 +59,7 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
 
   const expandAll = () => {
     const updated: Record<string, boolean> = {};
-    WORKFLOW_CATEGORIES.forEach((c) => {
+    categories.forEach((c) => {
       updated[c.id] = true;
     });
     setExpandedCategories(updated);
@@ -65,7 +67,7 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
 
   const collapseAll = () => {
     const updated: Record<string, boolean> = {};
-    WORKFLOW_CATEGORIES.forEach((c) => {
+    categories.forEach((c) => {
       updated[c.id] = false;
     });
     setExpandedCategories(updated);
@@ -74,8 +76,8 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
   // Group tasks by category
   const categoriesToShow =
     selectedCategory === 'ALL'
-      ? WORKFLOW_CATEGORIES
-      : WORKFLOW_CATEGORIES.filter((c) => c.id === selectedCategory);
+      ? categories
+      : categories.filter((c) => c.id === selectedCategory);
 
   const totalVisibleTasks = tasks.length;
 

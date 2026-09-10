@@ -8,8 +8,11 @@ import {
   CalendarCheck,
   Compass,
   Home,
+  Coins,
+  FileCheck,
+  Building2,
 } from 'lucide-react';
-import { WORKFLOW_CATEGORIES } from '../data/workflowData';
+import { WORKFLOW_CATEGORIES, WorkflowCategory } from '../data/workflowData';
 import { Employee } from '../types';
 
 interface WorkflowHeroBannerProps {
@@ -18,6 +21,7 @@ interface WorkflowHeroBannerProps {
   totalTasks: number;
   selectedCategory: string;
   onSelectCategory: (catId: string) => void;
+  categories?: WorkflowCategory[];
 }
 
 const getCategoryIcon = (iconName: string) => {
@@ -35,7 +39,13 @@ const getCategoryIcon = (iconName: string) => {
     case 'Compass':
       return <Compass className="w-4 h-4 text-rose-300" />;
     case 'Sparkles':
-      return <Sparkles className="w-4 h-4 text-rose-300" />;
+      return <Sparkles className="w-4 h-4 text-yellow-300" />;
+    case 'Coins':
+      return <Coins className="w-4 h-4 text-amber-300" />;
+    case 'FileCheck':
+      return <FileCheck className="w-4 h-4 text-indigo-300" />;
+    case 'Building2':
+      return <Building2 className="w-4 h-4 text-teal-300" />;
     default:
       return <Layers className="w-4 h-4 text-indigo-300" />;
   }
@@ -47,6 +57,7 @@ export const WorkflowHeroBanner: React.FC<WorkflowHeroBannerProps> = ({
   totalTasks,
   selectedCategory,
   onSelectCategory,
+  categories = WORKFLOW_CATEGORIES,
 }) => {
   const userName = currentUser?.name || 'Staff Member';
   const roleName = currentUser?.role === 'accounts' ? 'Accounts & Operational Workflow' : 'Operational Workflow';
@@ -103,8 +114,8 @@ export const WorkflowHeroBanner: React.FC<WorkflowHeroBannerProps> = ({
       </div>
 
       {/* Category Shortcut Cards Grid */}
-      <div className="relative z-10 mt-6 pt-5 border-t border-white/10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
-        {WORKFLOW_CATEGORIES.map((cat) => {
+      <div className="relative z-10 mt-6 pt-5 border-t border-white/10 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-2.5">
+        {categories.map((cat) => {
           const isSelected = selectedCategory === cat.id;
           return (
             <button

@@ -39,6 +39,7 @@ import {
   WORKFLOW_CATEGORIES,
   ALL_WORKFLOW_TASKS,
   WorkflowTask,
+  getWorkflowForEmployee,
 } from './data/workflowData';
 import {
   fetchDailyLogsForEmployee,
@@ -99,11 +100,21 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSupabaseConnected, setIsSupabaseConnected] = useState(false);
 
-  // Workflow 73-task state matching image.png
-  const [workflowTasks, setWorkflowTasks] = useState<WorkflowTask[]>(ALL_WORKFLOW_TASKS);
+  // Employee tailored workflow tasks and categories
+  const employeeWorkflow = useMemo(() => {
+    return getWorkflowForEmployee(currentUser?.employee_id);
+  }, [currentUser?.employee_id]);
+
+  const [workflowTasks, setWorkflowTasks] = useState<WorkflowTask[]>(() => employeeWorkflow.tasks);
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [priorityFilter, setPriorityFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
   const [viewDensity, setViewDensity] = useState<'detailed' | 'compact'>('detailed');
+
+  // Synchronize tasks when employee changes
+  useEffect(() => {
+    setWorkflowTasks(employeeWorkflow.tasks);
+    setSelectedCategory('ALL');
+  }, [employeeWorkflow]);
 
   // Modals state
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -334,11 +345,11 @@ export default function App() {
   // Task count per category
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    WORKFLOW_CATEGORIES.forEach((cat) => {
+    employeeWorkflow.categories.forEach((cat) => {
       counts[cat.id] = workflowTasks.filter((t) => t.category === cat.id).length;
     });
     return counts;
-  }, [workflowTasks]);
+  }, [workflowTasks, employeeWorkflow.categories]);
 
   // Filtered 73 workflow tasks based on category, priority, and search
   const filteredWorkflowTasks = useMemo(() => {
@@ -509,15 +520,16 @@ export default function App() {
             {/* 1. Hero Banner with Gradient & Quick Category Pills */}
             <WorkflowHeroBanner
               currentUser={currentUser}
-              totalCategories={WORKFLOW_CATEGORIES.length}
+              totalCategories={employeeWorkflow.categories.length}
               totalTasks={workflowTasks.length}
               selectedCategory={selectedCategory}
               onSelectCategory={setSelectedCategory}
+              categories={employeeWorkflow.categories}
             />
 
             {/* 2. Top Summary Stat Cards matching image.png exactly */}
             <WorkflowStatCards
-              totalCategories={WORKFLOW_CATEGORIES.length}
+              totalCategories={employeeWorkflow.categories.length}
               totalTasks={workflowStats.total}
               doneTasks={workflowStats.done}
               pendingTasks={workflowStats.pending}
@@ -540,6 +552,7 @@ export default function App() {
               onPriorityFilterChange={setPriorityFilter}
               viewDensity={viewDensity}
               onViewDensityChange={setViewDensity}
+              categories={employeeWorkflow.categories}
             />
 
             {/* 4. Main Workflow Tasks Table with Grouped Accordions */}
@@ -550,6 +563,7 @@ export default function App() {
               onUpdateReason={handleUpdateWorkflowReason}
               selectedCategory={selectedCategory}
               viewDensity={viewDensity}
+              categories={employeeWorkflow.categories}
             />
 
             {/* 100% Completion Milestone Banner */}

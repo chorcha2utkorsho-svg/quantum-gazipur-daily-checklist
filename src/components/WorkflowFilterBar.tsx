@@ -7,7 +7,7 @@ import {
   List,
   ChevronDown,
 } from 'lucide-react';
-import { WORKFLOW_CATEGORIES } from '../data/workflowData';
+import { WORKFLOW_CATEGORIES, WorkflowCategory } from '../data/workflowData';
 
 interface WorkflowFilterBarProps {
   searchQuery: string;
@@ -23,6 +23,7 @@ interface WorkflowFilterBarProps {
   onPriorityFilterChange: (p: 'all' | 'high' | 'medium' | 'low') => void;
   viewDensity: 'detailed' | 'compact';
   onViewDensityChange: (d: 'detailed' | 'compact') => void;
+  categories?: WorkflowCategory[];
 }
 
 export const WorkflowFilterBar: React.FC<WorkflowFilterBarProps> = ({
@@ -38,6 +39,7 @@ export const WorkflowFilterBar: React.FC<WorkflowFilterBarProps> = ({
   onPriorityFilterChange,
   viewDensity,
   onViewDensityChange,
+  categories = WORKFLOW_CATEGORIES,
 }) => {
   return (
     <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-xs space-y-3.5">
@@ -131,7 +133,7 @@ export const WorkflowFilterBar: React.FC<WorkflowFilterBarProps> = ({
         </button>
 
         {/* Category Pills */}
-        {WORKFLOW_CATEGORIES.map((cat) => {
+        {categories.map((cat) => {
           const count = categoryCounts[cat.id] || cat.taskCount;
           const isSelected = selectedCategory === cat.id;
 
@@ -170,7 +172,7 @@ export const WorkflowFilterBar: React.FC<WorkflowFilterBarProps> = ({
               className="appearance-none bg-slate-50 hover:bg-slate-100 text-slate-800 font-medium px-2.5 py-1 pr-6 rounded-md border border-slate-200 focus:outline-none cursor-pointer"
             >
               <option value="ALL">All Categories ({totalTasks})</option>
-              {WORKFLOW_CATEGORIES.map((cat) => (
+              {categories.map((cat) => (
                 <option key={cat.id} value={cat.id}>
                   {cat.name} ({cat.nameBn})
                 </option>
