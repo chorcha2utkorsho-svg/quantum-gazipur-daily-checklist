@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Employee, SYSTEM_ROLES } from '../types';
-import { KeyRound, LogIn, Shield, User, X, Check, ArrowRight } from 'lucide-react';
+import { KeyRound, LogIn, Shield, User, X, Check, ArrowRight, Crown, UserPlus } from 'lucide-react';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -8,6 +8,8 @@ interface LoginModalProps {
   employees: Employee[];
   currentUserId?: string;
   onLoginSuccess: (user: Employee) => void;
+  onRajiSirSignIn?: () => void;
+  onOpenEmployeeSignUp?: () => void;
 }
 
 export const LoginModal: React.FC<LoginModalProps> = ({
@@ -16,6 +18,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   employees,
   currentUserId,
   onLoginSuccess,
+  onRajiSirSignIn,
+  onOpenEmployeeSignUp,
 }) => {
   const [employeeIdInput, setEmployeeIdInput] = useState('');
   const [pinInput, setPinInput] = useState('');
@@ -40,7 +44,17 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     );
 
     if (!matched) {
-      setErrorMsg('Invalid Employee ID or PIN. Please try again.');
+      setErrorMsg('ভুল আইডি অথবা পাসওয়ার্ড/পিন। অনুগ্রহ করে আবার চেষ্টা করুন। (Invalid ID or PIN)');
+      return;
+    }
+
+    if (matched.approval_status === 'pending') {
+      setErrorMsg('⏳ আপনার অ্যাকাউন্টটি বর্তমানে পেন্ডিং অবস্থায় রয়েছে। শ্রদ্ধেয় রাজি স্যার সেন্ট্রাল ড্যাশবোর্ড থেকে অনুমোদন (Approve) করলেই আপনি সিস্টেমে লগইন করতে পারবেন।');
+      return;
+    }
+
+    if (matched.approval_status === 'rejected') {
+      setErrorMsg('❌ দুঃখিত, আপনার রেজিস্ট্রেশন আবেদনটি কতৃপক্ষ কর্তৃক বাতিল করা হয়েছে।');
       return;
     }
 
@@ -54,6 +68,10 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   };
 
   const handleQuickLogin = (emp: Employee) => {
+    if (emp.approval_status === 'pending') {
+      setErrorMsg('⏳ এই অ্যাকাউন্টটি রাজি স্যারের অনুমোদনের অপেক্ষায় রয়েছে।');
+      return;
+    }
     if (!emp.is_active) {
       setErrorMsg('This account is inactive.');
       return;
@@ -62,7 +80,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     onClose();
   };
 
-  const activeEmployees = employees.filter((e) => e.is_active);
+  const activeEmployees = employees.filter(
+    (e) => e.is_active && e.approval_status !== 'pending' && e.approval_status !== 'rejected'
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
@@ -222,6 +242,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                                 </span>
                               )}
                             </div>
+                            {emp.notes && (
+                              <p className="text-[10px] text-[#8e9299] mt-0.5 line-clamp-1">
+                                {emp.notes}
+                              </p>
+                            )}
                           </div>
                         </div>
 
@@ -305,6 +330,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                                 </span>
                               )}
                             </div>
+                            {emp.notes && (
+                              <p className="text-[10px] text-[#8e9299] mt-0.5 line-clamp-1">
+                                {emp.notes}
+                              </p>
+                            )}
                           </div>
                         </div>
 
@@ -373,6 +403,27 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               <span>Sign In to Account</span>
             </button>
           </form>
+
+          {/* New Account Sign Up Section */}
+          {onOpenEmployeeSignUp && (
+            <div className="pt-4 border-t border-white/10 space-y-2.5">
+              <div className="text-center">
+                <span className="text-xs text-slate-400 font-medium">নতুন কর্মীদের জন্য রেজিস্ট্রেশন:</span>
+              </div>
+              <button
+                type="button"
+                id="login-modal-employee-signup-btn"
+                onClick={() => {
+                  onClose();
+                  onOpenEmployeeSignUp();
+                }}
+                className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 text-xs font-bold transition-all shadow-xs"
+              >
+                <UserPlus className="w-4 h-4 text-emerald-400" />
+                <span>এমপ্লয়ী সাইন আপ (নিজস্ব আইডি ও পাসওয়ার্ড তৈরি করুন)</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -2119,21 +2119,23 @@ export const MUSTAKIM_90_TASKS: WorkflowTask[] = [
 ];
 
 // Helper to determine workflow tasks and categories based on employee
-export function getWorkflowForEmployee(employeeId?: string): {
+export function getWorkflowForEmployee(employeeId?: string, employeeName?: string): {
   tasks: WorkflowTask[];
   categories: WorkflowCategory[];
 } {
-  if (!employeeId) {
+  if (!employeeId && !employeeName) {
     return {
       tasks: WORKFLOW_73_TASKS,
       categories: WORKFLOW_CATEGORIES,
     };
   }
 
-  const normalized = employeeId.toLowerCase();
+  const normalizedId = (employeeId || '').toLowerCase();
+  const normalizedName = (employeeName || '').toLowerCase();
+  const combined = `${normalizedId} ${normalizedName}`.trim();
 
   // 1. Jahid Hasan: 73 operational workflow tasks
-  if (normalized === 'jahid') {
+  if (combined.includes('jahid')) {
     return {
       tasks: WORKFLOW_73_TASKS,
       categories: WORKFLOW_CATEGORIES,
@@ -2142,9 +2144,9 @@ export function getWorkflowForEmployee(employeeId?: string): {
 
   // 2. Tanzina Akter: 32 tasks across 2 categories (Wel-O & COMMUNICATION)
   if (
-    normalized === 'so-01' ||
-    normalized.includes('tanzina') ||
-    normalized.includes('tanjina')
+    normalizedId === 'so-01' ||
+    combined.includes('tanzina') ||
+    combined.includes('tanjina')
   ) {
     return {
       tasks: TANZINA_32_TASKS,
@@ -2154,8 +2156,8 @@ export function getWorkflowForEmployee(employeeId?: string): {
 
   // 3. Anjuman Khan (Gazipur Branch): 34 tasks across 3 categories (MATRIMONGL, HOME VISIT, HR)
   if (
-    normalized === 'gb-01' ||
-    normalized.includes('anjuman')
+    normalizedId === 'gb-01' ||
+    combined.includes('anjuman')
   ) {
     return {
       tasks: ANJUMAN_34_TASKS,
@@ -2165,9 +2167,9 @@ export function getWorkflowForEmployee(employeeId?: string): {
 
   // 4. Mustakim Hosen / Mustakim Hossain (Gazipur Branch): 90 tasks across 7 categories
   if (
-    normalized === 'gb-02' ||
-    normalized.includes('mustakim') ||
-    normalized.includes('mostakim')
+    normalizedId === 'gb-02' ||
+    combined.includes('mustakim') ||
+    combined.includes('mostakim')
   ) {
     return {
       tasks: MUSTAKIM_90_TASKS,
@@ -2177,8 +2179,8 @@ export function getWorkflowForEmployee(employeeId?: string): {
 
   // 5. Pronoy Das (Gazipur Sadar Office): 83 tasks across 6 categories
   if (
-    normalized === 'so-02' ||
-    normalized.includes('pronoy')
+    normalizedId === 'so-02' ||
+    combined.includes('pronoy')
   ) {
     return {
       tasks: PRONOY_83_TASKS,

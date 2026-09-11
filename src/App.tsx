@@ -33,6 +33,7 @@ import {
   SYSTEM_ROLES,
   TaskTemplate,
   DEFAULT_SUPERVISOR,
+  BOSS_RAJI_SIR,
   INITIAL_EMPLOYEES,
 } from './types';
 import {
@@ -50,6 +51,8 @@ import {
   getStoredSupabaseConfig,
   fetchEmployees,
   upsertEmployee,
+  approveEmployee,
+  rejectEmployee,
   toggleEmployeeStatus,
   getStoredSession,
   saveStoredSession,
@@ -71,6 +74,10 @@ import { WorkflowHeroBanner } from './components/WorkflowHeroBanner';
 import { WorkflowStatCards } from './components/WorkflowStatCards';
 import { WorkflowFilterBar } from './components/WorkflowFilterBar';
 import { WorkflowTaskTable } from './components/WorkflowTaskTable';
+import { SignUpModal } from './components/SignUpModal';
+import { CommonDashboard } from './components/CommonDashboard';
+import { AiStrategicInsight } from './components/AiStrategicInsight';
+import { EmployeeProfileWorkspace } from './components/EmployeeProfileWorkspace';
 
 export default function App() {
   const getTodayString = () => {
@@ -91,8 +98,8 @@ export default function App() {
 
   const isBoss = currentUser?.role === 'main_boss' || currentUser?.employee_id === 'RAJI_SIR';
   const isSupervisor = currentUser?.role === 'office_assistant' || isBoss;
-  const [viewMode, setViewMode] = useState<'supervisor' | 'checklist'>(() =>
-    isSupervisor ? 'supervisor' : 'checklist'
+  const [viewMode, setViewMode] = useState<'supervisor' | 'checklist' | 'common' | 'profile'>(() =>
+    isSupervisor ? 'supervisor' : 'profile'
   );
 
   const [filter, setFilter] = useState<'all' | 'pending' | 'done'>('all');
@@ -118,11 +125,13 @@ export default function App() {
 
   // Modals state
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false);
   const [isEmployeeManagerOpen, setIsEmployeeManagerOpen] = useState(false);
   const [isTaskManagerOpen, setIsTaskManagerOpen] = useState(false);
   const [isSupabaseModalOpen, setIsSupabaseModalOpen] = useState(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
+  const [isAiInsightModalOpen, setIsAiInsightModalOpen] = useState(false);
 
   // Inspection modal state
   const [inspectedEmployee, setInspectedEmployee] = useState<Employee | null>(null);
@@ -140,7 +149,7 @@ export default function App() {
     if (currentUser?.role === 'office_assistant' || currentUser?.role === 'main_boss' || currentUser?.employee_id === 'RAJI_SIR') {
       setViewMode('supervisor');
     } else {
-      setViewMode('checklist');
+      setViewMode('profile');
     }
   }, [currentUser]);
 
@@ -191,7 +200,52 @@ export default function App() {
   const handleUserLogin = (user: Employee) => {
     setCurrentUser(user);
     saveStoredSession(user);
+    setIsLoginModalOpen(false);
+    const isAuthority = user.role === 'main_boss' || user.role === 'office_assistant' || user.employee_id === 'RAJI_SIR';
+    if (isAuthority) {
+      setViewMode('supervisor');
+    } else {
+      setViewMode('checklist');
+    }
     loadData(selectedDate, user);
+  };
+
+  // Sign In directly as Raji Sir (Supreme Authority)
+  const handleRajiSirSignIn = () => {
+    const rajiSir = employees.find((e) => e.employee_id === 'RAJI_SIR') || BOSS_RAJI_SIR;
+    setCurrentUser(rajiSir);
+    saveStoredSession(rajiSir);
+    setViewMode('supervisor');
+    loadData(selectedDate, rajiSir);
+  };
+
+  const handleOpenEmployeeSignUp = () => {
+    setIsSignUpModalOpen(true);
+  };
+
+  // Handle employee registration submission (remains pending until Raji Sir approves)
+  const handleSignUpSuccess = async (newEmployee: Employee) => {
+    const updated = await upsertEmployee(newEmployee);
+    setEmployees(updated);
+    // Reload comparative stats to include the updated employee list
+    const comparative = await fetchAllEmployeesComparative(selectedDate, updated, templates);
+    setProgressList(comparative);
+  };
+
+  // Approve pending employee by Raji Sir
+  const handleApproveEmployee = async (employeeId: string) => {
+    const updated = await approveEmployee(employeeId);
+    setEmployees(updated);
+    const comparative = await fetchAllEmployeesComparative(selectedDate, updated, templates);
+    setProgressList(comparative);
+  };
+
+  // Reject pending employee by Raji Sir
+  const handleRejectEmployee = async (employeeId: string) => {
+    const updated = await rejectEmployee(employeeId);
+    setEmployees(updated);
+    const comparative = await fetchAllEmployeesComparative(selectedDate, updated, templates);
+    setProgressList(comparative);
   };
 
   // Save Employee (Hire or update role)
@@ -489,6 +543,8 @@ export default function App() {
         onOpenSupabaseModal={() => setIsSupabaseModalOpen(true)}
         onOpenPrintModal={() => setIsPrintModalOpen(true)}
         onOpenLoginModal={() => setIsLoginModalOpen(true)}
+        onRajiSirSignIn={handleRajiSirSignIn}
+        onOpenEmployeeSignUp={handleOpenEmployeeSignUp}
         onOpenEmployeeManager={() => setIsEmployeeManagerOpen(true)}
         isSupabaseConnected={isSupabaseConnected}
         currentUser={currentUser}
@@ -500,8 +556,26 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        {/* If Supervisor View is Active, show the Executive Comparative Dashboard */}
-        {isSupervisor && viewMode === 'supervisor' ? (
+        {/* 1. Common Dashboard Hub */}
+        {viewMode === 'common' ? (
+          <CommonDashboard
+            selectedDate={selectedDate}
+            employees={employees}
+            progressList={progressList}
+            currentUser={currentUser}
+            onOpenSignIn={() => setIsLoginModalOpen(true)}
+            onRajiSirSignIn={handleRajiSirSignIn}
+            onOpenEmployeeSignUp={handleOpenEmployeeSignUp}
+            onSelectEmployee={(emp) => {
+              setCurrentUser(emp);
+              saveStoredSession(emp);
+              setViewMode('profile');
+            }}
+            onGoToChecklist={() => setViewMode('profile')}
+            onGoToSupervisor={() => setViewMode('supervisor')}
+          />
+        ) : isSupervisor && viewMode === 'supervisor' ? (
+          /* 2. Executive Supervisor Dashboard (Sabar Activity for Raji Sir & Authority) */
           <SupervisorDashboard
             selectedDate={selectedDate}
             employees={employees}
@@ -513,9 +587,23 @@ export default function App() {
             onOpenEmployeeManager={() => setIsEmployeeManagerOpen(true)}
             onRefreshData={handleRefreshComparative}
             onInspectEmployee={handleInspectEmployee}
+            onApproveEmployee={handleApproveEmployee}
+            onRejectEmployee={handleRejectEmployee}
+            logs={logs}
+          />
+        ) : viewMode === 'profile' ? (
+          /* 3. Personalized Employee Profile & Planner Workspace (Exact User Requirement) */
+          <EmployeeProfileWorkspace
+            employee={currentUser}
+            selectedDate={selectedDate}
+            workflow={employeeWorkflow}
+            logs={logs}
+            onToggleTask={handleToggleWorkflowStatus}
+            onUpdatePendingReason={handleUpdateWorkflowReason}
+            onGoToTableView={() => setViewMode('checklist')}
           />
         ) : (
-          /* Workflow Checklist View matching image.png */
+          /* 4. Workflow Checklist View for Employee (Personal task management & status checkboxes) */
           <div className="space-y-6">
             {/* 1. Hero Banner with Gradient & Quick Category Pills */}
             <WorkflowHeroBanner
@@ -547,6 +635,7 @@ export default function App() {
               totalTasks={workflowTasks.length}
               onOpenNewTaskModal={() => setIsTaskManagerOpen(true)}
               onOpenPrintModal={() => setIsPrintModalOpen(true)}
+              onOpenAiInsightModal={() => setIsAiInsightModalOpen(true)}
               onResetDaily={() => setIsResetConfirmOpen(true)}
               priorityFilter={priorityFilter}
               onPriorityFilterChange={setPriorityFilter}
@@ -629,6 +718,17 @@ export default function App() {
         employees={employees}
         currentUserId={currentUser?.employee_id}
         onLoginSuccess={handleUserLogin}
+        onRajiSirSignIn={handleRajiSirSignIn}
+        onOpenEmployeeSignUp={handleOpenEmployeeSignUp}
+      />
+
+      {/* Employee Sign Up Modal */}
+      <SignUpModal
+        isOpen={isSignUpModalOpen}
+        onClose={() => setIsSignUpModalOpen(false)}
+        existingEmployees={employees}
+        onSignUpSuccess={handleSignUpSuccess}
+        onOpenRajiSirSignIn={handleRajiSirSignIn}
       />
 
       {/* Employee Manager Modal */}
@@ -638,6 +738,8 @@ export default function App() {
         employees={employees}
         onSaveEmployee={handleSaveEmployee}
         onToggleStatus={handleToggleEmployeeStatus}
+        onApproveEmployee={handleApproveEmployee}
+        onRejectEmployee={handleRejectEmployee}
       />
 
       {/* Employee Inspection Modal */}
@@ -677,6 +779,19 @@ export default function App() {
         items={logs}
         stats={workflowStats}
       />
+
+      {/* AI Strategic Insight Modal for Office Assistant Workflow */}
+      {isAiInsightModalOpen && (
+        <AiStrategicInsight
+          isModal
+          onClose={() => setIsAiInsightModalOpen(false)}
+          date={selectedDate}
+          currentUser={currentUser}
+          employees={employees}
+          logs={logs}
+          progressList={progressList}
+        />
+      )}
 
       {/* Daily Reset Confirmation Modal */}
       {isResetConfirmOpen && (

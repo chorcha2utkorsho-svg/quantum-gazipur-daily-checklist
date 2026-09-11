@@ -142,6 +142,9 @@ export interface Employee {
   role: UserRole;
   branch: BranchId;    // 'chowrasta' | 'rajbari' | 'all'
   is_active: boolean;  // Active vs Terminated / Inactive
+  approval_status?: 'pending' | 'approved' | 'rejected'; // Approval status by Raji Sir
+  approved_at?: string;
+  approved_by?: string;
   phone?: string;
   joined_date: string; // YYYY-MM-DD
   notes?: string;
@@ -228,6 +231,7 @@ export const BOSS_RAJI_SIR: Employee = {
   role: 'main_boss',
   branch: 'all',
   is_active: true,
+  approval_status: 'approved',
   phone: '01700000000',
   joined_date: '2023-01-01',
   notes: 'Quantum Gazipur Cell: Central Director & Policy Maker for both Gazipur Branch and Gazipur Sadar Office.',
@@ -249,9 +253,10 @@ export const INITIAL_EMPLOYEES: Employee[] = [
     role: 'office_assistant',
     branch: 'chowrasta',
     is_active: true,
+    approval_status: 'approved',
     phone: '01711000001',
     joined_date: '2023-05-01',
-    notes: 'Gazipur Branch: Operations and in-charge coordination.',
+    notes: 'Gazipur Branch: 3 categories & 34 tasks (MATRIMONGL, HOME VISIT, HR - Attendance & QMIS).',
     avatar_color: '#10b981',
   },
   {
@@ -259,9 +264,10 @@ export const INITIAL_EMPLOYEES: Employee[] = [
     employee_id: 'GB-02',
     name: 'Mustakim Hosen',
     pin: '1234',
-    role: 'accounts',
+    role: 'office_assistant',
     branch: 'chowrasta',
     is_active: true,
+    approval_status: 'approved',
     phone: '01711000002',
     joined_date: '2024-01-15',
     notes: 'Gazipur Branch: 7 categories & 90 tasks (MATIR BANK, ETIMAN, SADAKAION & PROGGA, OFFICE MANAGEMENT, BANKING, OUTSIDE CAMPAIGN, SHONGHODHAN).',
@@ -277,6 +283,7 @@ export const INITIAL_EMPLOYEES: Employee[] = [
     role: 'accounts',
     branch: 'rajbari',
     is_active: true,
+    approval_status: 'approved',
     phone: '01711999888',
     joined_date: '2024-01-01',
     notes: 'Gazipur Sadar Office: 6 categories & 73 operational workflow tasks (BILL WORK, FUND, DONATION, PROGRAM-Inside, PROGRAM-Outside, EXPLORATION).',
@@ -290,6 +297,7 @@ export const INITIAL_EMPLOYEES: Employee[] = [
     role: 'front_desk',
     branch: 'rajbari',
     is_active: true,
+    approval_status: 'approved',
     phone: '01722000001',
     joined_date: '2024-02-01',
     notes: 'Gazipur Sadar Office: Wel-O (20 tasks) & COMMUNICATION (12 tasks) operational workflows.',
@@ -303,6 +311,7 @@ export const INITIAL_EMPLOYEES: Employee[] = [
     role: 'logistics',
     branch: 'rajbari',
     is_active: true,
+    approval_status: 'approved',
     phone: '01722000002',
     joined_date: '2024-03-01',
     notes: 'Gazipur Sadar Office: Logistics, facility management, and asset coordination.',
@@ -332,3 +341,104 @@ export const PRE_SEEDED_TASKS: Array<{ name: string; category: string; order: nu
   { name: 'Report', category: 'Reporting', order: 19 },
   { name: 'Planing', category: 'Next Day Strategy', order: 20 },
 ];
+
+export interface ActionableOptimizationStep {
+  stepNumber: number;
+  title: string;
+  category: string;
+  priority: 'critical' | 'high' | 'medium';
+  problemIdentified: string;
+  actionPlan: string[];
+  expectedImpact: string;
+  recommendedTimeSlot?: string;
+}
+
+export interface AiStrategicInsightData {
+  summary: string;
+  overallHealth: 'Optimal' | 'Requires Attention' | 'At Risk';
+  velocityScore?: string;
+  topBottleneckCategory?: string;
+  actionableSteps: ActionableOptimizationStep[];
+  executiveTakeaway?: string;
+  quantumAffirmation?: string;
+  source?: string;
+  generatedAt?: string;
+}
+
+export interface ExecutiveDirective {
+  id: string;
+  sender_id: string;
+  sender_name: string;
+  target_type: 'all' | 'branch' | 'employee';
+  target_id?: string; // branchId ('chowrasta' | 'rajbari') or employee_id
+  target_name?: string;
+  message: string;
+  priority: 'urgent' | 'important' | 'normal';
+  created_at: string;
+  date: string;
+  acknowledged_by?: string[]; // Array of employee_ids
+}
+
+export interface DailyPlannerItem {
+  id: string;
+  employee_id: string;
+  date: string;
+  timeSlot: string; // e.g. "09:00 AM - 11:00 AM"
+  focusTitle: string;
+  isDone: boolean;
+  notes?: string;
+}
+
+export interface EmployeeDailyPlan {
+  employee_id: string;
+  date: string;
+  priorities: string[];
+  dayNotes: string;
+  items: DailyPlannerItem[];
+  updatedAt?: string;
+}
+
+// Client Communication & Calling Head (CRM) Types
+export type CallOutcome =
+  | 'positive'      // কনভার্শন পজেটিভ (আগ্রহী / অনুদান / মেডিটেশনে সম্মতি)
+  | 'negative'      // নেগেটিভ (অনাগ্রহী)
+  | 'no_answer'     // কল ধরে নাই / এন এ (N/A)
+  | 'unreachable'   // কল রিসিভ করেনি / ব্যস্ত (Not Received)
+  | 'inactive'      // ইন-অ্যাক্টিভ / বন্ধ নম্বর (Inactive)
+  | 'pending';      // কল করা বাকি (Pending Call)
+
+export interface ClientContact {
+  id: string;
+  name: string;
+  phone: string;
+  member_id?: string;
+  category: 'quantum_member' | 'donor' | 'old_student' | 'well_wisher' | 'new_lead';
+  category_name_bn: string;
+  branch: 'chowrasta' | 'rajbari';
+  assigned_to_id: string;   // Employee ID (যেমন রাজি স্যার ১০০ মেম্বার যে কর্মীকে দিয়েছেন)
+  assigned_to_name: string;
+  call_status: CallOutcome;
+  call_notes?: string;
+  conversion_amount?: number; // যদি কোনো অনুদান বা কোর্স ফি কনভার্ট হয়
+  last_called_at?: string;
+  date_assigned: string;
+  created_at: string;
+}
+
+export interface CommunicationStats {
+  total: number;
+  called: number;
+  pending: number;
+  positiveCount: number;
+  positiveRate: number;      // %
+  negativeCount: number;
+  negativeRate: number;      // %
+  noAnswerCount: number;     // এন এ / কল ধরে নাই
+  noAnswerRate: number;      // %
+  unreachableCount: number;  // রিসিভ করেনি
+  unreachableRate: number;   // %
+  inactiveCount: number;     // ইন-অ্যাক্টিভ
+  inactiveRate: number;      // %
+}
+
+

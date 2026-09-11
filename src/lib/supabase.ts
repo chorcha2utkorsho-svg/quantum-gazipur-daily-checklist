@@ -103,20 +103,25 @@ const STORAGE_PREFIX = 'qgz_cell_';
 
 export function getLocalEmployees(): Employee[] {
   if (typeof window === 'undefined') return INITIAL_EMPLOYEES;
-  const stored = localStorage.getItem(`${STORAGE_PREFIX}employees_v4`);
+  const stored = localStorage.getItem(`${STORAGE_PREFIX}employees_v5`);
   if (stored) {
     try {
       const parsed = JSON.parse(stored);
-      if (Array.isArray(parsed) && parsed.length === INITIAL_EMPLOYEES.length) {
-        // Ensure all key staff are present
+      if (Array.isArray(parsed) && parsed.length >= INITIAL_EMPLOYEES.length) {
+        // Ensure all key staff are present and roles updated
         const hasRajiSir = parsed.some((e) => e.employee_id === 'RAJI_SIR');
-        const hasMustakim = parsed.some((e) => e.name && e.name.toLowerCase().includes('mustakim'));
+        const mustakim = parsed.find((e) => e.name && e.name.toLowerCase().includes('mustakim'));
+        const hasMustakimOA = mustakim?.role === 'office_assistant';
         const hasAnjuman = parsed.some((e) => e.name && e.name.toLowerCase().includes('anjuman'));
         const hasJahid = parsed.some((e) => e.name && e.name.toLowerCase().includes('jahid'));
         const hasTanzina = parsed.some((e) => e.name && (e.name.toLowerCase().includes('tanzina') || e.name.toLowerCase().includes('tanjina')));
         const hasPronoy = parsed.some((e) => e.name && e.name.toLowerCase().includes('pronoy'));
-        if (hasRajiSir && hasMustakim && hasAnjuman && hasJahid && hasTanzina && hasPronoy) {
-          return parsed;
+        if (hasRajiSir && hasMustakimOA && hasAnjuman && hasJahid && hasTanzina && hasPronoy) {
+          // Normalize approval_status for pre-existing staff
+          return parsed.map((emp: Employee) => ({
+            ...emp,
+            approval_status: emp.approval_status || (emp.is_active ? 'approved' : 'pending'),
+          }));
         }
       }
     } catch {
@@ -125,13 +130,13 @@ export function getLocalEmployees(): Employee[] {
   }
 
   // Set to official 2-person Gazipur Branch + 3-person Sadar Office roster (+ Raji Sir)
-  localStorage.setItem(`${STORAGE_PREFIX}employees_v4`, JSON.stringify(INITIAL_EMPLOYEES));
+  localStorage.setItem(`${STORAGE_PREFIX}employees_v5`, JSON.stringify(INITIAL_EMPLOYEES));
   return INITIAL_EMPLOYEES;
 }
 
 export function saveLocalEmployees(employees: Employee[]) {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(`${STORAGE_PREFIX}employees_v4`, JSON.stringify(employees));
+  localStorage.setItem(`${STORAGE_PREFIX}employees_v5`, JSON.stringify(employees));
 }
 
 export function getLocalTemplates(): TaskTemplate[] {
@@ -289,6 +294,54 @@ export async function toggleEmployeeStatus(employeeId: string, isActive: boolean
       console.warn('Error updating employee status in Supabase:', e);
     }
   }
+  return updated;
+}
+
+export async function approveEmployee(employeeId: string): Promise<Employee[]> {
+  const current = getLocalEmployees();
+  const now = new Date().toISOString();
+  const updated = current.map((e) =>
+    e.employee_id === employeeId
+      ? {
+          ...e,
+          is_active: true,
+          approval_status: 'approved' as const,
+          approved_at: now,
+          approved_by: 'Raji Sir',
+        }
+      : e
+  );
+  saveLocalEmployees(updated);
+
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    try {
+      await supabase
+        .from('employees')
+        .update({
+          is_active: true,
+          notes: 'Approved by Raji Sir',
+        })
+        .eq('employee_id', employeeId);
+    } catch (e) {
+      console.warn('Error syncing approval to Supabase:', e);
+    }
+  }
+  return updated;
+}
+
+export async function rejectEmployee(employeeId: string): Promise<Employee[]> {
+  const current = getLocalEmployees();
+  const updated = current.map((e) =>
+    e.employee_id === employeeId
+      ? {
+          ...e,
+          is_active: false,
+          approval_status: 'rejected' as const,
+        }
+      : e
+  );
+  saveLocalEmployees(updated);
   return updated;
 }
 
@@ -599,3 +652,234 @@ ${
 - **Workload Balancing**: If accounting or front desk traffic is unusually heavy, cross-assign general assistants for prompt clearance.
 - **Role Optimization**: Team members consistently logging 90%+ completion should be positioned for critical tasks and operational coordination.`;
 }
+
+// Dedicated helper to analyze daily completion logs and get 3 actionable optimization steps for office assistant
+export async function requestOfficeAssistantInsight(payload: {
+  assistant: { name: string; employee_id: string; branch: string; role: string };
+  date: string;
+  completionLogs: any[];
+  summaryStats?: { total: number; done: number; pending: number; percentage: number };
+}): Promise<any> {
+  try {
+    const response = await fetch('/api/ai-office-assistant-insights', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      if (result.success && result.data) {
+        return result.data;
+      }
+    }
+  } catch (err) {
+    console.warn('Backend endpoint /api/ai-office-assistant-insights unreachable, falling back to local engine:', err);
+  }
+
+  // Client-side fallback generator if backend cannot be reached
+  const total = payload.summaryStats?.total || payload.completionLogs.length || 0;
+  const done = payload.summaryStats?.done || payload.completionLogs.filter((l) => l.status === 'done').length || 0;
+  const pending = payload.summaryStats?.pending || payload.completionLogs.filter((l) => l.status === 'pending').length || 0;
+  const percentage = payload.summaryStats?.percentage || (total > 0 ? Math.round((done / total) * 100) : 0);
+
+  return {
+    summary: `Daily completion analysis for ${payload.assistant.name} (${payload.assistant.employee_id}) shows ${done} of ${total} tasks accomplished (${percentage}%). Strategic pacing indicates room for front-loading morning routines to safeguard evening closing.`,
+    overallHealth: percentage >= 85 ? 'Optimal' : percentage >= 60 ? 'Requires Attention' : 'At Risk',
+    velocityScore: `${percentage}/100`,
+    topBottleneckCategory: 'Financial Reconciliations & Closing',
+    actionableSteps: [
+      {
+        stepNumber: 1,
+        title: 'Front-Load Morning Routines & Atmosphere Checks by 9:30 AM',
+        category: 'Time Management',
+        priority: 'high',
+        problemIdentified: 'Delaying early physical inspections and setup cascades friction into afternoon duties when visitor footfall increases.',
+        actionPlan: [
+          'Execute a 20-minute rapid sweep of Desk Set-up, Meditation equipment, and Cleanliness immediately upon arrival.',
+          'Verify that sales inventories and initial token registers are pre-stamped before first donor arrives.',
+        ],
+        expectedImpact: 'Saves 25+ minutes of mid-day distraction and ensures an inspiring, calm office atmosphere.',
+        recommendedTimeSlot: '09:00 AM - 09:30 AM',
+      },
+      {
+        stepNumber: 2,
+        title: 'Establish a 2:00 PM Mid-Day Voucher & bKash Clearing Window',
+        category: 'Process Optimization',
+        priority: 'high',
+        problemIdentified: 'Pending items accumulate around cash, donation slips, and bank coordination when delayed until closing hours.',
+        actionPlan: [
+          'Take 30 minutes at 2:00 PM to cross-match all morning MR numbers and mobile donation tokens.',
+          'Resolve ambiguous receipts with donors or desk colleagues immediately while events are fresh.',
+        ],
+        expectedImpact: 'Reduces end-of-day closing crunch by 70% and prevents mismatch disputes.',
+        recommendedTimeSlot: '02:00 PM - 02:45 PM',
+      },
+      {
+        stepNumber: 3,
+        title: 'Execute Strict Dual-Check Cash Closing & Daily Log Lock by 5:00 PM',
+        category: 'Closing Protocol',
+        priority: 'critical',
+        problemIdentified: 'End-of-day fatigue increases error risks during physical cash count and QMIS report dispatch to Raji Sir.',
+        actionPlan: [
+          'Initiate cash counting at 4:45 PM using the standardized denominations breakdown template.',
+          'Safely stow mobile devices and lock cash drawers before finalizing system log submissions.',
+          'Transmit completed report to Raji Sir’s executive command portal by 5:30 PM sharp.',
+        ],
+        expectedImpact: 'Guarantees 100% on-time daily closing and full compliance with Quantum Cell audit mandates.',
+        recommendedTimeSlot: '04:45 PM - 05:30 PM',
+      },
+    ],
+    executiveTakeaway: 'Ensure the Office Assistant is protected from non-urgent calls during the 2:00 PM and 4:45 PM focus blocks.',
+    quantumAffirmation: 'Self-discipline and mindful execution transform ordinary work into divine service.',
+    source: 'client-offline-fallback',
+  };
+}
+
+// ==========================================
+// Executive Directives API (Raji Sir's Live Commands)
+// ==========================================
+
+const DIRECTIVES_STORAGE_KEY = 'qgz_executive_directives_v1';
+
+export function fetchDirectives(date?: string): any[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(DIRECTIVES_STORAGE_KEY);
+    if (!raw) {
+      // Default initial welcome directive from Raji Sir
+      const initial: any[] = [
+        {
+          id: 'dir-welcome',
+          sender_id: 'RAJI_SIR',
+          sender_name: 'রাজি স্যার (সেন্ট্রাল ডিরেক্টর)',
+          target_type: 'all',
+          target_name: 'সকল কর্মী ও কর্মকর্তা',
+          message: 'আজকের সকল কাজের অগ্রগতি নিয়মিত আপডেট রাখুন। বিকেল ৪:৪৫ টার মধ্যে ক্যাশ ক্লোজিং এবং দৈনিক রিপোর্ট ফাইনাল করুন।',
+          priority: 'important',
+          created_at: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          date: date || new Date().toISOString().split('T')[0],
+          acknowledged_by: [],
+        },
+      ];
+      localStorage.setItem(DIRECTIVES_STORAGE_KEY, JSON.stringify(initial));
+      return initial;
+    }
+    const parsed = JSON.parse(raw);
+    if (date) {
+      return parsed.filter((d: any) => d.date === date);
+    }
+    return parsed;
+  } catch (err) {
+    console.error('Failed to load directives:', err);
+    return [];
+  }
+}
+
+export function sendDirective(directive: any): any[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const current = fetchDirectives();
+    const updated = [directive, ...current];
+    localStorage.setItem(DIRECTIVES_STORAGE_KEY, JSON.stringify(updated));
+    return updated;
+  } catch (err) {
+    console.error('Failed to save directive:', err);
+    return [];
+  }
+}
+
+export function acknowledgeDirective(directiveId: string, employeeId: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const current = fetchDirectives();
+    const updated = current.map((d: any) => {
+      if (d.id === directiveId) {
+        const acks = d.acknowledged_by || [];
+        if (!acks.includes(employeeId)) {
+          return { ...d, acknowledged_by: [...acks, employeeId] };
+        }
+      }
+      return d;
+    });
+    localStorage.setItem(DIRECTIVES_STORAGE_KEY, JSON.stringify(updated));
+  } catch (err) {
+    console.error('Failed to acknowledge directive:', err);
+  }
+}
+
+// ==========================================
+// Employee Daily Planner API
+// ==========================================
+
+export function fetchDailyPlan(employeeId: string, date: string): any {
+  if (typeof window === 'undefined') return null;
+  try {
+    const key = `qgz_daily_plan_${employeeId}_${date}`;
+    const raw = localStorage.getItem(key);
+    if (raw) {
+      return JSON.parse(raw);
+    }
+  } catch (err) {
+    console.error('Failed to load daily plan:', err);
+  }
+
+  // Default empty plan structure
+  return {
+    employee_id: employeeId,
+    date,
+    priorities: ['আজকের মূল দায়িত্বসমূহ সময়মত সম্পন্ন করা', 'ক্যাশ ও ভাউচার নিখুঁতভাবে সমন্বয় করা'],
+    dayNotes: '',
+    items: [
+      {
+        id: 'plan-1',
+        employee_id: employeeId,
+        date,
+        timeSlot: '০৯:০০ AM - ১১:০০ AM',
+        focusTitle: 'সকালের ডেস্কে প্রস্তুতি ও পরিদর্শন',
+        isDone: false,
+        notes: 'পরিষ্কার-পরিচ্ছন্নতা ও শুরুর সেটআপ',
+      },
+      {
+        id: 'plan-2',
+        employee_id: employeeId,
+        date,
+        timeSlot: '১১:০০ AM - ০২:০০ PM',
+        focusTitle: 'প্রধান সেবা ও গ্রাহক/অ্যাকাউন্টস কার্যক্রম',
+        isDone: false,
+        notes: 'ভাউচার সংগ্রহ ও কাস্টমার রেসপন্স',
+      },
+      {
+        id: 'plan-3',
+        employee_id: employeeId,
+        date,
+        timeSlot: '০২:০০ PM - ০৪:০০ PM',
+        focusTitle: 'বিকাশ এমআর ও রিপোর্ট আপডেট',
+        isDone: false,
+        notes: 'মিড-ডে ক্যাশ রিকনসিলিয়েশন',
+      },
+      {
+        id: 'plan-4',
+        employee_id: employeeId,
+        date,
+        timeSlot: '০৪:০০ PM - ০৫:৩০ PM',
+        focusTitle: 'ক্যাশ ক্লোজিং ও রাজি স্যারকে চূড়ান্ত রিপোর্ট প্রেরণ',
+        isDone: false,
+        notes: 'সকল লগ সম্পন্ন ও তালাবদ্ধকরণ',
+      },
+    ],
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+export function saveDailyPlan(plan: any): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const key = `qgz_daily_plan_${plan.employee_id}_${plan.date}`;
+    localStorage.setItem(key, JSON.stringify({ ...plan, updatedAt: new Date().toISOString() }));
+  } catch (err) {
+    console.error('Failed to save daily plan:', err);
+  }
+}
+
+

@@ -6,6 +6,7 @@ import {
   Grid,
   List,
   ChevronDown,
+  Sparkles,
 } from 'lucide-react';
 import { WORKFLOW_CATEGORIES, WorkflowCategory } from '../data/workflowData';
 
@@ -18,6 +19,7 @@ interface WorkflowFilterBarProps {
   totalTasks: number;
   onOpenNewTaskModal?: () => void;
   onOpenPrintModal?: () => void;
+  onOpenAiInsightModal?: () => void;
   onResetDaily?: () => void;
   priorityFilter: 'all' | 'high' | 'medium' | 'low';
   onPriorityFilterChange: (p: 'all' | 'high' | 'medium' | 'low') => void;
@@ -35,6 +37,7 @@ export const WorkflowFilterBar: React.FC<WorkflowFilterBarProps> = ({
   totalTasks,
   onOpenNewTaskModal,
   onOpenPrintModal,
+  onOpenAiInsightModal,
   priorityFilter,
   onPriorityFilterChange,
   viewDensity,
@@ -67,6 +70,18 @@ export const WorkflowFilterBar: React.FC<WorkflowFilterBarProps> = ({
 
         {/* Quick Tools & Add Task Button */}
         <div className="flex flex-wrap items-center gap-2 shrink-0">
+          {onOpenAiInsightModal && (
+            <button
+              type="button"
+              onClick={onOpenAiInsightModal}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 border border-amber-500/30 text-xs font-bold rounded-lg transition-all cursor-pointer shadow-xs"
+              title="AI Strategic Insight for Office Assistant Workflow"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
+              <span>AI Strategic Insight</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={() => onCategoryChange('ALL')}
