@@ -1,5 +1,4 @@
 import React, { useRef, useEffect } from 'react';
-import { Check, AlertCircle, Clock, Calendar, MessageSquare, Sparkles } from 'lucide-react';
 import { DailyLogItem } from '../types';
 
 interface TaskItemProps {
@@ -46,9 +45,9 @@ export const TaskItem: React.FC<TaskItemProps> = ({
           type="button"
           onClick={() => onToggleStatus(item.task_name)}
           aria-label={`Mark task ${item.task_name} as pending`}
-          className="w-5 h-5 rounded border border-emerald-500 bg-emerald-500/20 flex items-center justify-center mr-3 text-emerald-400 flex-shrink-0 cursor-pointer transition-all hover:scale-105"
+          className="px-1.5 py-0.5 rounded border border-emerald-500 bg-emerald-500/20 text-emerald-400 font-mono text-xs font-bold mr-3 flex-shrink-0 cursor-pointer transition-all"
         >
-          <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+          [Done]
         </button>
 
         {/* Task Name */}
@@ -82,8 +81,10 @@ export const TaskItem: React.FC<TaskItemProps> = ({
           type="button"
           onClick={() => onToggleStatus(item.task_name)}
           aria-label={`Mark task ${item.task_name} as done`}
-          className="w-5 h-5 rounded border border-white/20 mr-3 flex-shrink-0 cursor-pointer hover:border-emerald-400/80 transition-colors"
-        />
+          className="px-1.5 py-0.5 rounded border border-slate-600 bg-slate-800 text-slate-300 font-mono text-xs font-bold mr-3 flex-shrink-0 cursor-pointer hover:border-emerald-400 transition-colors"
+        >
+          [ ]
+        </button>
 
         {/* Task Title */}
         <span

@@ -1,15 +1,5 @@
 import React, { useState } from 'react';
-import {
-  X,
-  Plus,
-  Trash2,
-  Edit2,
-  Check,
-  RotateCcw,
-  SlidersHorizontal,
-  FolderPlus,
-} from 'lucide-react';
-import { TaskTemplate, PRE_SEEDED_TASKS } from '../types';
+import { TaskTemplate } from '../types';
 
 interface TaskManagerModalProps {
   isOpen: boolean;
@@ -73,27 +63,23 @@ export const TaskManagerModal: React.FC<TaskManagerModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
       <div
-        className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded bg-[#0a0a0a] border border-white/10 shadow-2xl overflow-hidden"
+        id="task-manager-modal"
+        className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl bg-[#0a0a0a] border border-white/10 shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-black/40">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded bg-white/5 text-[#e5e5e5] border border-white/10">
-              <SlidersHorizontal className="w-4 h-4" />
-            </div>
-            <div>
-              <h2 className="text-base font-semibold text-white tracking-tight">Manage Daily Task List</h2>
-              <p className="text-xs text-[#8e9299]">
-                Configure Quantum Gazipur cell's core checklist items ({templates.length} total tasks)
-              </p>
-            </div>
+          <div>
+            <h2 className="text-base font-semibold text-white tracking-tight">Manage Daily Task List</h2>
+            <p className="text-xs text-[#8e9299]">
+              Configure Quantum Gazipur cell core checklist items ({templates.length} total tasks)
+            </p>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded text-[#8e9299] hover:text-white hover:bg-white/5 transition-colors"
+            className="px-2.5 py-1 rounded text-xs font-bold text-[#8e9299] hover:text-white hover:bg-white/5 transition-colors"
           >
-            <X className="w-5 h-5" />
+            [Close]
           </button>
         </div>
 
@@ -104,14 +90,14 @@ export const TaskManagerModal: React.FC<TaskManagerModalProps> = ({
             <button
               id="open-add-task-btn"
               onClick={() => setIsAdding(true)}
-              className="w-full py-2.5 px-4 rounded border border-dashed border-white/20 text-[#e5e5e5] hover:bg-white/5 hover:border-emerald-500/60 font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-colors"
+              className="w-full py-2.5 px-4 rounded-xl border border-dashed border-white/20 text-[#e5e5e5] hover:bg-white/5 hover:border-emerald-500/60 font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-colors"
             >
-              <Plus className="w-4 h-4 text-emerald-400" /> Add New Dynamic Task
+              + Add New Dynamic Task
             </button>
           ) : (
             <form
               onSubmit={handleAddNew}
-              className="p-4 rounded bg-black/40 border border-white/10 space-y-3 animate-in fade-in"
+              className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-3 animate-in fade-in"
             >
               <div className="text-xs font-semibold uppercase tracking-wider text-emerald-400">Add New Task to Checklist</div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -162,7 +148,7 @@ export const TaskManagerModal: React.FC<TaskManagerModalProps> = ({
               return (
                 <div
                   key={template.id || template.name}
-                  className="flex items-center justify-between gap-3 p-2.5 rounded bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors"
+                  className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors"
                 >
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <span className="w-5 h-5 rounded bg-black/40 text-[10px] font-mono font-medium text-[#8e9299] flex items-center justify-center flex-shrink-0 border border-white/5">
@@ -201,31 +187,31 @@ export const TaskManagerModal: React.FC<TaskManagerModalProps> = ({
                   </div>
 
                   {/* Action buttons */}
-                  <div className="flex items-center gap-1 flex-shrink-0">
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     {isEditing ? (
                       <button
                         onClick={() => handleSaveEdit(template)}
-                        className="p-1.5 rounded text-emerald-400 hover:bg-emerald-500/20"
+                        className="px-2 py-0.5 rounded text-xs font-bold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20"
                         title="Save Changes"
                       >
-                        <Check className="w-4 h-4" />
+                        [Save]
                       </button>
                     ) : (
                       <button
                         onClick={() => handleStartEdit(template)}
-                        className="p-1.5 rounded text-[#8e9299] hover:text-white hover:bg-white/10 transition-colors"
+                        className="px-2 py-0.5 rounded text-xs text-[#8e9299] hover:text-white bg-white/5 hover:bg-white/10 transition-colors"
                         title="Edit Task"
                       >
-                        <Edit2 className="w-3.5 h-3.5" />
+                        [Edit]
                       </button>
                     )}
 
                     <button
                       onClick={() => onDeleteTemplate(template.id, template.name)}
-                      className="p-1.5 rounded text-rose-400/80 hover:text-rose-300 hover:bg-rose-500/20 transition-colors"
+                      className="px-2 py-0.5 rounded text-xs text-rose-400/80 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 transition-colors"
                       title="Delete Task"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      [Delete]
                     </button>
                   </div>
                 </div>
@@ -239,14 +225,13 @@ export const TaskManagerModal: React.FC<TaskManagerModalProps> = ({
           <button
             type="button"
             onClick={onRestoreDefaults}
-            className="inline-flex items-center gap-1.5 text-xs uppercase tracking-wider text-[#8e9299] hover:text-[#e5e5e5] transition-colors"
+            className="text-xs uppercase tracking-wider text-[#8e9299] hover:text-[#e5e5e5] transition-colors"
           >
-            <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
-            Restore 20 Default Tasks
+            [Restore 20 Default Tasks]
           </button>
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded text-xs uppercase tracking-widest font-bold bg-white/10 hover:bg-white/20 text-white transition-colors"
+            className="px-4 py-2 rounded-xl text-xs uppercase tracking-widest font-bold bg-white/10 hover:bg-white/20 text-white transition-colors"
           >
             Done
           </button>

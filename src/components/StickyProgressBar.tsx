@@ -1,5 +1,4 @@
 import React from 'react';
-import { CheckCircle2, Clock, ListFilter, Sparkles } from 'lucide-react';
 import { DailySummaryStats } from '../types';
 
 interface StickyProgressBarProps {
@@ -16,7 +15,7 @@ export const StickyProgressBar: React.FC<StickyProgressBarProps> = ({
   const isComplete = stats.percentage === 100 && stats.total > 0;
 
   return (
-    <div className="sticky top-0 z-30 w-full bg-[#0a0a0a]/90 backdrop-blur-md border-b border-white/10 shadow-lg shadow-black/40 transition-all">
+    <div id="sticky-progress-bar" className="sticky top-0 z-30 w-full bg-[#0a0a0a]/90 backdrop-blur-md border-b border-white/10 shadow-lg shadow-black/40 transition-all">
       <div className="max-w-6xl mx-auto px-6 sm:px-10 py-5 bg-gradient-to-b from-white/5 to-transparent">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-4">
           {/* Main Percentage Display */}
@@ -29,8 +28,8 @@ export const StickyProgressBar: React.FC<StickyProgressBarProps> = ({
                 </span>
               </h2>
               {isComplete && (
-                <span className="inline-flex items-center gap-1 text-[11px] uppercase tracking-widest px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold ml-2">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> All Done
+                <span className="inline-flex items-center text-[11px] uppercase tracking-widest px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold ml-2">
+                  All Done
                 </span>
               )}
             </div>

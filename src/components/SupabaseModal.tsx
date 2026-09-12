@@ -1,16 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import {
-  X,
-  Database,
-  CheckCircle2,
-  AlertCircle,
-  Copy,
-  Check,
-  ExternalLink,
-  RefreshCw,
-  Terminal,
-  ShieldCheck,
-} from 'lucide-react';
 import { getStoredSupabaseConfig, testConnection } from '../lib/supabase';
 
 interface SupabaseModalProps {
@@ -88,7 +76,7 @@ VALUES
     ('EMP-04', 'Md. Rafiqul Islam', '1234', 'logistics', true, 'Facility check, plant care, and office security routine.')
 ON CONFLICT (employee_id) DO NOTHING;
 
--- 7. Seed Quantum Gazipur cell, Raji sir Team's 20 Core Tasks
+-- 7. Seed Quantum Gazipur cell, Raji sir Team 20 Core Tasks
 INSERT INTO public.task_templates (name, order_index, category)
 VALUES
     ('Desk Set-up', 1, 'Morning Routine'),
@@ -98,20 +86,21 @@ VALUES
     ('Entertainment', 5, 'Atmosphere'),
     ('Office Check', 6, 'Facility Check'),
     ('Plant Check', 7, 'Environment'),
-    ('Communication List', 8, 'Coordination'),
-    ('Bkash MR', 9, 'Financial Reconciliation'),
-    ('Mobile Balance', 10, 'Communication'),
-    ('E-mail', 11, 'Inbox Management'),
-    ('QMIS', 12, 'Quality & Management System'),
-    ('Donation', 13, 'Corporate Social'),
-    ('Cash Closing', 14, 'Financial Reconciliation'),
-    ('Equipment Closing', 15, 'Hardware & Security'),
-    ('Mobile Placing', 16, 'Asset Safety'),
-    ('Information Update', 17, 'Records & Data'),
-    ('Log Update', 18, 'Daily Logs'),
-    ('Report', 19, 'Reporting'),
-    ('Planing', 20, 'Next Day Strategy')
-ON CONFLICT (name) DO UPDATE SET order_index = EXCLUDED.order_index;`;
+    ('Guest Book', 8, 'Customer Service'),
+    ('Program Schedule', 9, 'Operations'),
+    ('Communication with Organizers', 10, 'Outreach'),
+    ('Clean Table', 11, 'Workplace Hygiene'),
+    ('Cash Closing', 12, 'Financial'),
+    ('Check Lock', 13, 'Security'),
+    ('Follow Up', 14, 'Customer Service'),
+    ('Pre-Program', 15, 'Event Prep'),
+    ('Courier', 16, 'Logistics'),
+    ('bKash MR', 17, 'Financial'),
+    ('Bill/Voucher Sent', 18, 'Financial'),
+    ('All System Turn Off', 19, 'Shutdown Protocol'),
+    ('Keys Kept in Designated Place', 20, 'Security')
+ON CONFLICT (name) DO NOTHING;
+`;
 
 export const SupabaseModal: React.FC<SupabaseModalProps> = ({
   isOpen,
@@ -120,24 +109,20 @@ export const SupabaseModal: React.FC<SupabaseModalProps> = ({
 }) => {
   const [url, setUrl] = useState('');
   const [anonKey, setAnonKey] = useState('');
-  const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
   const [isTesting, setIsTesting] = useState(false);
+  const [statusMsg, setStatusMsg] = useState<{
+    type: 'success' | 'error' | 'info';
+    text: string;
+  } | null>(null);
   const [copiedSql, setCopiedSql] = useState(false);
-  const [activeTab, setActiveTab] = useState<'config' | 'schema' | 'vercel'>('config');
+  const [activeTab, setActiveTab] = useState<'connect' | 'schema' | 'vercel'>('connect');
 
   useEffect(() => {
     if (isOpen) {
-      const current = getStoredSupabaseConfig();
-      setUrl(current.url);
-      setAnonKey(current.anonKey);
-      if (current.isConfigured) {
-        setStatusMsg({ type: 'success', text: 'Supabase credentials currently active and verified.' });
-      } else {
-        setStatusMsg({
-          type: 'info',
-          text: 'Running in Local Storage Mode. Add your Supabase credentials below or in your environment variables for cloud sync.',
-        });
-      }
+      const cfg = getStoredSupabaseConfig();
+      setUrl(cfg.url || '');
+      setAnonKey(cfg.anonKey || '');
+      setStatusMsg(null);
     }
   }, [isOpen]);
 
@@ -146,111 +131,120 @@ export const SupabaseModal: React.FC<SupabaseModalProps> = ({
   const handleTestAndSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!url.trim() || !anonKey.trim()) {
-      setStatusMsg({ type: 'error', text: 'Please enter both Supabase Project URL and Anon Public Key.' });
+      setStatusMsg({
+        type: 'error',
+        text: 'Please enter both Supabase URL and Anon Key.',
+      });
       return;
     }
 
     setIsTesting(true);
-    setStatusMsg({ type: 'info', text: 'Connecting to Supabase...' });
+    setStatusMsg({ type: 'info', text: 'Testing Supabase connection...' });
 
-    const result = await testConnection(url.trim(), anonKey.trim());
+    const ok = await testConnection(url.trim(), anonKey.trim());
     setIsTesting(false);
 
-    if (result.success) {
-      localStorage.setItem('MINA_SUPABASE_URL', url.trim());
-      localStorage.setItem('MINA_SUPABASE_ANON_KEY', anonKey.trim());
-      setStatusMsg({ type: 'success', text: result.message });
+    if (ok) {
+      localStorage.setItem('quantum_supabase_url', url.trim());
+      localStorage.setItem('quantum_supabase_key', anonKey.trim());
+      setStatusMsg({
+        type: 'success',
+        text: 'Connected successfully to Supabase! Daily logs are now saved to the cloud.',
+      });
       onConfigSaved();
     } else {
-      setStatusMsg({ type: 'error', text: result.message });
+      setStatusMsg({
+        type: 'error',
+        text: 'Could not connect. Please check the URL and Anon Key, or verify that the SQL schema has been executed.',
+      });
     }
   };
 
   const handleClear = () => {
-    localStorage.removeItem('MINA_SUPABASE_URL');
-    localStorage.removeItem('MINA_SUPABASE_ANON_KEY');
+    localStorage.removeItem('quantum_supabase_url');
+    localStorage.removeItem('quantum_supabase_key');
     setUrl('');
     setAnonKey('');
-    setStatusMsg({ type: 'info', text: 'Supabase keys removed. Returned to Local Storage Mode.' });
+    setStatusMsg({
+      type: 'info',
+      text: 'Supabase credentials cleared. Using local browser storage.',
+    });
     onConfigSaved();
   };
 
   const handleCopySql = () => {
     navigator.clipboard.writeText(SQL_SCHEMA_CONTENT);
     setCopiedSql(true);
-    setTimeout(() => setCopiedSql(false), 2000);
+    setTimeout(() => setCopiedSql(false), 3000);
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
       <div
-        className="relative w-full max-w-3xl max-h-[90vh] flex flex-col rounded bg-[#0a0a0a] border border-white/10 shadow-2xl overflow-hidden"
+        id="supabase-modal"
+        className="relative w-full max-w-3xl max-h-[90vh] flex flex-col rounded-2xl bg-[#0a0a0a] border border-white/10 shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-black/40">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              <Database className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-base font-semibold text-white tracking-tight">Supabase Cloud Database &amp; Schema</h2>
-              <p className="text-xs text-[#8e9299]">
-                Persistent backend for daily checklist logs &amp; incomplete reason records
-              </p>
-            </div>
+          <div>
+            <h2 className="text-base font-semibold text-white tracking-tight">Supabase Cloud Database Settings</h2>
+            <p className="text-xs text-[#8e9299]">
+              Connect Supabase for persistent multi-device task tracking and team synchronization
+            </p>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded text-[#8e9299] hover:text-white hover:bg-white/5 transition-colors"
+            className="px-2.5 py-1 rounded text-xs font-bold text-[#8e9299] hover:text-white hover:bg-white/5 transition-colors"
           >
-            <X className="w-5 h-5" />
+            [Close]
           </button>
         </div>
 
-        {/* Modal Navigation Tabs */}
-        <div className="flex border-b border-white/10 px-6 bg-black/40">
+        {/* Tab Navigation */}
+        <div className="flex items-center gap-1 px-6 pt-3 border-b border-white/10 bg-black/20">
           <button
-            onClick={() => setActiveTab('config')}
-            className={`py-3 px-4 text-xs uppercase tracking-wider font-semibold border-b-2 transition-colors flex items-center gap-2 ${
-              activeTab === 'config'
-                ? 'border-emerald-500 text-emerald-400'
+            type="button"
+            onClick={() => setActiveTab('connect')}
+            className={`px-3.5 py-2 text-xs uppercase tracking-wider font-semibold border-b-2 transition-colors ${
+              activeTab === 'connect'
+                ? 'border-emerald-500 text-white'
                 : 'border-transparent text-[#8e9299] hover:text-[#e5e5e5]'
             }`}
           >
-            <Database className="w-3.5 h-3.5" /> Connection &amp; Keys
+            Connection Setup
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('schema')}
-            className={`py-3 px-4 text-xs uppercase tracking-wider font-semibold border-b-2 transition-colors flex items-center gap-2 ${
+            className={`px-3.5 py-2 text-xs uppercase tracking-wider font-semibold border-b-2 transition-colors ${
               activeTab === 'schema'
-                ? 'border-emerald-500 text-emerald-400'
+                ? 'border-emerald-500 text-white'
                 : 'border-transparent text-[#8e9299] hover:text-[#e5e5e5]'
             }`}
           >
-            <Terminal className="w-3.5 h-3.5" /> SQL Migration Schema
+            SQL Migration Schema
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('vercel')}
-            className={`py-3 px-4 text-xs uppercase tracking-wider font-semibold border-b-2 transition-colors flex items-center gap-2 ${
+            className={`px-3.5 py-2 text-xs uppercase tracking-wider font-semibold border-b-2 transition-colors ${
               activeTab === 'vercel'
-                ? 'border-emerald-500 text-emerald-400'
+                ? 'border-emerald-500 text-white'
                 : 'border-transparent text-[#8e9299] hover:text-[#e5e5e5]'
             }`}
           >
-            <ShieldCheck className="w-3.5 h-3.5" /> Next.js &amp; Vercel Guide
+            Vercel / Next.js Guide
           </button>
         </div>
 
-        {/* Modal Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-5">
-          {/* TAB 1: Config */}
-          {activeTab === 'config' && (
+        {/* Modal Body */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {/* TAB 1: Connect */}
+          {activeTab === 'connect' && (
             <div className="space-y-4">
-              {/* Quick instruction banner */}
               <div className="p-3.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-xs text-[#e5e5e5] space-y-1.5">
-                <div className="font-semibold text-emerald-400 flex items-center gap-1.5">
-                  <Database className="w-4 h-4" />
+                <div className="font-semibold text-emerald-400">
                   Steps to connect Supabase Cloud Database:
                 </div>
                 <ol className="list-decimal list-inside text-xs text-[#8e9299] space-y-1 leading-relaxed">
@@ -263,7 +257,7 @@ export const SupabaseModal: React.FC<SupabaseModalProps> = ({
 
               {statusMsg && (
                 <div
-                  className={`p-3.5 rounded text-xs flex items-start gap-2.5 ${
+                  className={`p-3.5 rounded text-xs ${
                     statusMsg.type === 'success'
                       ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'
                       : statusMsg.type === 'error'
@@ -271,9 +265,6 @@ export const SupabaseModal: React.FC<SupabaseModalProps> = ({
                       : 'bg-white/5 text-[#e5e5e5] border border-white/10'
                   }`}
                 >
-                  {statusMsg.type === 'success' && <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-emerald-400 mt-0.5" />}
-                  {statusMsg.type === 'error' && <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-400 mt-0.5" />}
-                  {statusMsg.type === 'info' && <Database className="w-4 h-4 flex-shrink-0 text-amber-400 mt-0.5" />}
                   <span>{statusMsg.text}</span>
                 </div>
               )}
@@ -317,38 +308,25 @@ export const SupabaseModal: React.FC<SupabaseModalProps> = ({
                     onClick={handleClear}
                     className="text-xs uppercase tracking-wider text-[#8e9299] hover:text-rose-400 transition-colors"
                   >
-                    Clear Credentials (Use Local Storage)
+                    [Clear Credentials]
                   </button>
 
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="submit"
-                      disabled={isTesting}
-                      className="px-4 py-2 rounded text-xs uppercase tracking-widest font-bold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all disabled:opacity-50"
-                    >
-                      {isTesting ? (
-                        <>
-                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                          Testing Connection...
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          Test &amp; Connect
-                        </>
-                      )}
-                    </button>
-                  </div>
+                  <button
+                    type="submit"
+                    disabled={isTesting}
+                    className="px-4 py-2 rounded text-xs uppercase tracking-widest font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition-all disabled:opacity-50"
+                  >
+                    {isTesting ? 'Testing Connection...' : 'Test & Connect'}
+                  </button>
                 </div>
               </form>
 
               <div className="mt-4 p-4 rounded bg-white/[0.02] border border-white/5 space-y-2">
-                <div className="text-xs font-semibold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4" />
+                <div className="text-xs font-semibold uppercase tracking-wider text-emerald-400">
                   Offline-First &amp; Automatic Synchronization:
                 </div>
                 <p className="text-xs text-[#8e9299] leading-relaxed">
-                  The application is engineered with an offline-first architecture. When Supabase is connected, all checklist toggles and reasons for incomplete tasks are instantly synchronized with your cloud database. If Supabase is offline or not yet configured, all records are stored reliably in your browser's local storage.
+                  The application is engineered with an offline-first architecture. When Supabase is connected, all checklist toggles and reasons for incomplete tasks are instantly synchronized with your cloud database. If Supabase is offline or not yet configured, all records are stored reliably in your browser local storage.
                 </p>
               </div>
             </div>
@@ -369,10 +347,9 @@ export const SupabaseModal: React.FC<SupabaseModalProps> = ({
                 <button
                   type="button"
                   onClick={handleCopySql}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs uppercase tracking-wider font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition-colors"
+                  className="px-3 py-1.5 rounded text-xs uppercase tracking-wider font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition-colors"
                 >
-                  {copiedSql ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copiedSql ? 'Copied to Clipboard!' : 'Copy SQL Schema'}</span>
+                  {copiedSql ? '[Copied to Clipboard!]' : '[Copy SQL Schema]'}
                 </button>
               </div>
 
@@ -401,7 +378,7 @@ export const SupabaseModal: React.FC<SupabaseModalProps> = ({
               <div className="p-4 rounded bg-white/[0.02] border border-white/5 space-y-2">
                 <h4 className="font-semibold text-white text-sm">Next.js Client Connection Pattern</h4>
                 <p className="text-[#8e9299]">
-                  The application uses the official <code className="text-emerald-400 font-mono">@supabase/supabase-js</code> client. It automatically detects both <code className="text-emerald-400 font-mono">NEXT_PUBLIC_SUPABASE_*</code> and <code className="text-emerald-400 font-mono">VITE_SUPABASE_*</code> conventions so your code works identically across local dev, Vite, and Vercel Next.js deployments.
+                  The application uses the official @supabase/supabase-js client. It automatically detects both NEXT_PUBLIC_SUPABASE_* and VITE_SUPABASE_* conventions so your code works identically across local dev, Vite, and Vercel Next.js deployments.
                 </p>
               </div>
             </div>

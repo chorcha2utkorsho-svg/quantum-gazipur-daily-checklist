@@ -1,15 +1,4 @@
 import React, { useState } from 'react';
-import {
-  ChevronDown,
-  ChevronRight,
-  Check,
-  Clock,
-  AlertCircle,
-  MessageSquare,
-  Maximize2,
-  Minimize2,
-  FolderOpen,
-} from 'lucide-react';
 import { WorkflowTask, WORKFLOW_CATEGORIES, WorkflowCategory } from '../data/workflowData';
 import { DailyLogItem } from '../types';
 
@@ -26,7 +15,7 @@ interface WorkflowTaskTableProps {
 const COMMON_REASONS = [
   'Awaiting client response',
   'Will be completed this afternoon',
-  'Technical / system issue',
+  'Technical or system issue',
   'Awaiting supervisor approval',
   'Not applicable today',
 ];
@@ -39,7 +28,6 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
   selectedCategory,
   categories = WORKFLOW_CATEGORIES,
 }) => {
-  // Category expanded state (default all open)
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
     categories.forEach((c) => {
@@ -73,7 +61,6 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
     setExpandedCategories(updated);
   };
 
-  // Group tasks by category
   const categoriesToShow =
     selectedCategory === 'ALL'
       ? categories
@@ -82,14 +69,13 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
   const totalVisibleTasks = tasks.length;
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+    <div id="workflow-task-table" className="bg-[#14161a] rounded-xl border border-white/10 shadow-xs overflow-hidden text-white">
       {/* Top Table Title & Expand/Collapse Controls */}
-      <div className="px-5 py-3.5 bg-slate-50/80 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="px-5 py-3.5 bg-black/40 border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <div className="w-2.5 h-2.5 rounded-full bg-indigo-600 animate-pulse" />
-          <h2 className="text-sm sm:text-base font-bold text-slate-800 tracking-tight">
-            Workflow & Accountability Table{' '}
-            <span className="text-xs font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200 ml-1">
+          <h2 className="text-sm sm:text-base font-bold text-white tracking-tight">
+            Workflow &amp; Accountability Table{' '}
+            <span className="text-xs font-semibold text-indigo-400 bg-indigo-500/20 px-2 py-0.5 rounded-full border border-indigo-500/30 ml-1 font-mono">
               ({totalVisibleTasks} Tasks Displayed)
             </span>
           </h2>
@@ -98,19 +84,19 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
         <div className="flex items-center gap-2">
           <button
             type="button"
+            id="btn-table-expand-all"
             onClick={expandAll}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200 transition-colors"
+            className="px-2.5 py-1 rounded-md bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-semibold border border-white/10 transition-colors"
           >
-            <Maximize2 className="w-3 h-3 text-slate-500" />
-            <span>Expand All</span>
+            [Expand All]
           </button>
           <button
             type="button"
+            id="btn-table-collapse-all"
             onClick={collapseAll}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200 transition-colors"
+            className="px-2.5 py-1 rounded-md bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-semibold border border-white/10 transition-colors"
           >
-            <Minimize2 className="w-3 h-3 text-slate-500" />
-            <span>Collapse All</span>
+            [Collapse All]
           </button>
         </div>
       </div>
@@ -120,8 +106,8 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
         <table className="w-full text-left text-xs border-collapse">
           {/* Table Header Row */}
           <thead>
-            <tr className="bg-slate-100/80 text-slate-700 font-bold border-b border-slate-200 text-[11px] uppercase tracking-wider select-none">
-              <th className="py-2.5 px-3 w-10 text-center">✓</th>
+            <tr className="bg-black/60 text-slate-400 font-bold border-b border-white/10 text-[11px] uppercase tracking-wider select-none">
+              <th className="py-2.5 px-3 w-10 text-center">[Done]</th>
               <th className="py-2.5 px-2 w-12 text-center">No.</th>
               <th className="py-2.5 px-2.5 w-20">Code</th>
               <th className="py-2.5 px-3">Task Details</th>
@@ -133,7 +119,7 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
           </thead>
 
           {/* Table Body by Category Accordion */}
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-white/5">
             {categoriesToShow.map((cat) => {
               const categoryTasks = tasks.filter((t) => t.category === cat.id);
               if (categoryTasks.length === 0) return null;
@@ -150,42 +136,32 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
                   {/* Category Accordion Header Row */}
                   <tr
                     onClick={() => toggleCategory(cat.id)}
-                    className="bg-slate-50/90 hover:bg-slate-100 cursor-pointer border-y border-slate-200 transition-colors select-none"
+                    className="bg-white/5 hover:bg-white/10 cursor-pointer border-y border-white/10 transition-colors select-none"
                   >
                     <td colSpan={8} className="py-2.5 px-3">
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            className="p-1 rounded text-slate-500 hover:text-slate-800"
-                          >
-                            {isExpanded ? (
-                              <ChevronDown className="w-4 h-4" />
-                            ) : (
-                              <ChevronRight className="w-4 h-4" />
-                            )}
-                          </button>
-                          <FolderOpen className="w-4 h-4 text-indigo-600 shrink-0" />
-                          <span className="font-extrabold text-xs sm:text-sm text-slate-900">
+                          <span className="text-xs font-mono font-bold text-slate-400">
+                            {isExpanded ? '[-]' : '[+]'}
+                          </span>
+                          <span className="font-extrabold text-xs sm:text-sm text-white">
                             {cat.name}
                           </span>
-                          <span
-                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${cat.badgeBg} ${cat.badgeText} ${cat.badgeBorder}`}
-                          >
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-white/10 text-slate-300 border-white/10 font-mono">
                             {totalCount} Tasks
                           </span>
                         </div>
 
                         {/* Progress Tracker on the right */}
                         <div className="flex items-center gap-3">
-                          <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-600">
+                          <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-300">
                             <span>Progress:</span>
-                            <span className="font-mono text-indigo-700">
+                            <span className="font-mono text-indigo-400">
                               {doneCount}/{totalCount}
                             </span>
-                            <div className="w-20 bg-slate-200 h-1.5 rounded-full overflow-hidden hidden sm:block">
+                            <div className="w-20 bg-white/10 h-1.5 rounded-full overflow-hidden hidden sm:block">
                               <div
-                                className="bg-indigo-600 h-full rounded-full transition-all duration-300"
+                                className="bg-indigo-500 h-full rounded-full transition-all duration-300"
                                 style={{ width: `${catPercent}%` }}
                               />
                             </div>
@@ -193,8 +169,8 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
                               {catPercent}%
                             </span>
                           </div>
-                          <span className="text-[10px] text-slate-400 hidden sm:inline">
-                            {isExpanded ? 'Collapse' : 'Expand'}
+                          <span className="text-[10px] text-slate-400 font-mono hidden sm:inline">
+                            {isExpanded ? '[Open]' : '[Closed]'}
                           </span>
                         </div>
                       </div>
@@ -212,24 +188,25 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
                       return (
                         <tr
                           key={task.id}
-                          className={`group transition-colors ${
+                          className={`transition-colors ${
                             isDone
-                              ? 'bg-emerald-50/20 hover:bg-emerald-50/40'
-                              : 'bg-white hover:bg-slate-50/90'
+                              ? 'bg-emerald-950/20 hover:bg-emerald-950/30'
+                              : 'bg-transparent hover:bg-white/5'
                           }`}
                         >
                           {/* Checkbox Column */}
                           <td className="py-2.5 px-3 text-center">
                             <button
                               type="button"
+                              id={`task-toggle-${task.id}`}
                               onClick={() => onToggleStatus(task.name)}
-                              className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
+                              className={`w-5 h-5 rounded border flex items-center justify-center text-xs font-black transition-all ${
                                 isDone
-                                  ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs'
-                                  : 'border-slate-300 hover:border-indigo-500 bg-white'
+                                  ? 'bg-emerald-500 border-emerald-500 text-slate-950 shadow-xs'
+                                  : 'border-white/30 hover:border-white/60 bg-white/5 text-transparent'
                               }`}
                             >
-                              {isDone && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
+                              X
                             </button>
                           </td>
 
@@ -238,9 +215,9 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
                             {task.order}
                           </td>
 
-                          {/* Code ID (e.g. BW-01) */}
-                          <td className="py-2.5 px-2.5 font-mono text-xs font-bold text-slate-700">
-                            <span className="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-600">
+                          {/* Code ID */}
+                          <td className="py-2.5 px-2.5 font-mono text-xs font-bold text-slate-300">
+                            <span className="px-1.5 py-0.5 rounded bg-white/10 border border-white/10">
                               {task.code}
                             </span>
                           </td>
@@ -250,29 +227,28 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
                             <div className="cursor-pointer" onClick={() => onToggleStatus(task.name)}>
                               <div
                                 className={`font-bold text-xs sm:text-sm tracking-tight transition-colors ${
-                                  isDone ? 'text-slate-500 line-through' : 'text-slate-900'
+                                  isDone ? 'text-slate-500 line-through' : 'text-white'
                                 }`}
                               >
                                 {task.name}
                               </div>
-                              <div className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                              <div className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
                                 {task.details}
                               </div>
                             </div>
 
                             {/* Inline Reason expansion */}
                             {!isDone && (isReasonOpen || reason) && (
-                              <div className="mt-2 pt-2 border-t border-amber-100 bg-amber-50/60 p-2 rounded-lg text-xs">
-                                <div className="flex items-center gap-1.5 text-amber-800 font-semibold text-[11px] mb-1">
-                                  <AlertCircle className="w-3 h-3 text-amber-600" />
-                                  <span>Reason for pending:</span>
+                              <div className="mt-2 pt-2 border-t border-amber-500/30 bg-black/40 p-2 rounded-lg text-xs">
+                                <div className="text-amber-300 font-semibold text-[11px] mb-1">
+                                  Reason for pending:
                                 </div>
                                 <input
                                   type="text"
                                   value={reason}
                                   onChange={(e) => onUpdateReason(task.name, e.target.value)}
                                   placeholder="Enter reason (e.g., awaiting supervisor confirmation)..."
-                                  className="w-full px-2.5 py-1 text-xs bg-white border border-amber-200 rounded text-slate-800 focus:outline-none focus:border-amber-400"
+                                  className="w-full px-2.5 py-1 text-xs bg-black/50 border border-white/10 rounded text-white focus:outline-none focus:border-amber-500"
                                 />
                                 <div className="flex flex-wrap gap-1 mt-1.5">
                                   {COMMON_REASONS.map((chip) => (
@@ -282,8 +258,8 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
                                       onClick={() => onUpdateReason(task.name, chip)}
                                       className={`text-[10px] px-1.5 py-0.5 rounded border transition-colors ${
                                         reason === chip
-                                          ? 'bg-amber-600 text-white border-amber-600'
-                                          : 'bg-white hover:bg-amber-100 text-amber-900 border-amber-200'
+                                          ? 'bg-amber-500 text-slate-950 border-amber-500 font-bold'
+                                          : 'bg-white/5 hover:bg-white/10 text-slate-300 border-white/10'
                                       }`}
                                     >
                                       {chip}
@@ -296,9 +272,7 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
 
                           {/* Category Column */}
                           <td className="py-2.5 px-3 hidden md:table-cell">
-                            <span
-                              className={`inline-block text-[11px] px-2 py-0.5 rounded-full border font-semibold ${cat.badgeBg} ${cat.badgeText} ${cat.badgeBorder}`}
-                            >
+                            <span className="inline-block text-[11px] px-2 py-0.5 rounded-full border font-semibold bg-white/10 text-slate-300 border-white/10">
                               {cat.name}
                             </span>
                           </td>
@@ -306,19 +280,16 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
                           {/* Priority Column */}
                           <td className="py-2.5 px-3 text-center">
                             {task.priority === 'high' ? (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 shadow-2xs">
-                                <span className="w-1.5 h-1.5 rounded-full bg-rose-600" />
-                                <span>High</span>
+                              <span className="inline-block text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 font-mono">
+                                High
                               </span>
                             ) : task.priority === 'medium' ? (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
-                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                                <span>Medium</span>
+                              <span className="inline-block text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-mono">
+                                Medium
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
-                                <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                                <span>Low</span>
+                              <span className="inline-block text-[11px] font-medium px-2 py-0.5 rounded-full bg-white/5 text-slate-400 border border-white/10 font-mono">
+                                Low
                               </span>
                             )}
                           </td>
@@ -328,23 +299,13 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
                             <button
                               type="button"
                               onClick={() => onToggleStatus(task.name)}
-                              className={`inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all border ${
+                              className={`inline-flex items-center justify-center px-2.5 py-1 rounded-lg text-xs font-bold transition-all border ${
                                 isDone
-                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-                                  : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
+                                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/30'
+                                  : 'bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30'
                               }`}
                             >
-                              {isDone ? (
-                                <>
-                                  <Check className="w-3.5 h-3.5 text-emerald-600" />
-                                  <span>Done</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Clock className="w-3 h-3 text-slate-500" />
-                                  <span>Pending ▼</span>
-                                </>
-                              )}
+                              {isDone ? '[Done]' : '[Pending]'}
                             </button>
                           </td>
 
@@ -362,7 +323,7 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
                                       setActiveReasonInput(isReasonOpen ? null : task.name)
                                     }
                                     title={reason}
-                                    className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded truncate max-w-[150px] cursor-pointer"
+                                    className="text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded truncate max-w-[150px] cursor-pointer"
                                   >
                                     {reason}
                                   </span>
@@ -372,10 +333,9 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
                                     onClick={() =>
                                       setActiveReasonInput(isReasonOpen ? null : task.name)
                                     }
-                                    className="text-[11px] text-slate-400 hover:text-indigo-600 flex items-center gap-1 underline"
+                                    className="text-[11px] text-slate-400 hover:text-white underline"
                                   >
-                                    <MessageSquare className="w-3 h-3" />
-                                    <span>Add reason</span>
+                                    [Add reason]
                                   </button>
                                 )}
                               </div>

@@ -1,22 +1,6 @@
 import React, { useState } from 'react';
 import { Employee, SYSTEM_ROLES, UserRole, BranchId } from '../types';
 import { getWorkflowForEmployee } from '../data/workflowData';
-import {
-  UserPlus,
-  UserCheck,
-  UserX,
-  X,
-  Edit2,
-  Shield,
-  Briefcase,
-  Phone,
-  Calendar,
-  Save,
-  Building2,
-  Landmark,
-  Clock,
-  CheckCircle2,
-} from 'lucide-react';
 
 interface EmployeeManagerModalProps {
   isOpen: boolean;
@@ -116,29 +100,25 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+    <div id="employee-manager-backdrop" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
       <div
         id="employee-manager-modal"
         className="relative w-full max-w-2xl bg-[#14161a] border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
       >
         {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-white/[0.02]">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              <Briefcase className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-base font-semibold text-white">Staff & Role Management</h2>
-              <p className="text-xs text-[#8e9299]">
-                Register staff, assign workflow roles, approve pending sign-ups, and manage accounts
-              </p>
-            </div>
+          <div>
+            <h2 className="text-base font-semibold text-white">Staff &amp; Role Management</h2>
+            <p className="text-xs text-[#8e9299]">
+              Register staff, assign workflow roles, approve pending sign-ups, and manage accounts
+            </p>
           </div>
           <button
+            id="btn-close-emp-modal"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[#8e9299] hover:text-white hover:bg-white/10 transition-colors"
+            className="px-2.5 py-1 rounded-lg text-xs text-[#8e9299] hover:text-white hover:bg-white/10 transition-colors border border-white/10"
           >
-            <X className="w-5 h-5" />
+            Close
           </button>
         </div>
 
@@ -151,6 +131,7 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
               <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-lg bg-white/[0.03] border border-white/10 text-xs">
                 <button
                   type="button"
+                  id="filter-status-all"
                   onClick={() => setFilter('all')}
                   className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${
                     filter === 'all' ? 'bg-white/20 text-white' : 'text-[#8e9299] hover:text-white'
@@ -160,6 +141,7 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
                 </button>
                 <button
                   type="button"
+                  id="filter-status-active"
                   onClick={() => setFilter('active')}
                   className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${
                     filter === 'active' ? 'bg-emerald-500/20 text-emerald-400' : 'text-[#8e9299] hover:text-white'
@@ -169,20 +151,21 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
                 </button>
                 <button
                   type="button"
+                  id="filter-status-pending"
                   onClick={() => setFilter('pending')}
-                  className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors flex items-center gap-1 ${
+                  className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${
                     filter === 'pending'
                       ? 'bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30'
                       : pendingCount > 0
-                      ? 'text-amber-400 hover:text-white font-bold animate-pulse'
+                      ? 'text-amber-400 hover:text-white font-bold'
                       : 'text-[#8e9299] hover:text-white'
                   }`}
                 >
-                  <Clock className="w-3 h-3" />
-                  <span>Pending ({pendingCount})</span>
+                  Pending ({pendingCount})
                 </button>
                 <button
                   type="button"
+                  id="filter-status-inactive"
                   onClick={() => setFilter('inactive')}
                   className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${
                     filter === 'inactive' ? 'bg-red-500/20 text-red-400' : 'text-[#8e9299] hover:text-white'
@@ -197,6 +180,7 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
                 <span className="text-[10px] text-[#8e9299] px-1 font-semibold">Office:</span>
                 <button
                   type="button"
+                  id="filter-branch-all"
                   onClick={() => setBranchFilter('all')}
                   className={`px-2 py-1 rounded-md text-xs font-bold transition-colors ${
                     branchFilter === 'all' ? 'bg-amber-500/20 text-amber-300' : 'text-[#8e9299] hover:text-white'
@@ -206,52 +190,52 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
                 </button>
                 <button
                   type="button"
+                  id="filter-branch-chowrasta"
                   onClick={() => setBranchFilter('chowrasta')}
-                  className={`px-2 py-1 rounded-md text-xs font-bold transition-colors flex items-center gap-1 ${
+                  className={`px-2 py-1 rounded-md text-xs font-bold transition-colors ${
                     branchFilter === 'chowrasta'
                       ? 'bg-emerald-500/20 text-emerald-400'
                       : 'text-[#8e9299] hover:text-emerald-300'
                   }`}
                 >
-                  <Building2 className="w-3 h-3" />
-                  <span>Gazipur Branch</span>
+                  Gazipur Branch
                 </button>
                 <button
                   type="button"
+                  id="filter-branch-rajbari"
                   onClick={() => setBranchFilter('rajbari')}
-                  className={`px-2 py-1 rounded-md text-xs font-bold transition-colors flex items-center gap-1 ${
+                  className={`px-2 py-1 rounded-md text-xs font-bold transition-colors ${
                     branchFilter === 'rajbari'
                       ? 'bg-sky-500/20 text-sky-400'
                       : 'text-[#8e9299] hover:text-sky-300'
                   }`}
                 >
-                  <Landmark className="w-3 h-3" />
-                  <span>Sadar Office</span>
+                  Sadar Office
                 </button>
               </div>
 
               <button
+                id="btn-add-new-staff"
                 onClick={handleStartNew}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
               >
-                <UserPlus className="w-4 h-4" />
-                <span>Add New Staff</span>
+                Add New Staff
               </button>
             </div>
           </div>
 
           {/* Add / Edit Form */}
           {editingEmployee && (
-            <form onSubmit={handleSave} className="p-4 rounded-xl bg-white/[0.04] border border-emerald-500/30 space-y-4 animate-in fade-in duration-150">
+            <form onSubmit={handleSave} className="p-4 rounded-xl bg-white/[0.04] border border-emerald-500/30 space-y-4">
               <div className="flex items-center justify-between border-b border-white/10 pb-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-2">
-                  <Shield className="w-3.5 h-3.5" />
+                <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
                   {editingEmployee.id?.startsWith('emp-') && !employees.some((e) => e.id === editingEmployee.id)
                     ? 'Register & Assign New Staff'
                     : 'Edit Staff & Role Information'}
                 </span>
                 <button
                   type="button"
+                  id="btn-cancel-edit-staff"
                   onClick={() => setEditingEmployee(null)}
                   className="text-xs text-[#8e9299] hover:text-white"
                 >
@@ -269,10 +253,11 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
                 <div>
                   <label className="block text-xs font-medium text-[#8e9299] mb-1">Full Name *</label>
                   <input
+                    id="edit-emp-name"
                     type="text"
                     value={editingEmployee.name || ''}
                     onChange={(e) => setEditingEmployee({ ...editingEmployee, name: e.target.value })}
-                    placeholder="e.g., Mohammad Rahim"
+                    placeholder="e.g. Mohammad Rahim"
                     className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500"
                     required
                   />
@@ -281,18 +266,20 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
                 <div>
                   <label className="block text-xs font-medium text-[#8e9299] mb-1">Assign Office *</label>
                   <select
+                    id="edit-emp-branch"
                     value={editingEmployee.branch || 'chowrasta'}
                     onChange={(e) => setEditingEmployee({ ...editingEmployee, branch: e.target.value as 'chowrasta' | 'rajbari' })}
                     className="w-full px-3 py-2 bg-[#1c1f24] border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500"
                   >
-                    <option value="chowrasta">🏢 1. Gazipur Branch</option>
-                    <option value="rajbari">🏛️ 2. Gazipur Sadar Office</option>
+                    <option value="chowrasta">1. Gazipur Branch</option>
+                    <option value="rajbari">2. Gazipur Sadar Office</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-xs font-medium text-[#8e9299] mb-1">Select Workflow Role *</label>
                   <select
+                    id="edit-emp-role"
                     value={editingEmployee.role || 'general_staff'}
                     onChange={(e) => setEditingEmployee({ ...editingEmployee, role: e.target.value as UserRole })}
                     className="w-full px-3 py-2 bg-[#1c1f24] border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500"
@@ -308,6 +295,7 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
                 <div>
                   <label className="block text-xs font-medium text-[#8e9299] mb-1">Employee ID (Login ID) *</label>
                   <input
+                    id="edit-emp-id"
                     type="text"
                     value={editingEmployee.employee_id || ''}
                     onChange={(e) => setEditingEmployee({ ...editingEmployee, employee_id: e.target.value.toUpperCase() })}
@@ -320,6 +308,7 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
                 <div>
                   <label className="block text-xs font-medium text-[#8e9299] mb-1">Login PIN / Password *</label>
                   <input
+                    id="edit-emp-pin"
                     type="text"
                     value={editingEmployee.pin || ''}
                     onChange={(e) => setEditingEmployee({ ...editingEmployee, pin: e.target.value })}
@@ -332,6 +321,7 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
                 <div>
                   <label className="block text-xs font-medium text-[#8e9299] mb-1">Phone Number</label>
                   <input
+                    id="edit-emp-phone"
                     type="text"
                     value={editingEmployee.phone || ''}
                     onChange={(e) => setEditingEmployee({ ...editingEmployee, phone: e.target.value })}
@@ -343,6 +333,7 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
                 <div>
                   <label className="block text-xs font-medium text-[#8e9299] mb-1">Joining Date</label>
                   <input
+                    id="edit-emp-date"
                     type="date"
                     value={editingEmployee.joined_date || ''}
                     onChange={(e) => setEditingEmployee({ ...editingEmployee, joined_date: e.target.value })}
@@ -352,12 +343,13 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-[#8e9299] mb-1">Notes & Responsibilities</label>
+                <label className="block text-xs font-medium text-[#8e9299] mb-1">Notes &amp; Responsibilities</label>
                 <input
+                  id="edit-emp-notes"
                   type="text"
                   value={editingEmployee.notes || ''}
                   onChange={(e) => setEditingEmployee({ ...editingEmployee, notes: e.target.value })}
-                  placeholder="e.g., Front desk coordination and donor reception"
+                  placeholder="e.g. Front desk coordination and donor reception"
                   className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500"
                 />
               </div>
@@ -371,11 +363,11 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
                   Cancel
                 </button>
                 <button
+                  id="btn-save-staff"
                   type="submit"
-                  className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg shadow-sm"
+                  className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg shadow-sm"
                 >
-                  <Save className="w-3.5 h-3.5" />
-                  <span>Save & Assign Staff</span>
+                  Save &amp; Assign Staff
                 </button>
               </div>
             </form>
@@ -411,20 +403,20 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
                           {emp.employee_id}
                         </span>
                         {emp.approval_status === 'pending' ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] text-amber-300 font-bold px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 animate-pulse">
-                            <Clock className="w-3 h-3" /> অনুমোদন অপেক্ষমাণ
+                          <span className="text-[10px] text-amber-300 font-bold px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40">
+                            Pending Authorization
                           </span>
                         ) : emp.approval_status === 'rejected' ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] text-red-400 font-bold px-2 py-0.5 rounded-full bg-red-500/20 border border-red-500/40">
-                            <X className="w-3 h-3" /> বাতিলকৃত
+                          <span className="text-[10px] text-red-400 font-bold px-2 py-0.5 rounded-full bg-red-500/20 border border-red-500/40">
+                            Declined
                           </span>
                         ) : emp.is_active ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400 font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-                            <UserCheck className="w-3 h-3" /> Active
+                          <span className="text-[10px] text-emerald-400 font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                            Active
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-[10px] text-red-400 font-semibold px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/20">
-                            <UserX className="w-3 h-3" /> Inactive
+                          <span className="text-[10px] text-red-400 font-semibold px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/20">
+                            Inactive
                           </span>
                         )}
                       </div>
@@ -442,27 +434,27 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
 
                         {/* Branch badge */}
                         {emp.role === 'main_boss' || emp.employee_id === 'RAJI_SIR' ? (
-                          <span className="text-xs px-2 py-0.5 rounded-md border font-bold bg-amber-500/15 text-amber-300 border-amber-500/30 flex items-center gap-1">
-                            👑 Both Offices (Central)
+                          <span className="text-xs px-2 py-0.5 rounded-md border font-bold bg-amber-500/15 text-amber-300 border-amber-500/30">
+                            Both Offices (Central)
                           </span>
                         ) : (emp.branch === 'rajbari' || emp.employee_id.startsWith('SO-') || emp.employee_id.startsWith('RB-') || emp.employee_id === 'SUP-RAJB' || emp.employee_id === 'JAHID') ? (
-                          <span className="text-xs px-2 py-0.5 rounded-md border font-bold bg-sky-500/15 text-sky-400 border-sky-500/30 flex items-center gap-1">
-                            <Landmark className="w-3 h-3" /> Gazipur Sadar Office
+                          <span className="text-xs px-2 py-0.5 rounded-md border font-bold bg-sky-500/15 text-sky-400 border-sky-500/30">
+                            Gazipur Sadar Office
                           </span>
                         ) : (
-                          <span className="text-xs px-2 py-0.5 rounded-md border font-bold bg-emerald-500/15 text-emerald-400 border-emerald-500/30 flex items-center gap-1">
-                            <Building2 className="w-3 h-3" /> Gazipur Branch
+                          <span className="text-xs px-2 py-0.5 rounded-md border font-bold bg-emerald-500/15 text-emerald-400 border-emerald-500/30">
+                            Gazipur Branch
                           </span>
                         )}
 
                         {emp.phone && (
-                          <span className="text-xs text-[#8e9299] flex items-center gap-1">
-                            <Phone className="w-3 h-3" /> {emp.phone}
+                          <span className="text-xs text-[#8e9299]">
+                            {emp.phone}
                           </span>
                         )}
                         {emp.joined_date && (
-                          <span className="text-xs text-[#8e9299] flex items-center gap-1">
-                            <Calendar className="w-3 h-3" /> {emp.joined_date}
+                          <span className="text-xs text-[#8e9299]">
+                            Joined: {emp.joined_date}
                           </span>
                         )}
                       </div>
@@ -495,54 +487,45 @@ export const EmployeeManagerModal: React.FC<EmployeeManagerModalProps> = ({
                       <>
                         <button
                           type="button"
+                          id={`btn-approve-${emp.employee_id}`}
                           onClick={() => onApproveEmployee?.(emp.employee_id)}
-                          className="px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition-colors flex items-center gap-1 shadow-md shadow-emerald-500/20"
+                          className="px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition-colors shadow-md shadow-emerald-500/20"
                         >
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>অনুমোদন</span>
+                          Approve
                         </button>
                         <button
                           type="button"
+                          id={`btn-reject-${emp.employee_id}`}
                           onClick={() => onRejectEmployee?.(emp.employee_id)}
-                          className="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors flex items-center gap-1"
+                          className="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors"
                         >
-                          <X className="w-3.5 h-3.5" />
-                          <span>বাতিল</span>
+                          Reject
                         </button>
                       </>
                     ) : null}
 
                     <button
                       type="button"
+                      id={`btn-edit-emp-${emp.employee_id}`}
                       onClick={() => setEditingEmployee(emp)}
                       title="Edit staff or role assignment"
-                      className="p-1.5 text-xs text-[#8e9299] hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-colors flex items-center gap-1"
+                      className="px-2.5 py-1 text-xs text-[#8e9299] hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-colors border border-white/10"
                     >
-                      <Edit2 className="w-3.5 h-3.5" />
-                      <span className="sm:hidden">Edit</span>
+                      Edit
                     </button>
 
                     {!isSupervisor && emp.approval_status !== 'pending' && (
                       <button
                         type="button"
+                        id={`btn-toggle-emp-${emp.employee_id}`}
                         onClick={() => onToggleStatus(emp.employee_id, !emp.is_active)}
-                        className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-colors border flex items-center gap-1 ${
+                        className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-colors border ${
                           emp.is_active
                             ? 'bg-red-500/10 text-red-400 border-red-500/30 hover:bg-red-500/20'
                             : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20'
                         }`}
                       >
-                        {emp.is_active ? (
-                          <>
-                            <UserX className="w-3 h-3" />
-                            <span>Deactivate</span>
-                          </>
-                        ) : (
-                          <>
-                            <UserCheck className="w-3 h-3" />
-                            <span>Reactivate</span>
-                          </>
-                        )}
+                        {emp.is_active ? 'Deactivate' : 'Reactivate'}
                       </button>
                     )}
                   </div>

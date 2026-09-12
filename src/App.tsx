@@ -5,24 +5,6 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import confetti from 'canvas-confetti';
-import {
-  Sparkles,
-  CheckCircle2,
-  Clock,
-  RotateCcw,
-  SlidersHorizontal,
-  Printer,
-  Database,
-  Search,
-  CheckCheck,
-  AlertCircle,
-  HelpCircle,
-  Users,
-  LayoutDashboard,
-  ShieldCheck,
-  UserCheck,
-  ArrowRightLeft,
-} from 'lucide-react';
 
 import {
   BranchId,
@@ -78,6 +60,10 @@ import { SignUpModal } from './components/SignUpModal';
 import { CommonDashboard } from './components/CommonDashboard';
 import { AiStrategicInsight } from './components/AiStrategicInsight';
 import { EmployeeProfileWorkspace } from './components/EmployeeProfileWorkspace';
+import { CommunicationCenter } from './components/CommunicationCenter';
+import { DeveloperConsoleModal } from './components/DeveloperConsoleModal';
+import { DatabaseArchiveModal } from './components/DatabaseArchiveModal';
+import { getEffectiveWorkflowForEmployee } from './lib/customWorkflowStorage';
 
 export default function App() {
   const getTodayString = () => {
@@ -89,6 +75,15 @@ export default function App() {
   };
 
   const [selectedDate, setSelectedDate] = useState<string>(getTodayString());
+  // Current calendar day for midnight transition detection
+  const [currentCalendarDay, setCurrentCalendarDay] = useState<string>(getTodayString());
+  // Midnight rollover notice notification toast
+  const [midnightRolloverNotice, setMidnightRolloverNotice] = useState<{
+    show: boolean;
+    previousDate: string;
+    newDate: string;
+  } | null>(null);
+
   const [currentUser, setCurrentUser] = useState<Employee>(() => getStoredSession() || DEFAULT_SUPERVISOR);
   const [employees, setEmployees] = useState<Employee[]>(INITIAL_EMPLOYEES);
   const [templates, setTemplates] = useState<TaskTemplate[]>([]);
@@ -98,7 +93,7 @@ export default function App() {
 
   const isBoss = currentUser?.role === 'main_boss' || currentUser?.employee_id === 'RAJI_SIR';
   const isSupervisor = currentUser?.role === 'office_assistant' || isBoss;
-  const [viewMode, setViewMode] = useState<'supervisor' | 'checklist' | 'common' | 'profile'>(() =>
+  const [viewMode, setViewMode] = useState<'supervisor' | 'checklist' | 'common' | 'profile' | 'communication'>(() =>
     isSupervisor ? 'supervisor' : 'profile'
   );
 
@@ -107,10 +102,21 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSupabaseConnected, setIsSupabaseConnected] = useState(false);
 
-  // Employee tailored workflow tasks and categories
+  // Workflow live revision counter for developer changes
+  const [workflowVersion, setWorkflowVersion] = useState(0);
+
+  useEffect(() => {
+    const handleWorkflowUpdated = () => {
+      setWorkflowVersion((v) => v + 1);
+    };
+    window.addEventListener('qgz_workflow_updated', handleWorkflowUpdated);
+    return () => window.removeEventListener('qgz_workflow_updated', handleWorkflowUpdated);
+  }, []);
+
+  // Employee tailored workflow tasks and categories (incorporates developer live alterations)
   const employeeWorkflow = useMemo(() => {
-    return getWorkflowForEmployee(currentUser?.employee_id);
-  }, [currentUser?.employee_id]);
+    return getEffectiveWorkflowForEmployee(currentUser?.employee_id, currentUser?.name);
+  }, [currentUser?.employee_id, currentUser?.name, workflowVersion]);
 
   const [workflowTasks, setWorkflowTasks] = useState<WorkflowTask[]>(() => employeeWorkflow.tasks);
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
@@ -132,6 +138,8 @@ export default function App() {
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
   const [isAiInsightModalOpen, setIsAiInsightModalOpen] = useState(false);
+  const [isDevConsoleOpen, setIsDevConsoleOpen] = useState(false);
+  const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
 
   // Inspection modal state
   const [inspectedEmployee, setInspectedEmployee] = useState<Employee | null>(null);
@@ -143,6 +151,68 @@ export default function App() {
     const cfg = getStoredSupabaseConfig();
     setIsSupabaseConnected(cfg.isConfigured);
   }, []);
+
+  // ==========================================
+  // Midnight Auto-Rollover Engine (00:00 AM)
+  // ==========================================
+  // Checks if the calendar day rolled over (passed 12:00 midnight)
+  // Automatically switches to the new date and prepares fresh checklists for everyone,
+  // while previous date's complete data stays permanently stored in Supabase.
+  useEffect(() => {
+    const checkMidnight = () => {
+      const liveToday = getTodayString();
+      if (liveToday !== currentCalendarDay) {
+        console.log(`[Midnight Engine] Clock passed 12:00 AM! Date changed from ${currentCalendarDay} to ${liveToday}`);
+
+        // If the user was viewing yesterday (the previous currentCalendarDay), auto switch to the new day
+        if (selectedDate === currentCalendarDay) {
+          setSelectedDate(liveToday);
+        }
+
+        setMidnightRolloverNotice({
+          show: true,
+          previousDate: currentCalendarDay,
+          newDate: liveToday,
+        });
+
+        setCurrentCalendarDay(liveToday);
+      }
+    };
+
+    // Check every 10 seconds
+    const intervalId = setInterval(checkMidnight, 10000);
+
+    // Also check immediately when user re-focuses or unlocks their device
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        checkMidnight();
+      }
+    };
+
+    window.addEventListener('focus', checkMidnight);
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('focus', checkMidnight);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [currentCalendarDay, selectedDate]);
+
+  // Test / Simulator tool for user and supervisor: Simulate midnight rollover
+  const handleSimulateMidnightRollover = (targetDate?: string) => {
+    const d = new Date(`${selectedDate}T00:00:00`);
+    d.setDate(d.getDate() + 1);
+    const nextDate = targetDate || d.toISOString().split('T')[0];
+    const prevDate = selectedDate;
+
+    setSelectedDate(nextDate);
+    setMidnightRolloverNotice({
+      show: true,
+      previousDate: prevDate,
+      newDate: nextDate,
+    });
+  };
 
   // Synchronize viewMode whenever user changes
   useEffect(() => {
@@ -552,10 +622,47 @@ export default function App() {
         onToggleViewMode={setViewMode}
         selectedBranch={selectedBranch}
         onSelectBranch={setSelectedBranch}
+        onOpenDeveloperConsole={() => setIsDevConsoleOpen(true)}
+        onOpenArchiveModal={() => setIsArchiveModalOpen(true)}
       />
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        {/* Historical Database Archive Banner when viewing past dates */}
+        {selectedDate < getTodayString() && (
+          <div className="rounded-2xl p-4 sm:p-5 bg-gradient-to-r from-amber-500/10 via-indigo-500/10 to-amber-500/10 border border-amber-300 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-start sm:items-center gap-3.5">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-slate-900">
+                    Saved Database Record View: {selectedDate}
+                  </h3>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-bold border border-amber-300">
+                    Intact in Primary Database
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">
+                  This is the saved history of a prior workday. All completed checks, percentage metrics, and notes for this date are securely retained in the database.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => setSelectedDate(getTodayString())}
+                className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs"
+              >
+                Return to Today's Tasks
+              </button>
+              <button
+                onClick={() => setIsArchiveModalOpen(true)}
+                className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-xs font-semibold transition"
+              >
+                View Other Dates
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* 1. Common Dashboard Hub */}
         {viewMode === 'common' ? (
           <CommonDashboard
@@ -573,6 +680,7 @@ export default function App() {
             }}
             onGoToChecklist={() => setViewMode('profile')}
             onGoToSupervisor={() => setViewMode('supervisor')}
+            onGoToCommunication={() => setViewMode('communication')}
           />
         ) : isSupervisor && viewMode === 'supervisor' ? (
           /* 2. Executive Supervisor Dashboard (Sabar Activity for Raji Sir & Authority) */
@@ -602,8 +710,15 @@ export default function App() {
             onUpdatePendingReason={handleUpdateWorkflowReason}
             onGoToTableView={() => setViewMode('checklist')}
           />
+        ) : viewMode === 'communication' ? (
+          /* 4. Client Communication & Calling Head CRM (Exact User Requirement) */
+          <CommunicationCenter
+            currentUser={currentUser}
+            employees={employees}
+            selectedBranch={selectedBranch}
+          />
         ) : (
-          /* 4. Workflow Checklist View for Employee (Personal task management & status checkboxes) */
+          /* 5. Workflow Checklist View for Employee (Personal task management & status checkboxes) */
           <div className="space-y-6">
             {/* 1. Hero Banner with Gradient & Quick Category Pills */}
             <WorkflowHeroBanner
@@ -658,24 +773,18 @@ export default function App() {
             {/* 100% Completion Milestone Banner */}
             {workflowStats.total > 0 && workflowStats.done === workflowStats.total && (
               <div className="p-5 rounded-2xl bg-emerald-50 border border-emerald-200 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-emerald-600 text-white shadow-xs">
-                    <Sparkles className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-emerald-950 tracking-tight">
-                      Congratulations! All {workflowStats.total} tasks completed 100% today!
-                    </h3>
-                    <p className="text-xs text-emerald-800">
-                      Your operational progress has been recorded and synced to the central supervisor's audit log.
-                    </p>
-                  </div>
+                <div>
+                  <h3 className="text-base font-bold text-emerald-950 tracking-tight">
+                    Congratulations! All {workflowStats.total} tasks completed 100% today!
+                  </h3>
+                  <p className="text-xs text-emerald-800">
+                    Your operational progress has been recorded and synced to the central supervisor's audit log.
+                  </p>
                 </div>
                 <button
                   onClick={() => setIsPrintModalOpen(true)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors flex items-center gap-1.5 shrink-0"
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors shrink-0"
                 >
-                  <Printer className="w-4 h-4" />
                   Print Report
                 </button>
               </div>
@@ -797,18 +906,34 @@ export default function App() {
       {isResetConfirmOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in">
           <div className="w-full max-w-md rounded-2xl bg-white border border-slate-200 p-6 shadow-2xl space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-amber-50 text-amber-600 border border-amber-200">
-                <RotateCcw className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-slate-900">Reset Today's Checklist?</h3>
-                <p className="text-xs text-slate-500">Date: {selectedDate}</p>
-              </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-900">Reset Today's Checklist?</h3>
+              <p className="text-xs text-slate-500 font-mono">Date: {selectedDate}</p>
             </div>
+
             <p className="text-xs text-slate-600 leading-relaxed">
-              This will reset all task statuses for <strong>{currentUser.name}</strong> on <strong>{selectedDate}</strong> back to pending. Logs from other dates will remain unchanged.
+              This will clear all checkboxes (set to pending) for <strong>{currentUser.name}</strong> on <strong>{selectedDate}</strong>.
             </p>
+
+            <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-xl text-indigo-900 text-xs space-y-1.5">
+              <div className="font-bold text-indigo-950">
+                Automatic Midnight Rollover Rule:
+              </div>
+              <p className="text-[11px] text-indigo-800 leading-relaxed">
+                Checklists are automatically cleared for a fresh workday after 12:00 AM each night. All completed work records and historical logs remain securely saved in the database and can be reviewed anytime via <strong>"Database History"</strong>.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsResetConfirmOpen(false);
+                  handleSimulateMidnightRollover();
+                }}
+                className="mt-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 underline underline-offset-2"
+              >
+                [Test Midnight Rollover (Simulate Tomorrow)]
+              </button>
+            </div>
+
             <div className="flex items-center justify-end gap-2 pt-2">
               <button
                 onClick={() => setIsResetConfirmOpen(false)}
@@ -823,6 +948,64 @@ export default function App() {
                 Confirm Reset
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Database Archive & History Vault Modal */}
+      <DatabaseArchiveModal
+        isOpen={isArchiveModalOpen}
+        onClose={() => setIsArchiveModalOpen(false)}
+        selectedDate={selectedDate}
+        onSelectDate={(d) => setSelectedDate(d)}
+        currentUser={currentUser}
+        employees={employees}
+        onOpenPrintModal={() => setIsPrintModalOpen(true)}
+        onSimulateMidnightRollover={handleSimulateMidnightRollover}
+      />
+
+      {/* Developer Console Modal (Live Task Point Modifier & System Developer Access) */}
+      <DeveloperConsoleModal
+        isOpen={isDevConsoleOpen}
+        onClose={() => setIsDevConsoleOpen(false)}
+        currentUser={currentUser}
+        employees={employees}
+      />
+
+      {/* Midnight Rollover Notification Toast / Banner */}
+      {midnightRolloverNotice && midnightRolloverNotice.show && (
+        <div className="fixed bottom-6 right-6 z-50 max-w-md w-full p-4 rounded-2xl bg-slate-900 text-white border border-indigo-500/50 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-1">
+              <h4 className="text-sm font-bold text-white">Midnight Rollover Complete — New Workday Started!</h4>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Checklists for all employees have been automatically cleared for the new date ({midnightRolloverNotice.newDate}).
+                All completed work and notes from yesterday ({midnightRolloverNotice.previousDate}) are <strong>permanently stored in the primary database</strong>.
+              </p>
+              <div className="mt-3 flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setSelectedDate(midnightRolloverNotice.previousDate);
+                    setMidnightRolloverNotice(null);
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition shadow-xs"
+                >
+                  View Yesterday's ({midnightRolloverNotice.previousDate}) Record
+                </button>
+                <button
+                  onClick={() => setMidnightRolloverNotice(null)}
+                  className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition"
+                >
+                  Start New Day
+                </button>
+              </div>
+            </div>
+            <button
+              onClick={() => setMidnightRolloverNotice(null)}
+              className="px-2 py-1 rounded-lg text-slate-400 hover:text-white text-xs font-bold"
+            >
+              [Close]
+            </button>
           </div>
         </div>
       )}

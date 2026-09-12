@@ -752,10 +752,10 @@ export function fetchDirectives(date?: string): any[] {
         {
           id: 'dir-welcome',
           sender_id: 'RAJI_SIR',
-          sender_name: 'রাজি স্যার (সেন্ট্রাল ডিরেক্টর)',
+          sender_name: 'Raji Sir (Central Director)',
           target_type: 'all',
-          target_name: 'সকল কর্মী ও কর্মকর্তা',
-          message: 'আজকের সকল কাজের অগ্রগতি নিয়মিত আপডেট রাখুন। বিকেল ৪:৪৫ টার মধ্যে ক্যাশ ক্লোজিং এবং দৈনিক রিপোর্ট ফাইনাল করুন।',
+          target_name: 'All Staff & Executives',
+          message: 'Keep daily progress updated regularly. Finalize cash closing and submit daily report by 04:45 PM.',
           priority: 'important',
           created_at: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           date: date || new Date().toISOString().split('T')[0],
@@ -828,44 +828,44 @@ export function fetchDailyPlan(employeeId: string, date: string): any {
   return {
     employee_id: employeeId,
     date,
-    priorities: ['আজকের মূল দায়িত্বসমূহ সময়মত সম্পন্ন করা', 'ক্যাশ ও ভাউচার নিখুঁতভাবে সমন্বয় করা'],
+    priorities: ['Complete core daily responsibilities on time', 'Reconcile cash and vouchers accurately'],
     dayNotes: '',
     items: [
       {
         id: 'plan-1',
         employee_id: employeeId,
         date,
-        timeSlot: '০৯:০০ AM - ১১:০০ AM',
-        focusTitle: 'সকালের ডেস্কে প্রস্তুতি ও পরিদর্শন',
+        timeSlot: '09:00 AM - 11:00 AM',
+        focusTitle: 'Morning desk preparation & inspection',
         isDone: false,
-        notes: 'পরিষ্কার-পরিচ্ছন্নতা ও শুরুর সেটআপ',
+        notes: 'Cleanliness and opening checklist',
       },
       {
         id: 'plan-2',
         employee_id: employeeId,
         date,
-        timeSlot: '১১:০০ AM - ০২:০০ PM',
-        focusTitle: 'প্রধান সেবা ও গ্রাহক/অ্যাকাউন্টস কার্যক্রম',
+        timeSlot: '11:00 AM - 02:00 PM',
+        focusTitle: 'Core client services & accounts workflow',
         isDone: false,
-        notes: 'ভাউচার সংগ্রহ ও কাস্টমার রেসপন্স',
+        notes: 'Voucher collection and customer queries',
       },
       {
         id: 'plan-3',
         employee_id: employeeId,
         date,
-        timeSlot: '০২:০০ PM - ০৪:০০ PM',
-        focusTitle: 'বিকাশ এমআর ও রিপোর্ট আপডেট',
+        timeSlot: '02:00 PM - 04:00 PM',
+        focusTitle: 'bKash MR & system report updates',
         isDone: false,
-        notes: 'মিড-ডে ক্যাশ রিকনসিলিয়েশন',
+        notes: 'Mid-day cash reconciliation',
       },
       {
         id: 'plan-4',
         employee_id: employeeId,
         date,
-        timeSlot: '০৪:০০ PM - ০৫:৩০ PM',
-        focusTitle: 'ক্যাশ ক্লোজিং ও রাজি স্যারকে চূড়ান্ত রিপোর্ট প্রেরণ',
+        timeSlot: '04:00 PM - 05:30 PM',
+        focusTitle: 'Cash closing & final report submission to Raji Sir',
         isDone: false,
-        notes: 'সকল লগ সম্পন্ন ও তালাবদ্ধকরণ',
+        notes: 'All logs finalized and secured',
       },
     ],
     updatedAt: new Date().toISOString(),
@@ -880,6 +880,72 @@ export function saveDailyPlan(plan: any): void {
   } catch (err) {
     console.error('Failed to save daily plan:', err);
   }
+}
+
+// ==========================================
+// Database Archive & Historical Dates Service
+// ==========================================
+
+export async function fetchAvailableLogDates(): Promise<string[]> {
+  const datesSet = new Set<string>();
+
+  // Check local storage keys
+  if (typeof window !== 'undefined') {
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('qgz_cell_logs_')) {
+          const rest = key.replace('qgz_cell_logs_', '');
+          const datePart = rest.substring(0, 10);
+          if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+            datesSet.add(datePart);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Error reading local log dates:', e);
+    }
+  }
+
+  // Also query Supabase for distinct dates
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('daily_logs')
+        .select('date')
+        .order('date', { ascending: false })
+        .limit(100);
+      if (!error && data) {
+        data.forEach((row: { date: string }) => {
+          if (row.date && /^\d{4}-\d{2}-\d{2}$/.test(row.date)) {
+            datesSet.add(row.date);
+          }
+        });
+      }
+    } catch (e) {
+      console.warn('Error querying distinct dates from Supabase:', e);
+    }
+  }
+
+  // Always ensure today and yesterday are present
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const today = `${year}-${month}-${day}`;
+
+  const y = new Date();
+  y.setDate(y.getDate() - 1);
+  const yYear = y.getFullYear();
+  const yMonth = String(y.getMonth() + 1).padStart(2, '0');
+  const yDay = String(y.getDate()).padStart(2, '0');
+  const yesterday = `${yYear}-${yMonth}-${yDay}`;
+
+  datesSet.add(today);
+  datesSet.add(yesterday);
+
+  return Array.from(datesSet).sort().reverse();
 }
 
 

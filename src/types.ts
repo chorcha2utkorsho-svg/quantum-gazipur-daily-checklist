@@ -40,6 +40,7 @@ export const BRANCHES: BranchInfo[] = [
 ];
 
 export type UserRole =
+  | 'developer'            // System Developer (Live Application Editor, Task Point Customizer)
   | 'main_boss'            // Raji Sir (Central Director - Overall monitoring & policy maker for both branches)
   | 'office_assistant'     // Office Assistant / Branch In-charge (Operation oversight, reports, recruitment & deployment)
   | 'front_desk'           // Front desk & general operations
@@ -60,6 +61,15 @@ export interface RoleInfo {
 }
 
 export const SYSTEM_ROLES: RoleInfo[] = [
+  {
+    id: 'developer',
+    titleBn: 'System Developer / Admin',
+    titleEn: 'Developer & System Customizer',
+    description: 'Sudden task point modifications, field configuration, and system developer editing tools.',
+    badgeBg: 'bg-rose-500/20',
+    badgeText: 'text-rose-300',
+    badgeBorder: 'border-rose-500/40',
+  },
   {
     id: 'main_boss',
     titleBn: 'Raji Sir (Central Director)',
@@ -238,11 +248,30 @@ export const BOSS_RAJI_SIR: Employee = {
   avatar_color: '#f59e0b',
 };
 
+// System Developer ID for live application editing & task point modification
+export const SYSTEM_DEVELOPER: Employee = {
+  id: 'emp-developer-admin',
+  employee_id: 'DEV_ADMIN',
+  name: 'System Developer',
+  pin: '7788',
+  role: 'developer',
+  branch: 'all',
+  is_active: true,
+  approval_status: 'approved',
+  phone: '01799999999',
+  joined_date: '2023-01-01',
+  notes: 'Application Developer ID: Direct system edits, dynamic task point adjustment, and configuration controls.',
+  avatar_color: '#e11d48',
+};
+
 export const DEFAULT_SUPERVISOR: Employee = BOSS_RAJI_SIR;
 
 export const INITIAL_EMPLOYEES: Employee[] = [
   // Central Director (Raji Sir)
   BOSS_RAJI_SIR,
+
+  // Dedicated Developer ID (For sudden system point edits & customizers)
+  SYSTEM_DEVELOPER,
 
   // 1. Gazipur Branch Staff (2 people)
   {
@@ -400,12 +429,12 @@ export interface EmployeeDailyPlan {
 
 // Client Communication & Calling Head (CRM) Types
 export type CallOutcome =
-  | 'positive'      // কনভার্শন পজেটিভ (আগ্রহী / অনুদান / মেডিটেশনে সম্মতি)
-  | 'negative'      // নেগেটিভ (অনাগ্রহী)
-  | 'no_answer'     // কল ধরে নাই / এন এ (N/A)
-  | 'unreachable'   // কল রিসিভ করেনি / ব্যস্ত (Not Received)
-  | 'inactive'      // ইন-অ্যাক্টিভ / বন্ধ নম্বর (Inactive)
-  | 'pending';      // কল করা বাকি (Pending Call)
+  | 'positive'      // Conversion positive (Interested / Donation / Meditation consent)
+  | 'negative'      // Negative (Not interested)
+  | 'no_answer'     // No answer / NA
+  | 'unreachable'   // Unreachable / Busy / Not received
+  | 'inactive'      // Inactive / Switched off number
+  | 'pending';      // Pending call
 
 export interface ClientContact {
   id: string;
@@ -415,11 +444,11 @@ export interface ClientContact {
   category: 'quantum_member' | 'donor' | 'old_student' | 'well_wisher' | 'new_lead';
   category_name_bn: string;
   branch: 'chowrasta' | 'rajbari';
-  assigned_to_id: string;   // Employee ID (যেমন রাজি স্যার ১০০ মেম্বার যে কর্মীকে দিয়েছেন)
+  assigned_to_id: string;   // Assigned employee ID
   assigned_to_name: string;
   call_status: CallOutcome;
   call_notes?: string;
-  conversion_amount?: number; // যদি কোনো অনুদান বা কোর্স ফি কনভার্ট হয়
+  conversion_amount?: number; // Converted donation / fee
   last_called_at?: string;
   date_assigned: string;
   created_at: string;
@@ -433,11 +462,11 @@ export interface CommunicationStats {
   positiveRate: number;      // %
   negativeCount: number;
   negativeRate: number;      // %
-  noAnswerCount: number;     // এন এ / কল ধরে নাই
+  noAnswerCount: number;     // No answer count
   noAnswerRate: number;      // %
-  unreachableCount: number;  // রিসিভ করেনি
+  unreachableCount: number;  // Unreachable count
   unreachableRate: number;   // %
-  inactiveCount: number;     // ইন-অ্যাক্টিভ
+  inactiveCount: number;     // Inactive count
   inactiveRate: number;      // %
 }
 
