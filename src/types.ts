@@ -41,7 +41,7 @@ export const BRANCHES: BranchInfo[] = [
 
 export type UserRole =
   | 'developer'            // System Developer (Live Application Editor, Task Point Customizer)
-  | 'main_boss'            // Raji Sir (Central Director - Overall monitoring & policy maker for both branches)
+  | 'main_boss'            // Raji Sir (Overall monitoring & policy maker for both branches)
   | 'office_assistant'     // Office Assistant / Branch In-charge (Operation oversight, reports, recruitment & deployment)
   | 'front_desk'           // Front desk & general operations
   | 'accounts'             // Accounts & cash management
@@ -72,9 +72,9 @@ export const SYSTEM_ROLES: RoleInfo[] = [
   },
   {
     id: 'main_boss',
-    titleBn: 'Raji Sir (Central Director)',
-    titleEn: 'Central Director (Raji Sir)',
-    description: 'Central administration of 1. Gazipur Branch and 2. Gazipur Sadar Office, unified executive monitoring and strategic decisions.',
+    titleBn: 'Raji Sir',
+    titleEn: 'Raji Sir',
+    description: 'Executive administration of 1. Gazipur Branch and 2. Gazipur Sadar Office, unified executive monitoring and strategic decisions.',
     badgeBg: 'bg-amber-500/20',
     badgeText: 'text-amber-300',
     badgeBorder: 'border-amber-500/40',
@@ -244,7 +244,7 @@ export const BOSS_RAJI_SIR: Employee = {
   approval_status: 'approved',
   phone: '01700000000',
   joined_date: '2023-01-01',
-  notes: 'Quantum Gazipur Cell: Central Director & Policy Maker for both Gazipur Branch and Gazipur Sadar Office.',
+  notes: 'Quantum Gazipur Cell: Executive Leadership & Policy Maker for both Gazipur Branch and Gazipur Sadar Office.',
   avatar_color: '#f59e0b',
 };
 
@@ -267,7 +267,7 @@ export const SYSTEM_DEVELOPER: Employee = {
 export const DEFAULT_SUPERVISOR: Employee = BOSS_RAJI_SIR;
 
 export const INITIAL_EMPLOYEES: Employee[] = [
-  // Central Director (Raji Sir)
+  // Executive (Raji Sir)
   BOSS_RAJI_SIR,
 
   // Dedicated Developer ID (For sudden system point edits & customizers)

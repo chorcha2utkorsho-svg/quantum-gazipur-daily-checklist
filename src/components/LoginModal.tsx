@@ -123,7 +123,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               <span className="text-[11px] text-amber-400 font-mono">Default PIN: 1234</span>
             </div>
 
-            {/* Central Director (Raji Sir) */}
+            {/* Executive Leadership (Raji Sir) */}
             {activeEmployees.filter((e) => e.role === 'main_boss' || e.employee_id === 'RAJI_SIR').map((emp) => {
               const isSelected = emp.employee_id === currentUserId;
               return (
@@ -149,13 +149,13 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                     </div>
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className="text-[11px] px-2 py-0.5 rounded-full border border-amber-500/40 bg-amber-500/20 text-amber-200 font-semibold">
-                        Central Director • Dual-Branch Supervision
+                        Executive Leadership • Dual-Branch
                       </span>
                     </div>
                   </div>
 
                   <div className="shrink-0 text-xs font-bold text-amber-400">
-                    {isSelected ? '[Active]' : '[Sign In]'}
+                    {isSelected ? 'Active' : 'Sign In'}
                   </div>
                 </button>
               );

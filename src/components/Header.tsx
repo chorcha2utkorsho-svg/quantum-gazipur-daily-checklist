@@ -1,4 +1,5 @@
 import React from 'react';
+import { Sun, Moon, Monitor, LogIn } from 'lucide-react';
 import { BranchId, Employee, SYSTEM_ROLES } from '../types';
 
 interface HeaderProps {
@@ -9,7 +10,7 @@ interface HeaderProps {
   onOpenSupabaseModal: () => void;
   onOpenPrintModal: () => void;
   onOpenLoginModal: () => void;
-  onRajiSirSignIn: () => void;
+  onRajiSirSignIn?: () => void;
   onOpenEmployeeSignUp: () => void;
   onOpenEmployeeManager: () => void;
   isSupabaseConnected: boolean;
@@ -20,6 +21,8 @@ interface HeaderProps {
   onSelectBranch?: (branch: BranchId) => void;
   onOpenDeveloperConsole?: () => void;
   onOpenArchiveModal?: () => void;
+  currentTheme?: 'light' | 'dark' | 'slate';
+  onToggleTheme?: (theme: 'light' | 'dark' | 'slate') => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -41,6 +44,8 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectBranch,
   onOpenDeveloperConsole,
   onOpenArchiveModal,
+  currentTheme = 'light',
+  onToggleTheme,
 }) => {
   const dateObj = new Date(`${selectedDate}T00:00:00`);
   const formattedDisplay = isNaN(dateObj.getTime())
@@ -90,8 +95,8 @@ export const Header: React.FC<HeaderProps> = ({
                   Quantum Gazipur Cell
                 </h1>
                 {isBoss ? (
-                  <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 font-bold border border-amber-200 shadow-2xs">
-                    Raji Sir [Central Director]
+                  <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-800 font-bold border border-slate-200 shadow-2xs">
+                    Raji Sir
                   </span>
                 ) : (
                   <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-semibold border border-indigo-200">
@@ -124,28 +129,61 @@ export const Header: React.FC<HeaderProps> = ({
               Common Dashboard
             </button>
 
-            {/* 2. Sign In Button */}
+            {/* 2. Unified Sign In Button */}
             <button
               id="header-sign-in-btn"
               onClick={onOpenLoginModal}
-              className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-2xs"
+              className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5"
             >
-              Sign In
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Sign In</span>
             </button>
 
-            {/* 3. Raji Sir Sign In Button */}
-            <button
-              id="header-raji-sir-signin-btn"
-              onClick={onRajiSirSignIn}
-              className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all shadow-2xs ${
-                isBoss
-                  ? 'bg-amber-400 text-slate-950 ring-2 ring-amber-400/50 border border-amber-300'
-                  : 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/20 border border-amber-400'
-              }`}
-              title="Access Central Director Workspace"
-            >
-              {isBoss ? 'Raji Sir [Active]' : 'Raji Sir Sign In'}
-            </button>
+            {/* 3. Theme Toggle Controls */}
+            <div className="flex items-center rounded-xl bg-slate-100 p-0.5 border border-slate-200 text-xs">
+              <button
+                type="button"
+                id="theme-btn-light"
+                onClick={() => onToggleTheme?.('light')}
+                className={`px-2 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${
+                  currentTheme === 'light'
+                    ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+                title="Light Theme"
+              >
+                <Sun className="w-3.5 h-3.5 text-amber-500" />
+                <span className="hidden sm:inline">Light</span>
+              </button>
+              <button
+                type="button"
+                id="theme-btn-slate"
+                onClick={() => onToggleTheme?.('slate')}
+                className={`px-2 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${
+                  currentTheme === 'slate'
+                    ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+                title="Slate Theme"
+              >
+                <Monitor className="w-3.5 h-3.5 text-indigo-500" />
+                <span className="hidden sm:inline">Slate</span>
+              </button>
+              <button
+                type="button"
+                id="theme-btn-dark"
+                onClick={() => onToggleTheme?.('dark')}
+                className={`px-2 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${
+                  currentTheme === 'dark'
+                    ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+                title="Dark Theme"
+              >
+                <Moon className="w-3.5 h-3.5 text-indigo-600" />
+                <span className="hidden sm:inline">Dark</span>
+              </button>
+            </div>
 
             {/* 4. Employee Sign Up */}
             <button
@@ -291,7 +329,7 @@ export const Header: React.FC<HeaderProps> = ({
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                {isBoss ? 'Central Director Dashboard' : 'Supervisor Dashboard'}
+                Supervisor Dashboard
               </button>
             )}
 

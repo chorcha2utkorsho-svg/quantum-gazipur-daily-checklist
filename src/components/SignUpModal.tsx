@@ -6,7 +6,7 @@ interface SignUpModalProps {
   onClose: () => void;
   existingEmployees?: Employee[];
   onSignUpSuccess: (newEmployee: Employee) => void;
-  onOpenRajiSirSignIn?: () => void;
+  onOpenSignIn?: () => void;
 }
 
 export const SignUpModal: React.FC<SignUpModalProps> = ({
@@ -14,7 +14,7 @@ export const SignUpModal: React.FC<SignUpModalProps> = ({
   onClose,
   existingEmployees = [],
   onSignUpSuccess,
-  onOpenRajiSirSignIn,
+  onOpenSignIn,
 }) => {
   // Form fields for employee registration
   const [name, setName] = useState('');
@@ -120,7 +120,7 @@ export const SignUpModal: React.FC<SignUpModalProps> = ({
             </span>
             <h3 className="text-lg font-bold text-white">Registration Submitted Successfully</h3>
             <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-              Your profile information is recorded. To begin work on the platform, authorization from Central Director <strong>Raji Sir</strong> is required.
+              Your profile information is recorded. To begin work on the platform, authorization from <strong>Raji Sir</strong> is required.
             </p>
           </div>
 
@@ -149,7 +149,7 @@ export const SignUpModal: React.FC<SignUpModalProps> = ({
           </div>
 
           <div className="p-3 bg-amber-950/30 border border-amber-900/40 rounded-xl text-left text-xs text-amber-200/90 leading-relaxed">
-            <strong>Next Step:</strong> Once Raji Sir approves your registration from the Central Director Dashboard, you will be able to sign in immediately using this ID and PIN.
+            <strong>Next Step:</strong> Once Raji Sir approves your registration from the Executive Dashboard, you will be able to sign in immediately using this ID and PIN.
           </div>
 
           <button
@@ -359,17 +359,17 @@ export const SignUpModal: React.FC<SignUpModalProps> = ({
           {/* Notice about Raji Sir */}
           <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
             <span>Central authority is managed by <strong>Raji Sir</strong>.</span>
-            {onOpenRajiSirSignIn && (
+            {onOpenSignIn && (
               <button
                 type="button"
-                id="signup-open-raji-sir"
+                id="signup-open-signin"
                 onClick={() => {
                   onClose();
-                  onOpenRajiSirSignIn();
+                  onOpenSignIn();
                 }}
                 className="text-amber-400 hover:text-amber-300 font-bold underline shrink-0 ml-2"
               >
-                Raji Sir Sign In
+                Sign In
               </button>
             )}
           </div>

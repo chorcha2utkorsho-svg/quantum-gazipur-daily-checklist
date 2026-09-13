@@ -144,43 +144,27 @@ export const CommonDashboard: React.FC<CommonDashboardProps> = ({
           </div>
 
           {/* Quick Access Action CTA Buttons */}
-          <div className="flex flex-col sm:flex-row lg:flex-col gap-2.5 shrink-0">
-            {/* 1. Raji Sir Sign In Button */}
+          <div className="flex flex-col sm:flex-row gap-2.5 shrink-0">
+            {/* Unified Sign In */}
             <button
               type="button"
-              id="hero-raji-sir-signin-btn"
-              onClick={onRajiSirSignIn}
-              className={`px-4 py-2.5 rounded-xl text-xs font-black shadow-lg transition-all ${
-                isBoss
-                  ? 'bg-amber-400 text-slate-950 border-2 border-amber-300'
-                  : 'bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-400'
-              }`}
+              id="hero-sign-in-btn"
+              onClick={onOpenSignIn}
+              className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg transition-all border border-indigo-400/30 flex items-center justify-center gap-2"
             >
-              {isBoss ? 'Raji Sir (Active)' : 'Raji Sir Sign In'}
+              Sign In
             </button>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {/* 2. Employee Sign Up */}
-              <button
-                type="button"
-                id="hero-employee-signup-btn"
-                onClick={onOpenEmployeeSignUp}
-                className="px-3.5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black shadow-lg transition-all"
-                title="Register a new employee account"
-              >
-                Employee Sign Up
-              </button>
-
-              {/* 3. General Sign In */}
-              <button
-                type="button"
-                id="hero-sign-in-btn"
-                onClick={onOpenSignIn}
-                className="px-3.5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg transition-all border border-indigo-400/30"
-              >
-                Sign In
-              </button>
-            </div>
+            {/* Employee Sign Up */}
+            <button
+              type="button"
+              id="hero-employee-signup-btn"
+              onClick={onOpenEmployeeSignUp}
+              className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black shadow-lg transition-all"
+              title="Register a new employee account"
+            >
+              Employee Sign Up
+            </button>
           </div>
         </div>
       </div>
@@ -498,7 +482,7 @@ export const CommonDashboard: React.FC<CommonDashboardProps> = ({
         </div>
       </div>
 
-      {/* 4. Central Directorate Card: Raji Sir */}
+      {/* 4. Executive Oversight Card: Raji Sir */}
       <div className="p-6 rounded-3xl bg-[#14161a] border border-amber-500/40 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xs text-white">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center justify-center font-black text-sm shrink-0">
@@ -507,9 +491,6 @@ export const CommonDashboard: React.FC<CommonDashboardProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-lg font-black text-white">Raji Sir</h3>
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500 text-slate-950 font-black uppercase">
-                Central Director
-              </span>
             </div>
             <p className="text-xs text-slate-300 mt-1 max-w-xl">
               Overall audit, executive directives, and cross-office coordination. Signing in as Raji Sir unlocks the supervisor audit console with live team status and progress reports.

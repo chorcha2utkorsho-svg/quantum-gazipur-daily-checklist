@@ -752,7 +752,7 @@ export function fetchDirectives(date?: string): any[] {
         {
           id: 'dir-welcome',
           sender_id: 'RAJI_SIR',
-          sender_name: 'Raji Sir (Central Director)',
+          sender_name: 'Raji Sir',
           target_type: 'all',
           target_name: 'All Staff & Executives',
           message: 'Keep daily progress updated regularly. Finalize cash closing and submit daily report by 04:45 PM.',

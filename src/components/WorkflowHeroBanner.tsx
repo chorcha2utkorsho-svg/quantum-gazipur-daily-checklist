@@ -94,7 +94,7 @@ export const WorkflowHeroBanner: React.FC<WorkflowHeroBannerProps> = ({
               </div>
               <div>
                 <div className="font-bold text-xs truncate text-white">{cat.name}</div>
-                <div className="text-[10px] text-slate-400 truncate mt-0.5">{cat.description || cat.name}</div>
+                <div className="text-[10px] text-slate-400 truncate mt-0.5">{cat.name}</div>
               </div>
             </button>
           );

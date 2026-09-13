@@ -91,6 +91,21 @@ export default function App() {
   const [progressList, setProgressList] = useState<EmployeeDailyProgress[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<BranchId>('all');
 
+  const [theme, setTheme] = useState<'light' | 'dark' | 'slate'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('cell_app_theme');
+      if (saved === 'dark' || saved === 'slate' || saved === 'light') return saved;
+    }
+    return 'light';
+  });
+
+  const handleToggleTheme = (newTheme: 'light' | 'dark' | 'slate') => {
+    setTheme(newTheme);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('cell_app_theme', newTheme);
+    }
+  };
+
   const isBoss = currentUser?.role === 'main_boss' || currentUser?.employee_id === 'RAJI_SIR';
   const isSupervisor = currentUser?.role === 'office_assistant' || isBoss;
   const [viewMode, setViewMode] = useState<'supervisor' | 'checklist' | 'common' | 'profile' | 'communication'>(() =>
@@ -602,8 +617,18 @@ export default function App() {
 
   const activeRoleDef = SYSTEM_ROLES.find((r) => r.id === currentUser?.role);
 
+  const getThemeWrapperClass = () => {
+    if (theme === 'dark') {
+      return 'min-h-screen bg-[#0d1117] text-slate-100 flex flex-col font-sans selection:bg-indigo-500/30 selection:text-indigo-200';
+    }
+    if (theme === 'slate') {
+      return 'min-h-screen bg-[#1e293b] text-slate-100 flex flex-col font-sans selection:bg-indigo-500/30 selection:text-indigo-200';
+    }
+    return 'min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-indigo-500/20 selection:text-indigo-900';
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-indigo-500/20 selection:text-indigo-900">
+    <div className={getThemeWrapperClass()}>
       {/* Header */}
       <Header
         selectedDate={selectedDate}
@@ -624,6 +649,8 @@ export default function App() {
         onSelectBranch={setSelectedBranch}
         onOpenDeveloperConsole={() => setIsDevConsoleOpen(true)}
         onOpenArchiveModal={() => setIsArchiveModalOpen(true)}
+        currentTheme={theme}
+        onToggleTheme={handleToggleTheme}
       />
 
       {/* Main Content Area */}
@@ -837,7 +864,7 @@ export default function App() {
         onClose={() => setIsSignUpModalOpen(false)}
         existingEmployees={employees}
         onSignUpSuccess={handleSignUpSuccess}
-        onOpenRajiSirSignIn={handleRajiSirSignIn}
+        onOpenSignIn={() => setIsLoginModalOpen(true)}
       />
 
       {/* Employee Manager Modal */}
