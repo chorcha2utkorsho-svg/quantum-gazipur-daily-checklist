@@ -79,6 +79,7 @@ import {
 } from './lib/productivityGoalTracker';
 import { GoalReachedModal } from './components/GoalReachedModal';
 import { DailyGoalTracker } from './components/DailyGoalTracker';
+import { MobileDrawer } from './components/MobileDrawer';
 
 export default function App() {
   const getTodayString = () => {
@@ -209,6 +210,9 @@ export default function App() {
 
   // Daily productivity goal achievement modal state
   const [goalAchievementModal, setGoalAchievementModal] = useState<GoalAchievementRecord | null>(null);
+
+  // Mobile navigation sidebar / drawer state
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Check Supabase connection state
   const checkSupabaseStatus = useCallback(() => {
@@ -1100,6 +1104,7 @@ export default function App() {
         onToggleTheme={handleToggleTheme}
         isFocusMode={isFocusMode}
         onToggleFocusMode={() => setIsFocusMode((prev) => !prev)}
+        onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -1486,6 +1491,33 @@ export default function App() {
           }}
         />
       )}
+
+      {/* Mobile Responsive Navigation Drawer (Three-line Sidebar) */}
+      <MobileDrawer
+        isOpen={isMobileMenuOpen}
+        onClose={() => setIsMobileMenuOpen(false)}
+        currentUser={currentUser}
+        viewMode={viewMode}
+        onToggleViewMode={setViewMode}
+        selectedBranch={selectedBranch}
+        onSelectBranch={setSelectedBranch}
+        selectedDate={selectedDate}
+        onDateChange={setSelectedDate}
+        onOpenLoginModal={() => setIsLoginModalOpen(true)}
+        onOpenEmployeeManager={() => setIsEmployeeManagerOpen(true)}
+        onOpenTaskManager={() => setIsTaskManagerOpen(true)}
+        onOpenPrintModal={() => setIsPrintModalOpen(true)}
+        onOpenArchiveModal={() => setIsArchiveModalOpen(true)}
+        onOpenCredentialsVault={() => setIsCredentialsVaultOpen(true)}
+        onOpenDeveloperConsole={() => setIsDevConsoleOpen(true)}
+        onOpenSupabaseModal={() => setIsSupabaseModalOpen(true)}
+        onDailyReset={() => setIsResetConfirmOpen(true)}
+        isSupabaseConnected={isSupabaseConnected}
+        currentTheme={theme}
+        onToggleTheme={handleToggleTheme}
+        isFocusMode={isFocusMode}
+        onToggleFocusMode={() => setIsFocusMode((prev) => !prev)}
+      />
 
       {/* Midnight Rollover Notification Toast / Banner */}
       {midnightRolloverNotice && midnightRolloverNotice.show && (

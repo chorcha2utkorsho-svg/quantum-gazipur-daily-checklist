@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sun, Moon, Monitor, LogIn, Target, Key } from 'lucide-react';
+import { Sun, Moon, Monitor, LogIn, Target, Key, Menu } from 'lucide-react';
 import { BranchId, Employee, SYSTEM_ROLES } from '../types';
 
 interface HeaderProps {
@@ -25,6 +25,7 @@ interface HeaderProps {
   onToggleTheme?: (theme: 'light' | 'dark' | 'slate') => void;
   isFocusMode?: boolean;
   onToggleFocusMode?: () => void;
+  onOpenMobileMenu?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -50,6 +51,7 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleTheme,
   isFocusMode = false,
   onToggleFocusMode,
+  onOpenMobileMenu,
 }) => {
   const dateObj = new Date(`${selectedDate}T00:00:00`);
   const formattedDisplay = isNaN(dateObj.getTime())
@@ -88,33 +90,59 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-8 py-3.5">
         {/* Top row: Brand & Status & Sign In Controls */}
         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
-          {/* Brand & Persona */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <div>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-xs">
-                  Q
+          {/* Brand & Persona + Mobile Hamburger Toggle */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              {/* Mobile 3-line hamburger menu button */}
+              <button
+                id="mobile-hamburger-menu-btn"
+                type="button"
+                onClick={onOpenMobileMenu}
+                aria-label="Open navigation menu"
+                className="xl:hidden p-2 -ml-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 shadow-2xs flex items-center justify-center transition-colors cursor-pointer"
+                title="মেনু ও সাইডবার খুলুন"
+              >
+                <Menu className="w-5 h-5 text-slate-800" />
+              </button>
+
+              <div>
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-xs">
+                    Q
+                  </div>
+                  <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900">
+                    Quantum Gazipur Cell
+                  </h1>
+                  {isBoss ? (
+                    <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-800 font-bold border border-slate-200 shadow-2xs">
+                      Raji Sir
+                    </span>
+                  ) : (
+                    <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-semibold border border-indigo-200">
+                      Gazipur Cell Team
+                    </span>
+                  )}
                 </div>
-                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900">
-                  Quantum Gazipur Cell
-                </h1>
-                {isBoss ? (
-                  <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-800 font-bold border border-slate-200 shadow-2xs">
-                    Raji Sir
-                  </span>
-                ) : (
-                  <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-semibold border border-indigo-200">
-                    Gazipur Cell Team
-                  </span>
-                )}
+                <p className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-1.5 font-medium">
+                  <span className="text-slate-700 font-semibold">1. Gazipur Branch</span>
+                  <span>•</span>
+                  <span className="text-slate-700 font-semibold">2. Gazipur Sadar Office</span>
+                  <span>•</span>
+                  <span>Daily Workflow &amp; Operational Management</span>
+                </p>
               </div>
-              <p className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-1.5 font-medium">
-                <span className="text-slate-700 font-semibold">1. Gazipur Branch</span>
-                <span>•</span>
-                <span className="text-slate-700 font-semibold">2. Gazipur Sadar Office</span>
-                <span>•</span>
-                <span>Daily Workflow &amp; Operational Management</span>
-              </p>
+            </div>
+
+            {/* Quick Mobile Action Icons */}
+            <div className="flex items-center gap-1.5 xl:hidden">
+              <button
+                type="button"
+                onClick={onOpenMobileMenu}
+                className="px-2.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold border border-indigo-200 flex items-center gap-1.5 transition"
+              >
+                <Menu className="w-3.5 h-3.5" />
+                <span>মেনু</span>
+              </button>
             </div>
           </div>
 
