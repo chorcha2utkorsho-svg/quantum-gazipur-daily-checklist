@@ -43,10 +43,16 @@ import {
   ArrowDownRight,
   Minus,
   AlertOctagon,
+  Activity,
+  Flame,
+  Target,
 } from 'lucide-react';
 import { requestAiAnalysis, fetchDirectives, sendDirective } from '../lib/supabase';
 import { getWorkflowForEmployee } from '../data/workflowData';
 import { AiStrategicInsight } from './AiStrategicInsight';
+import { ActivityLogFeed } from './ActivityLogFeed';
+import { ActivityIntensityHeatmap } from './ActivityIntensityHeatmap';
+import { SupervisorGoalMonitor } from './SupervisorGoalMonitor';
 
 interface SupervisorDashboardProps {
   selectedDate: string;
@@ -62,6 +68,7 @@ interface SupervisorDashboardProps {
   onApproveEmployee?: (employeeId: string) => void;
   onRejectEmployee?: (employeeId: string) => void;
   logs?: DailyLogItem[];
+  allDailyLogs?: DailyLogItem[];
 }
 
 export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
@@ -78,6 +85,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
   onApproveEmployee,
   onRejectEmployee,
   logs = [],
+  allDailyLogs = [],
 }) => {
   const isBoss = currentUser?.role === 'main_boss' || currentUser?.employee_id === 'RAJI_SIR';
 
@@ -85,9 +93,18 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
   const [aiReport, setAiReport] = useState<string>('');
   const [isGeneratingAi, setIsGeneratingAi] = useState<boolean>(false);
   const [copiedAi, setCopiedAi] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<'matrix' | 'field_progress' | 'instant_directive' | 'approvals' | 'ai' | 'issues'>('field_progress');
+  const [activeTab, setActiveTab] = useState<'matrix' | 'field_progress' | 'live_feed' | 'heatmap' | 'goals' | 'instant_directive' | 'approvals' | 'ai' | 'issues'>('field_progress');
   const [aiSubTab, setAiSubTab] = useState<'oa_insights' | 'boss_directives'>('oa_insights');
   const [approvalFeedback, setApprovalFeedback] = useState<string>('');
+
+  const handleHeatmapDirective = (type: 'all' | 'branch' | 'employee', id: string, initialMessage?: string) => {
+    setTargetType(type);
+    setTargetId(id);
+    if (initialMessage) {
+      setDirectiveMessage(initialMessage);
+    }
+    setActiveTab('instant_directive');
+  };
 
   // Instant Directives Dispatch State (Raji Sir's Live Directives)
   const [instantDirectives, setInstantDirectives] = useState<ExecutiveDirective[]>(() => fetchDirectives(selectedDate));
@@ -761,6 +778,55 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
             <span>Field Matrix</span>
           </button>
 
+          {/* Live Activity Feed Tab (Real-Time Task Completions & Notes Stream) */}
+          <button
+            onClick={() => setActiveTab('live_feed')}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${
+              activeTab === 'live_feed'
+                ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20 font-black'
+                : 'text-emerald-400 hover:text-white bg-emerald-500/10 border border-emerald-500/30'
+            }`}
+          >
+            <Activity className="w-3.5 h-3.5 animate-pulse" />
+            <span>Live Feed</span>
+            <span className="flex h-2 w-2 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+          </button>
+
+          {/* Activity Intensity Heatmap Tab (Hourly Task Completions & Bottleneck Identification) */}
+          <button
+            onClick={() => setActiveTab('heatmap')}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+              activeTab === 'heatmap'
+                ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20 font-black'
+                : 'text-amber-300 hover:text-white bg-amber-500/10 border border-amber-500/30'
+            }`}
+          >
+            <Flame className="w-3.5 h-3.5 text-amber-400" />
+            <span>ইনটেনসিটি হিটম্যাপ (Heatmap)</span>
+            <span className="px-1.5 py-0.2 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black">
+              Radar
+            </span>
+          </button>
+
+          {/* Daily Goal Tracker Monitor Tab (Productivity Threshold Tracking) */}
+          <button
+            onClick={() => setActiveTab('goals')}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+              activeTab === 'goals'
+                ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20 font-black'
+                : 'text-emerald-300 hover:text-white bg-emerald-500/10 border border-emerald-500/30'
+            }`}
+          >
+            <Target className="w-3.5 h-3.5 text-emerald-400" />
+            <span>দৈনিক লক্ষ্যমাত্রা (Goals)</span>
+            <span className="px-1.5 py-0.2 rounded-full bg-emerald-400 text-slate-950 text-[10px] font-black">
+              Tracker
+            </span>
+          </button>
+
           {/* 2. Instant Directive Dispatch */}
           <button
             onClick={() => setActiveTab('instant_directive')}
@@ -937,14 +1003,36 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                   </p>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('instant_directive')}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs transition-all shadow-md shadow-amber-400/20 cursor-pointer self-start md:self-auto shrink-0"
-                >
-                  <Send className="w-4 h-4" />
-                  <span>Send Directives</span>
-                </button>
+                <div className="flex items-center gap-2 self-start md:self-auto shrink-0 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('heatmap')}
+                    className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-black text-xs border border-amber-500/40 transition-all cursor-pointer shadow-md shadow-amber-500/10"
+                  >
+                    <Flame className="w-4 h-4 text-amber-400" />
+                    <span>ইনটেনসিটি হিটম্যাপ</span>
+                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('live_feed')}
+                    className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 font-black text-xs border border-emerald-500/40 transition-all cursor-pointer shadow-md shadow-emerald-500/10"
+                  >
+                    <Activity className="w-4 h-4 animate-pulse" />
+                    <span>লাইভ অ্যাক্টিভিটি ফিড</span>
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('instant_directive')}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs transition-all shadow-md shadow-amber-400/20 cursor-pointer"
+                  >
+                    <Send className="w-4 h-4" />
+                    <span>Send Directives</span>
+                  </button>
+                </div>
               </div>
 
               {/* 3 Executive Proportional Tiers Banner */}
@@ -1221,6 +1309,46 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
           </div>
         );
       })()}
+
+      {/* TAB: REAL-TIME SCROLLING ACTIVITY FEED (TASK COMPLETIONS & NOTES STREAM) */}
+      {activeTab === 'live_feed' && (
+        <ActivityLogFeed
+          selectedDate={selectedDate}
+          employees={employees}
+          allDailyLogs={allDailyLogs}
+          currentUser={currentUser}
+          onInspectEmployee={onInspectEmployee}
+        />
+      )}
+
+      {/* TAB: ACTIVITY INTENSITY HEATMAP (HOURLY COMPLETIONS & BOTTLENECK RADAR) */}
+      {activeTab === 'heatmap' && (
+        <ActivityIntensityHeatmap
+          selectedDate={selectedDate}
+          employees={employees}
+          allDailyLogs={allDailyLogs}
+          currentUser={currentUser}
+          onInspectEmployee={onInspectEmployee}
+          onSendDirective={handleHeatmapDirective}
+        />
+      )}
+
+      {/* TAB: DAILY GOAL TRACKER & THRESHOLD MONITOR */}
+      {activeTab === 'goals' && (
+        <SupervisorGoalMonitor
+          employees={employees}
+          progressList={progressList}
+          selectedDate={selectedDate}
+          selectedBranch={selectedBranch}
+          onInspectEmployee={onInspectEmployee}
+          onSendDirectiveToEmployee={(empId, initialMsg) => {
+            setTargetType('employee');
+            setTargetId(empId);
+            setDirectiveMessage(initialMsg);
+            setActiveTab('instant_directive');
+          }}
+        />
+      )}
 
       {/* TAB 0.5: RAJI SIR'S INSTANT DIRECTIVE DISPATCH */}
       {activeTab === 'instant_directive' && (

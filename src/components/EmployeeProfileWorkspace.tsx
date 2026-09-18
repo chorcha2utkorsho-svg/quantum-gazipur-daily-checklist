@@ -18,6 +18,12 @@ import {
 import { TaskTimerControl } from './TaskTimerControl';
 import { EditTaskModal } from './EditTaskModal';
 import { updateTaskPoint, resetTaskPointToDefault } from '../lib/customWorkflowStorage';
+import { DailyGoalTracker } from './DailyGoalTracker';
+import {
+  ProductivityGoalConfig,
+  getProductivityGoalConfig,
+  saveProductivityGoalConfig,
+} from '../lib/productivityGoalTracker';
 
 interface EmployeeProfileWorkspaceProps {
   currentUser?: Employee;
@@ -115,11 +121,17 @@ export const EmployeeProfileWorkspace: React.FC<EmployeeProfileWorkspaceProps> =
   const [directives, setDirectives] = useState<ExecutiveDirective[]>(() => fetchDirectives(selectedDate));
   const [ackNotice, setAckNotice] = useState<string | null>(null);
 
-  // Refresh directives & plan when date or user changes
+  // Daily productivity goal configuration for this employee
+  const [goalConfig, setGoalConfig] = useState<ProductivityGoalConfig>(() =>
+    getProductivityGoalConfig(currentUser?.employee_id)
+  );
+
+  // Refresh directives, plan & goalConfig when date or user changes
   useEffect(() => {
     setDirectives(fetchDirectives(selectedDate));
     if (currentUser?.employee_id) {
       setDailyPlan(fetchDailyPlan(currentUser.employee_id, selectedDate));
+      setGoalConfig(getProductivityGoalConfig(currentUser.employee_id));
     }
   }, [currentUser?.employee_id, selectedDate]);
 
@@ -506,6 +518,19 @@ export const EmployeeProfileWorkspace: React.FC<EmployeeProfileWorkspaceProps> =
               </div>
             </div>
           </div>
+        </div>
+
+        {/* 3.5. Dedicated Daily Productivity Goal Tracker Component */}
+        <div className="mt-4">
+          <DailyGoalTracker
+            currentUser={currentUser}
+            currentDone={stats.done}
+            totalTasks={stats.total}
+            currentPercentage={stats.percentage}
+            selectedDate={selectedDate}
+            goalConfig={goalConfig}
+            onUpdateGoalConfig={setGoalConfig}
+          />
         </div>
       </div>
 

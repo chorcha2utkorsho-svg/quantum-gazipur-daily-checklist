@@ -1,12 +1,15 @@
-import React from 'react';
-import { Employee, EmployeeDailyProgress } from '../types';
+import React, { useState } from 'react';
+import { DailyLogItem, Employee, EmployeeDailyProgress } from '../types';
 import { getWorkflowForEmployee } from '../data/workflowData';
+import { ActivityLogFeed } from './ActivityLogFeed';
+import { Activity, ChevronDown, ChevronUp, Flame } from 'lucide-react';
 
 interface CommonDashboardProps {
   selectedDate: string;
   employees: Employee[];
   progressList: EmployeeDailyProgress[];
   currentUser: Employee | null;
+  allDailyLogs?: DailyLogItem[];
   onOpenSignIn: () => void;
   onRajiSirSignIn: () => void;
   onOpenEmployeeSignUp?: () => void;
@@ -21,6 +24,7 @@ export const CommonDashboard: React.FC<CommonDashboardProps> = ({
   employees,
   progressList,
   currentUser,
+  allDailyLogs = [],
   onOpenSignIn,
   onRajiSirSignIn,
   onOpenEmployeeSignUp: _onOpenEmployeeSignUp,
@@ -29,6 +33,7 @@ export const CommonDashboard: React.FC<CommonDashboardProps> = ({
   onGoToSupervisor,
   onGoToCommunication,
 }) => {
+  const [showLiveFeed, setShowLiveFeed] = useState<boolean>(true);
   const isBoss = currentUser?.role === 'main_boss' || currentUser?.employee_id === 'RAJI_SIR';
   const isSupervisor = currentUser?.role === 'office_assistant' || isBoss;
 
@@ -480,6 +485,60 @@ export const CommonDashboard: React.FC<CommonDashboardProps> = ({
             })}
           </div>
         </div>
+      </div>
+
+      {/* 3.5. Real-Time Operations Activity Feed (All Employees Live Stream) */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-4 p-4 rounded-2xl bg-slate-900/60 border border-white/10">
+          <div className="flex items-center gap-3">
+            <span className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+              <Activity className="w-5 h-5 animate-pulse" />
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-black text-white">
+                  রিয়েল-টাইম লাইভ অ্যাক্টিভিটি স্ট্রিম (Live Operations Stream)
+                </h3>
+                <span className="flex h-2 w-2 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+              </div>
+              <p className="text-xs text-slate-400">
+                উভয় অফিসের সকল স্টাফদের কাজের সমাপ্তি, সময় লগ ও নোটের লাইভ আপডেট
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onGoToSupervisor}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-xs font-bold text-amber-300 transition cursor-pointer"
+              title="ঘণ্টাপ্রতি কাজের ইনটেনসিটি হিটম্যাপ ও বটলনেক বিশ্লেষণ দেখুন"
+            >
+              <Flame className="w-3.5 h-3.5 text-amber-400" />
+              <span>বটলনেক হিটম্যাপ (Heatmap)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowLiveFeed(!showLiveFeed)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-slate-300 transition cursor-pointer"
+            >
+              <span>{showLiveFeed ? 'ফিড সঙ্কুচিত করুন' : 'ফিড খুলুন'}</span>
+              {showLiveFeed ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+          </div>
+        </div>
+
+        {showLiveFeed && (
+          <ActivityLogFeed
+            selectedDate={selectedDate}
+            employees={employees}
+            allDailyLogs={allDailyLogs}
+            currentUser={currentUser || undefined}
+            onInspectEmployee={onSelectEmployee}
+          />
+        )}
       </div>
 
       {/* 4. Executive Oversight Card: Raji Sir */}

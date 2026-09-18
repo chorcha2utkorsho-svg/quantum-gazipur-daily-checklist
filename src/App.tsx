@@ -39,9 +39,11 @@ import {
   getStoredSession,
   saveStoredSession,
   fetchAllEmployeesComparative,
+  fetchAllEmployeesAllDailyLogs,
   saveLocalDailyLogs,
   updateEmployeePin,
 } from './lib/supabase';
+import { recordActivity } from './lib/activityLogger';
 
 import { Header } from './components/Header';
 import { StickyProgressBar } from './components/StickyProgressBar';
@@ -66,6 +68,17 @@ import { DeveloperConsoleModal } from './components/DeveloperConsoleModal';
 import { DatabaseArchiveModal } from './components/DatabaseArchiveModal';
 import { FocusModeView } from './components/FocusModeView';
 import { getEffectiveWorkflowForEmployee } from './lib/customWorkflowStorage';
+import {
+  getProductivityGoalConfig,
+  saveProductivityGoalConfig,
+  checkGoalAchievement,
+  recordGoalAchievement,
+  playGoalReachedSound,
+  GoalAchievementRecord,
+  ProductivityGoalConfig,
+} from './lib/productivityGoalTracker';
+import { GoalReachedModal } from './components/GoalReachedModal';
+import { DailyGoalTracker } from './components/DailyGoalTracker';
 
 export default function App() {
   const getTodayString = () => {
@@ -90,6 +103,7 @@ export default function App() {
   const [employees, setEmployees] = useState<Employee[]>(INITIAL_EMPLOYEES);
   const [templates, setTemplates] = useState<TaskTemplate[]>([]);
   const [logs, setLogs] = useState<DailyLogItem[]>([]);
+  const [allDailyLogs, setAllDailyLogs] = useState<DailyLogItem[]>([]);
   const [progressList, setProgressList] = useState<EmployeeDailyProgress[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<BranchId>('all');
 
@@ -165,6 +179,17 @@ export default function App() {
     setSelectedCategory('ALL');
   }, [employeeWorkflow]);
 
+  // Productivity goal configuration for current user
+  const [goalConfig, setGoalConfig] = useState<ProductivityGoalConfig>(() =>
+    getProductivityGoalConfig(currentUser?.employee_id || 'RAJI_SIR')
+  );
+
+  useEffect(() => {
+    if (currentUser?.employee_id) {
+      setGoalConfig(getProductivityGoalConfig(currentUser.employee_id));
+    }
+  }, [currentUser?.employee_id]);
+
   // Modals state
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isCredentialsVaultOpen, setIsCredentialsVaultOpen] = useState(false);
@@ -181,6 +206,9 @@ export default function App() {
   const [inspectedEmployee, setInspectedEmployee] = useState<Employee | null>(null);
   const [inspectedLogs, setInspectedLogs] = useState<DailyLogItem[]>([]);
   const [isInspectionOpen, setIsInspectionOpen] = useState(false);
+
+  // Daily productivity goal achievement modal state
+  const [goalAchievementModal, setGoalAchievementModal] = useState<GoalAchievementRecord | null>(null);
 
   // Check Supabase connection state
   const checkSupabaseStatus = useCallback(() => {
@@ -278,6 +306,10 @@ export default function App() {
         // Load comparative overview for supervisor
         const comparative = await fetchAllEmployeesComparative(date, loadedEmployees, loadedTemplates);
         setProgressList(comparative);
+
+        // Load all daily logs across all employees for the activity feed & supervisor audit
+        const allLogs = await fetchAllEmployeesAllDailyLogs(date, loadedEmployees, loadedTemplates);
+        setAllDailyLogs(allLogs);
       } catch (err) {
         console.error('Error loading data:', err);
       } finally {
@@ -297,6 +329,8 @@ export default function App() {
     try {
       const comparative = await fetchAllEmployeesComparative(selectedDate, employees, templates);
       setProgressList(comparative);
+      const allLogs = await fetchAllEmployeesAllDailyLogs(selectedDate, employees, templates);
+      setAllDailyLogs(allLogs);
     } catch (err) {
       console.error('Error refreshing comparative list:', err);
     }
@@ -399,6 +433,55 @@ export default function App() {
     });
   }, []);
 
+  // Check and trigger Daily Productivity Goal achievement (Sound + Celebration + Modal)
+  const triggerProductivityGoalCheck = useCallback(
+    (newDoneCount: number, totalTasksCount: number) => {
+      if (!currentUser?.employee_id || totalTasksCount === 0) return;
+
+      const empId = currentUser.employee_id;
+      const config = getProductivityGoalConfig(empId);
+
+      const isAchieved = checkGoalAchievement(
+        empId,
+        selectedDate,
+        newDoneCount,
+        totalTasksCount,
+        config
+      );
+
+      if (isAchieved) {
+        const record = recordGoalAchievement(
+          empId,
+          selectedDate,
+          newDoneCount,
+          totalTasksCount,
+          config
+        );
+
+        if (record) {
+          // Play audio notification if enabled
+          if (config.enableAudioNotification) {
+            playGoalReachedSound();
+          }
+
+          // Fire celebratory confetti if enabled
+          if (config.enableCelebration) {
+            confetti({
+              particleCount: 80,
+              spread: 60,
+              origin: { y: 0.5 },
+              colors: ['#10b981', '#34d399', '#fbbf24', '#38bdf8'],
+            });
+          }
+
+          // Show congratulatory goal reached modal
+          setGoalAchievementModal(record);
+        }
+      }
+    },
+    [currentUser?.employee_id, selectedDate]
+  );
+
   // Toggle status of a task for active user
   const handleToggleStatus = async (taskName: string) => {
     const target = logs.find((l) => l.task_name === taskName);
@@ -419,11 +502,28 @@ export default function App() {
     // Save to local & Supabase
     await upsertDailyLog(updatedItem);
 
+    // Record real-time activity for the live feed
+    const activeEmp = employees.find((e) => e.employee_id === updatedItem.employee_id) || currentUser;
+    recordActivity({
+      date: selectedDate,
+      employee_id: updatedItem.employee_id,
+      employee_name: activeEmp?.name || updatedItem.employee_id,
+      employee_role: activeEmp?.role || 'staff',
+      branch: updatedItem.branch || activeEmp?.branch,
+      avatar_color: activeEmp?.avatar_color,
+      task_name: taskName,
+      type: newStatus === 'done' ? 'task_completed' : 'task_reopened',
+    });
+
     // Update comparative state in background
     handleRefreshComparative();
 
-    // Check 100% completion
+    // Check productivity goal achievement & 100% completion
     const willBeDone = newLogs.filter((l) => l.status === 'done').length;
+    if (wasPending) {
+      triggerProductivityGoalCheck(willBeDone, newLogs.length);
+    }
+
     if (wasPending && willBeDone === newLogs.length && newLogs.length > 0) {
       fireCelebration();
     }
@@ -443,6 +543,22 @@ export default function App() {
     setLogs(newLogs);
 
     await upsertDailyLog(updatedItem);
+
+    if (reason && reason.trim()) {
+      const activeEmp = employees.find((e) => e.employee_id === updatedItem.employee_id) || currentUser;
+      recordActivity({
+        date: selectedDate,
+        employee_id: updatedItem.employee_id,
+        employee_name: activeEmp?.name || updatedItem.employee_id,
+        employee_role: activeEmp?.role || 'staff',
+        branch: updatedItem.branch || activeEmp?.branch,
+        avatar_color: activeEmp?.avatar_color,
+        task_name: taskName,
+        type: 'note_added',
+        note: reason.trim(),
+      });
+    }
+
     handleRefreshComparative();
   };
 
@@ -721,9 +837,24 @@ export default function App() {
 
       setLogs(newLogs);
       await upsertDailyLog(updatedItem);
+
+      // Record real-time activity for the live feed
+      const activeEmp = employees.find((e) => e.employee_id === updatedItem.employee_id) || currentUser;
+      recordActivity({
+        date: selectedDate,
+        employee_id: updatedItem.employee_id,
+        employee_name: activeEmp?.name || updatedItem.employee_id,
+        employee_role: activeEmp?.role || 'staff',
+        branch: updatedItem.branch || activeEmp?.branch,
+        avatar_color: activeEmp?.avatar_color,
+        task_name: taskName,
+        type: 'time_logged',
+        actual_minutes: minutes,
+      });
+
       handleRefreshComparative();
     },
-    [activeTimerTask, logs, currentUser, selectedDate, stopTimerInterval]
+    [activeTimerTask, logs, currentUser, selectedDate, stopTimerInterval, employees]
   );
 
   // Toggle status for a workflow task
@@ -764,12 +895,32 @@ export default function App() {
       const newLogs = logs.map((l) => (l.task_name === taskName ? updatedItem : l));
       setLogs(newLogs);
       await upsertDailyLog(updatedItem);
+
+      // Record real-time activity for the live feed
+      const activeEmp = employees.find((e) => e.employee_id === updatedItem.employee_id) || currentUser;
+      recordActivity({
+        date: selectedDate,
+        employee_id: updatedItem.employee_id,
+        employee_name: activeEmp?.name || updatedItem.employee_id,
+        employee_role: activeEmp?.role || 'staff',
+        branch: updatedItem.branch || activeEmp?.branch,
+        avatar_color: activeEmp?.avatar_color,
+        task_name: taskName,
+        type: newStatus === 'done' ? 'task_completed' : 'task_reopened',
+        actual_minutes: updatedItem.actual_minutes,
+        time_spent_seconds: updatedItem.time_spent_seconds,
+      });
+
       handleRefreshComparative();
 
       const willBeDone = workflowTasks.filter((t) => {
         if (t.name === taskName) return newStatus === 'done';
         return workflowLogsMap[t.name]?.status === 'done';
       }).length;
+
+      if (wasPending) {
+        triggerProductivityGoalCheck(willBeDone, workflowTasks.length);
+      }
 
       if (wasPending && willBeDone === workflowTasks.length && workflowTasks.length > 0) {
         fireCelebration();
@@ -792,12 +943,30 @@ export default function App() {
       const newLogs = [...logs, updatedItem];
       setLogs(newLogs);
       await upsertDailyLog(updatedItem);
+
+      // Record real-time activity for the live feed
+      const activeEmp = employees.find((e) => e.employee_id === updatedItem.employee_id) || currentUser;
+      recordActivity({
+        date: selectedDate,
+        employee_id: updatedItem.employee_id,
+        employee_name: activeEmp?.name || updatedItem.employee_id,
+        employee_role: activeEmp?.role || 'staff',
+        branch: updatedItem.branch || activeEmp?.branch,
+        avatar_color: activeEmp?.avatar_color,
+        task_name: taskName,
+        type: 'task_completed',
+        actual_minutes: updatedItem.actual_minutes,
+        time_spent_seconds: updatedItem.time_spent_seconds,
+      });
+
       handleRefreshComparative();
 
       const willBeDone = workflowTasks.filter((t) => {
         if (t.name === taskName) return true;
         return workflowLogsMap[t.name]?.status === 'done';
       }).length;
+
+      triggerProductivityGoalCheck(willBeDone, workflowTasks.length);
 
       if (willBeDone === workflowTasks.length && workflowTasks.length > 0) {
         fireCelebration();
@@ -835,6 +1004,23 @@ export default function App() {
       setLogs(newLogs);
       await upsertDailyLog(updatedItem);
     }
+
+    if (reason && reason.trim()) {
+      const activeEmp = employees.find((e) => e.employee_id === updatedItem.employee_id) || currentUser;
+      recordActivity({
+        date: selectedDate,
+        employee_id: updatedItem.employee_id,
+        employee_name: activeEmp?.name || updatedItem.employee_id,
+        employee_role: activeEmp?.role || 'staff',
+        branch: updatedItem.branch || activeEmp?.branch,
+        avatar_color: activeEmp?.avatar_color,
+        task_name: taskName,
+        type: 'note_added',
+        note: reason.trim(),
+        actual_minutes: updatedItem.actual_minutes,
+      });
+    }
+
     handleRefreshComparative();
   };
 
@@ -960,6 +1146,7 @@ export default function App() {
             employees={employees}
             progressList={progressList}
             currentUser={currentUser}
+            allDailyLogs={allDailyLogs}
             onOpenSignIn={() => setIsLoginModalOpen(true)}
             onRajiSirSignIn={handleRajiSirSignIn}
             onSelectEmployee={(emp) => {
@@ -987,6 +1174,7 @@ export default function App() {
             onApproveEmployee={handleApproveEmployee}
             onRejectEmployee={handleRejectEmployee}
             logs={logs}
+            allDailyLogs={allDailyLogs}
           />
         ) : viewMode === 'profile' ? (
           /* 3. Personalized Employee Profile & Planner Workspace (Exact User Requirement) */
@@ -1036,6 +1224,17 @@ export default function App() {
               pendingTasks={workflowStats.pending}
               remainingTasks={workflowStats.pending}
               percentage={workflowStats.percentage}
+            />
+
+            {/* 2.5. Daily Productivity Goal Tracker */}
+            <DailyGoalTracker
+              currentUser={currentUser}
+              currentDone={workflowStats.done}
+              totalTasks={workflowStats.total}
+              currentPercentage={workflowStats.percentage}
+              selectedDate={selectedDate}
+              goalConfig={goalConfig}
+              onUpdateGoalConfig={setGoalConfig}
             />
 
             {/* 3. Action / Search / Filter Bar */}
@@ -1274,6 +1473,19 @@ export default function App() {
         currentUser={currentUser}
         employees={employees}
       />
+
+      {/* Daily Productivity Goal Reached Modal */}
+      {goalAchievementModal && (
+        <GoalReachedModal
+          achievement={goalAchievementModal}
+          currentUser={currentUser}
+          onClose={() => setGoalAchievementModal(null)}
+          onViewSummary={() => {
+            setGoalAchievementModal(null);
+            setViewMode('profile');
+          }}
+        />
+      )}
 
       {/* Midnight Rollover Notification Toast / Banner */}
       {midnightRolloverNotice && midnightRolloverNotice.show && (

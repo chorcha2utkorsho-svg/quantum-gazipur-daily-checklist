@@ -236,6 +236,24 @@ export interface AIAnalysisResult {
   source?: string;
 }
 
+export type ActivityType = 'task_completed' | 'task_reopened' | 'note_added' | 'time_logged';
+
+export interface ActivityLogEntry {
+  id: string;
+  timestamp: string; // ISO string
+  type: ActivityType;
+  date: string; // YYYY-MM-DD
+  employee_id: string;
+  employee_name: string;
+  employee_role: string;
+  branch?: BranchId;
+  avatar_color?: string;
+  task_name: string;
+  note?: string;
+  actual_minutes?: number;
+  time_spent_seconds?: number;
+}
+
 export const BOSS_RAJI_SIR: Employee = {
   id: 'emp-raji-sir-boss',
   employee_id: 'RAJI_SIR',

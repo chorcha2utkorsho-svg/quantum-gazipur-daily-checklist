@@ -652,6 +652,21 @@ export async function fetchAllEmployeesComparative(
   return results;
 }
 
+// Fetch all daily logs across all employees for comprehensive feed & activity inspection
+export async function fetchAllEmployeesAllDailyLogs(
+  date: string,
+  employees: Employee[],
+  templates: TaskTemplate[]
+): Promise<DailyLogItem[]> {
+  const allLogs: DailyLogItem[] = [];
+  for (const emp of employees) {
+    if (!emp || !emp.employee_id) continue;
+    const logs = await fetchDailyLogsForEmployee(date, emp.employee_id, templates);
+    allLogs.push(...logs);
+  }
+  return allLogs;
+}
+
 // Call AI Strategic Analysis endpoint
 export async function requestAiAnalysis(payload: {
   date: string;

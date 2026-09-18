@@ -1,35 +1,64 @@
 import React from 'react';
 import { DailySummaryStats } from '../types';
+import { Target, Award } from 'lucide-react';
 
 interface StickyProgressBarProps {
   stats: DailySummaryStats;
   currentFilter: 'all' | 'pending' | 'done';
   onFilterChange: (filter: 'all' | 'pending' | 'done') => void;
+  goalThreshold?: number; // e.g. 80 for 80%
+  isGoalReached?: boolean;
 }
 
 export const StickyProgressBar: React.FC<StickyProgressBarProps> = ({
   stats,
   currentFilter,
   onFilterChange,
+  goalThreshold = 80,
+  isGoalReached = false,
 }) => {
   const isComplete = stats.percentage === 100 && stats.total > 0;
+  const reachedGoal = isGoalReached || stats.percentage >= goalThreshold;
 
   return (
     <div id="sticky-progress-bar" className="sticky top-0 z-30 w-full bg-[#0a0a0a]/90 backdrop-blur-md border-b border-white/10 shadow-lg shadow-black/40 transition-all">
-      <div className="max-w-6xl mx-auto px-6 sm:px-10 py-5 bg-gradient-to-b from-white/5 to-transparent">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-4">
-          {/* Main Percentage Display */}
+      <div className="max-w-6xl mx-auto px-6 sm:px-10 py-4 bg-gradient-to-b from-white/5 to-transparent">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-3">
+          {/* Main Percentage Display & Goal Badge */}
           <div>
-            <div className="flex items-baseline gap-2">
-              <h2 className="text-3xl sm:text-4xl font-light text-white tracking-tight">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h2 className="text-2xl sm:text-3xl font-light text-white tracking-tight">
                 {stats.percentage}%{' '}
-                <span className="text-lg sm:text-xl text-[#8e9299] font-normal">
+                <span className="text-base sm:text-lg text-[#8e9299] font-normal">
                   Completion
                 </span>
               </h2>
+
+              {/* Goal threshold pill indicator */}
+              <div
+                className={`inline-flex items-center gap-1 text-[11px] px-2.5 py-0.5 rounded-full font-bold border transition-all ${
+                  reachedGoal
+                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-xs'
+                    : 'bg-amber-500/10 text-amber-300 border-amber-500/30'
+                }`}
+                title={`দৈনিক লক্ষ্যমাত্রা থ্রেশহোল্ড: ${goalThreshold}%`}
+              >
+                {reachedGoal ? (
+                  <>
+                    <Award className="w-3 h-3 text-emerald-400" />
+                    <span>লক্ষ্য অর্জিত ({goalThreshold}%)</span>
+                  </>
+                ) : (
+                  <>
+                    <Target className="w-3 h-3 text-amber-400" />
+                    <span>লক্ষ্য: {goalThreshold}%</span>
+                  </>
+                )}
+              </div>
+
               {isComplete && (
-                <span className="inline-flex items-center text-[11px] uppercase tracking-widest px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold ml-2">
-                  All Done
+                <span className="inline-flex items-center text-[10px] uppercase tracking-widest px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold">
+                  All 100% Done
                 </span>
               )}
             </div>
@@ -106,12 +135,25 @@ export const StickyProgressBar: React.FC<StickyProgressBarProps> = ({
           </div>
         </div>
 
-        {/* The Signature Glowing Progress Line */}
-        <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
+        {/* The Signature Glowing Progress Line with Goal Threshold Marker */}
+        <div className="relative h-2 w-full bg-white/10 rounded-full overflow-hidden">
           <div
-            className="h-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)] transition-all duration-500 ease-out"
+            className={`h-full transition-all duration-500 ease-out ${
+              reachedGoal
+                ? 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.7)]'
+                : 'bg-emerald-500/80 shadow-[0_0_12px_rgba(16,185,129,0.3)]'
+            }`}
             style={{ width: `${stats.percentage}%` }}
           />
+
+          {/* Goal threshold indicator pin */}
+          {goalThreshold > 0 && goalThreshold < 100 && (
+            <div
+              className="absolute top-0 bottom-0 w-0.5 bg-amber-400 z-10 opacity-90 shadow-sm"
+              style={{ left: `${goalThreshold}%` }}
+              title={`Goal Threshold: ${goalThreshold}%`}
+            />
+          )}
         </div>
       </div>
     </div>
