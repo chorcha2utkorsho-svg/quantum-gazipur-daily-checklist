@@ -12,6 +12,7 @@ import {
   Play,
   Pause,
   Check,
+  AlertTriangle,
 } from 'lucide-react';
 import { WorkflowTask, WORKFLOW_CATEGORIES, WorkflowCategory } from '../data/workflowData';
 import { DailyLogItem } from '../types';
@@ -90,16 +91,20 @@ const TaskRow: React.FC<TaskRowProps> = ({
 }) => {
   const log = dailyLogs[task.name];
   const isDone = log?.status === 'done';
+  const isHighPriority = task.priority === 'high';
   const reason = log?.reason_for_pending || '';
   const isReasonOpen = activeReasonInput === task.name;
 
   return (
     <tr
       key={task.id}
-      className={`transition-colors ${
+      id={`task-row-${task.id}`}
+      className={`transition-all duration-200 ${
         isDone
-          ? 'bg-emerald-950/20 hover:bg-emerald-950/30'
-          : 'bg-transparent hover:bg-white/5'
+          ? 'bg-emerald-950/20 hover:bg-emerald-950/30 border-y border-transparent'
+          : isHighPriority
+          ? 'bg-gradient-to-r from-rose-950/30 via-rose-950/15 to-transparent hover:bg-rose-900/25 border-y border-rose-500/30 shadow-[inset_4px_0_0_0_#f43f5e,0_0_14px_rgba(244,63,94,0.12)]'
+          : 'bg-transparent hover:bg-white/5 border-y border-transparent'
       }`}
     >
       {/* Checkbox Column */}
@@ -111,22 +116,34 @@ const TaskRow: React.FC<TaskRowProps> = ({
           className={`w-5 h-5 rounded border flex items-center justify-center text-xs font-black transition-all ${
             isDone
               ? 'bg-emerald-500 border-emerald-500 text-slate-950 shadow-xs'
+              : isHighPriority
+              ? 'border-rose-500/70 hover:border-rose-400 bg-rose-500/15 hover:bg-rose-500/25 text-transparent ring-2 ring-rose-500/40 shadow-xs shadow-rose-500/30'
               : 'border-white/30 hover:border-white/60 bg-white/5 text-transparent'
           }`}
-          title={isDone ? 'Mark as Pending' : 'Mark as Done'}
+          title={isDone ? 'Mark as Pending' : isHighPriority ? 'Urgent Task (জরুরি কাজ) - Mark as Done' : 'Mark as Done'}
         >
           X
         </button>
       </td>
 
       {/* Serial Number */}
-      <td className="py-2.5 px-2 text-center font-mono text-slate-400 font-medium text-[11px]">
-        {task.order}
+      <td className="py-2.5 px-2 text-center font-mono font-medium text-[11px]">
+        <span className={isHighPriority && !isDone ? 'text-rose-300 font-bold' : 'text-slate-400'}>
+          {task.order}
+        </span>
       </td>
 
       {/* Code ID */}
-      <td className="py-2.5 px-2.5 font-mono text-xs font-bold text-slate-300">
-        <span className="px-1.5 py-0.5 rounded bg-white/10 border border-white/10">
+      <td className="py-2.5 px-2.5 font-mono text-xs font-bold">
+        <span
+          className={`px-1.5 py-0.5 rounded border transition-colors ${
+            isDone
+              ? 'bg-white/5 border-white/5 text-slate-400'
+              : isHighPriority
+              ? 'bg-rose-500/20 border-rose-500/40 text-rose-200 shadow-2xs'
+              : 'bg-white/10 border-white/10 text-slate-300'
+          }`}
+        >
           {task.code}
         </span>
       </td>
@@ -134,12 +151,35 @@ const TaskRow: React.FC<TaskRowProps> = ({
       {/* Task Name & Details */}
       <td className="py-2.5 px-3">
         <div className="cursor-pointer" onClick={() => onToggleStatus(task.name)}>
-          <div
-            className={`font-bold text-xs sm:text-sm tracking-tight transition-colors ${
-              isDone ? 'text-slate-500 line-through' : 'text-white'
-            }`}
-          >
-            {task.name}
+          <div className="flex items-center gap-2 flex-wrap">
+            <div
+              className={`font-bold text-xs sm:text-sm tracking-tight transition-colors ${
+                isDone
+                  ? 'text-slate-500 line-through'
+                  : isHighPriority
+                  ? 'text-rose-100 font-extrabold drop-shadow-xs'
+                  : 'text-white'
+              }`}
+            >
+              {task.name}
+            </div>
+
+            {/* Color-coded Urgent Badge for High Priority Tasks */}
+            {isHighPriority && !isDone && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-full bg-rose-500/25 text-rose-200 border border-rose-500/50 shadow-sm shadow-rose-500/30 ring-1 ring-rose-500/30">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-rose-400"></span>
+                </span>
+                <AlertTriangle className="w-2.5 h-2.5 text-rose-400" />
+                Urgent
+              </span>
+            )}
+            {isHighPriority && isDone && (
+              <span className="inline-flex items-center gap-1 text-[9px] font-mono font-semibold uppercase px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                High Priority Completed
+              </span>
+            )}
           </div>
           <div className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
             {task.details}
@@ -148,7 +188,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
             <span
               className={`text-[10px] font-bold px-1.5 py-0.2 rounded font-mono uppercase ${
                 task.priority === 'high'
-                  ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                  ? 'bg-rose-500/25 text-rose-200 border border-rose-500/50 shadow-xs shadow-rose-500/25 ring-1 ring-rose-500/30'
                   : task.priority === 'medium'
                   ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
                   : 'bg-white/5 text-slate-400 border border-white/10'
@@ -206,7 +246,19 @@ const TaskRow: React.FC<TaskRowProps> = ({
       {/* Priority Column */}
       <td className="py-2.5 px-3 text-center">
         {task.priority === 'high' ? (
-          <span className="inline-block text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 font-mono shadow-xs">
+          <span
+            className={`inline-flex items-center justify-center gap-1.5 text-[11px] font-bold px-2.5 py-0.5 rounded-full font-mono transition-all ${
+              isDone
+                ? 'bg-rose-500/10 text-rose-400/70 border border-rose-500/20'
+                : 'bg-rose-500/25 text-rose-200 border border-rose-500/50 shadow-sm shadow-rose-500/30 ring-1 ring-rose-500/30'
+            }`}
+          >
+            {!isDone && (
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-400"></span>
+              </span>
+            )}
             High
           </span>
         ) : task.priority === 'medium' ? (
@@ -414,6 +466,12 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
   const completedMins = completedMinutes % 60;
   const formattedCompletedTime = completedHours > 0 ? `${completedHours}h ${completedMins}m` : `${completedMins}m`;
 
+  const highPriorityTasks = useMemo(() => tasks.filter((t) => t.priority === 'high'), [tasks]);
+  const pendingHighPriorityCount = useMemo(
+    () => highPriorityTasks.filter((t) => dailyLogs[t.name]?.status !== 'done').length,
+    [highPriorityTasks, dailyLogs]
+  );
+
   // Sorted list for flat view
   const globallySortedTasks = useMemo(() => {
     return sortTasks(tasks);
@@ -434,6 +492,38 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
             <Clock className="w-3.5 h-3.5" />
             Est. Workload: {formattedTotalTime} ({formattedCompletedTime} completed)
           </span>
+
+          {/* Urgent High Priority Tasks Counter Indicator */}
+          {highPriorityTasks.length > 0 && (
+            <span
+              className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-0.5 rounded-full border font-mono transition-all ${
+                pendingHighPriorityCount > 0
+                  ? 'bg-rose-500/20 text-rose-300 border-rose-500/50 shadow-xs shadow-rose-500/25 ring-1 ring-rose-500/30'
+                  : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+              }`}
+              title={
+                pendingHighPriorityCount > 0
+                  ? `${pendingHighPriorityCount} urgent high priority tasks pending today`
+                  : 'All urgent high priority tasks completed!'
+              }
+            >
+              {pendingHighPriorityCount > 0 ? (
+                <>
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-400"></span>
+                  </span>
+                  <AlertTriangle className="w-3 h-3 text-rose-400" />
+                  <span>{pendingHighPriorityCount} Urgent High</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                  <span>All Urgent Done</span>
+                </>
+              )}
+            </span>
+          )}
         </div>
 
         {/* Workday Structuring & Sort Controls */}
@@ -733,6 +823,9 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
                   (t) => dailyLogs[t.name]?.status === 'done'
                 ).length;
                 const totalCount = categoryTasks.length;
+                const catHighPending = categoryTasks.filter(
+                  (t) => t.priority === 'high' && dailyLogs[t.name]?.status !== 'done'
+                ).length;
                 const catPercent = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
                 const categoryMinutes = categoryTasks.reduce(
                   (sum, t) => sum + (t.estimated_minutes || 30),
@@ -767,6 +860,16 @@ export const WorkflowTaskTable: React.FC<WorkflowTaskTableProps> = ({
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-white/10 text-slate-300 border-white/10 font-mono">
                               {totalCount} Tasks
                             </span>
+                            {catHighPending > 0 && (
+                              <span
+                                className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500/25 text-rose-200 border border-rose-500/40 font-mono shadow-xs shadow-rose-500/25 ring-1 ring-rose-500/30"
+                                title={`${catHighPending} urgent high-priority task(s) pending in this category`}
+                              >
+                                <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" />
+                                <AlertTriangle className="w-2.5 h-2.5 text-rose-400" />
+                                {catHighPending} Urgent
+                              </span>
+                            )}
                             <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border bg-sky-500/10 text-sky-300 border-sky-500/20 font-mono" title="Estimated total time for this category">
                               <Clock className="w-3 h-3 text-sky-400" />
                               Est: {formattedCatTime}

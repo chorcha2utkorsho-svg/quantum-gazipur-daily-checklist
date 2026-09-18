@@ -1,5 +1,7 @@
 export type TaskStatus = 'done' | 'pending';
 
+export type ViewMode = 'boxes' | 'head-tasks' | 'checklist' | 'supervisor' | 'common' | 'profile' | 'communication';
+
 export type BranchId = 'all' | 'chowrasta' | 'rajbari';
 
 export interface BranchInfo {

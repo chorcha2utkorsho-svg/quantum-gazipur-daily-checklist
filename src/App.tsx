@@ -17,11 +17,13 @@ import {
   DEFAULT_SUPERVISOR,
   BOSS_RAJI_SIR,
   INITIAL_EMPLOYEES,
+  ViewMode,
 } from './types';
 import {
   WORKFLOW_CATEGORIES,
   ALL_WORKFLOW_TASKS,
   WorkflowTask,
+  WorkflowCategory,
   getWorkflowForEmployee,
 } from './data/workflowData';
 import {
@@ -80,6 +82,8 @@ import {
 import { GoalReachedModal } from './components/GoalReachedModal';
 import { DailyGoalTracker } from './components/DailyGoalTracker';
 import { MobileDrawer } from './components/MobileDrawer';
+import { HeadsGridView } from './components/HeadsGridView';
+import { HeadTaskListView } from './components/HeadTaskListView';
 
 export default function App() {
   const getTodayString = () => {
@@ -125,9 +129,55 @@ export default function App() {
 
   const isBoss = currentUser?.role === 'main_boss' || currentUser?.employee_id === 'RAJI_SIR';
   const isSupervisor = currentUser?.role === 'office_assistant' || isBoss;
-  const [viewMode, setViewMode] = useState<'supervisor' | 'checklist' | 'common' | 'profile' | 'communication'>(() =>
-    isSupervisor ? 'supervisor' : 'profile'
-  );
+  const [viewMode, setViewMode] = useState<ViewMode>('boxes');
+  const [selectedHeadId, setSelectedHeadId] = useState<string | null>(null);
+
+  // Custom Heads & Tasks from Excel upload or manual addition
+  const [customHeads, setCustomHeads] = useState<WorkflowCategory[]>(() => {
+    try {
+      const saved = localStorage.getItem('qgz_custom_heads');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [customTasks, setCustomTasks] = useState<WorkflowTask[]>(() => {
+    try {
+      const saved = localStorage.getItem('qgz_custom_tasks');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const handleSelectHead = (categoryId: string) => {
+    setSelectedHeadId(categoryId);
+    setSelectedCategory(categoryId);
+    setViewMode('head-tasks');
+  };
+
+  const handleBackToHeads = () => {
+    setSelectedHeadId(null);
+    setViewMode('boxes');
+  };
+
+  const handleImportCustomHeadsAndTasks = (newCats: WorkflowCategory[], newTks: WorkflowTask[]) => {
+    const updatedCats = [...customHeads];
+    newCats.forEach((c) => {
+      if (!updatedCats.some((existing) => existing.id === c.id)) {
+        updatedCats.push(c);
+      }
+    });
+    const updatedTasks = [...customTasks, ...newTks];
+    setCustomHeads(updatedCats);
+    setCustomTasks(updatedTasks);
+    try {
+      localStorage.setItem('qgz_custom_heads', JSON.stringify(updatedCats));
+      localStorage.setItem('qgz_custom_tasks', JSON.stringify(updatedTasks));
+    } catch (e) {
+      console.error('Failed to persist custom workflow heads to localStorage', e);
+    }
+  };
 
   const [filter, setFilter] = useState<'all' | 'pending' | 'done'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -282,12 +332,12 @@ export default function App() {
     });
   };
 
-  // Synchronize viewMode whenever user changes
+  // Keep viewMode on boxes default for clean Quantum UI layout
   useEffect(() => {
-    if (currentUser?.role === 'office_assistant' || currentUser?.role === 'main_boss' || currentUser?.employee_id === 'RAJI_SIR') {
-      setViewMode('supervisor');
-    } else {
-      setViewMode('profile');
+    // Only reset if currently in head-tasks
+    if (viewMode === 'head-tasks') {
+      setViewMode('boxes');
+      setSelectedHeadId(null);
     }
   }, [currentUser]);
 
@@ -623,14 +673,40 @@ export default function App() {
     return { total, done, pending, percentage };
   }, [workflowTasks, workflowLogsMap]);
 
+  // Effective categories including custom heads from Excel or manual creation
+  const effectiveCategories = useMemo(() => {
+    const combined = [...employeeWorkflow.categories];
+    customHeads.forEach((ch) => {
+      if (!combined.some((c) => c.id === ch.id)) {
+        combined.push(ch);
+      }
+    });
+    return combined;
+  }, [employeeWorkflow.categories, customHeads]);
+
+  // Effective tasks including custom tasks
+  const effectiveTasks = useMemo(() => {
+    return [...workflowTasks, ...customTasks];
+  }, [workflowTasks, customTasks]);
+
+  // Active category when in 'head-tasks' view
+  const activeCategoryForHeadView = useMemo(() => {
+    if (!selectedHeadId) return effectiveCategories[0] || employeeWorkflow.categories[0];
+    return (
+      effectiveCategories.find((c) => c.id === selectedHeadId) ||
+      employeeWorkflow.categories.find((c) => c.id === selectedHeadId) ||
+      effectiveCategories[0]
+    );
+  }, [selectedHeadId, effectiveCategories, employeeWorkflow.categories]);
+
   // Task count per category
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    employeeWorkflow.categories.forEach((cat) => {
-      counts[cat.id] = workflowTasks.filter((t) => t.category === cat.id).length;
+    effectiveCategories.forEach((cat) => {
+      counts[cat.id] = effectiveTasks.filter((t) => t.category === cat.id).length;
     });
     return counts;
-  }, [workflowTasks, employeeWorkflow.categories]);
+  }, [effectiveTasks, effectiveCategories]);
 
   // Filtered 73 workflow tasks based on category, priority, and search
   const filteredWorkflowTasks = useMemo(() => {
@@ -1144,8 +1220,48 @@ export default function App() {
           </div>
         )}
 
-        {/* 1. Common Dashboard Hub */}
-        {viewMode === 'common' ? (
+        {/* 0. Heads Grid View (The 3-column / 3x3 Boxes Layout from user sketch) */}
+        {viewMode === 'boxes' ? (
+          <HeadsGridView
+            categories={effectiveCategories}
+            tasks={effectiveTasks}
+            dailyLogs={workflowLogsMap}
+            onSelectHead={handleSelectHead}
+            currentUser={currentUser}
+            selectedDate={selectedDate}
+            onImportCustomHeadsAndTasks={handleImportCustomHeadsAndTasks}
+          />
+        ) : viewMode === 'head-tasks' && activeCategoryForHeadView ? (
+          /* 0.1 Tasks inside the selected Head */
+          <HeadTaskListView
+            category={activeCategoryForHeadView}
+            tasks={effectiveTasks}
+            dailyLogs={workflowLogsMap}
+            onBackToHeads={handleBackToHeads}
+            onToggleTaskStatus={handleToggleWorkflowStatus}
+            onUpdateReason={handleUpdateWorkflowReason}
+            currentUser={currentUser}
+            selectedDate={selectedDate}
+            onAddNewTask={(newTask) => {
+              const fullTask: WorkflowTask = {
+                id: newTask.id || `custom-task-${Date.now()}`,
+                code: newTask.code || `TK-${effectiveTasks.length + 1}`,
+                name: newTask.name || '',
+                details: newTask.details || '',
+                category: activeCategoryForHeadView.id,
+                categoryBn: activeCategoryForHeadView.nameBn,
+                priority: newTask.priority || 'medium',
+                order: effectiveTasks.length + 1,
+              };
+              handleImportCustomHeadsAndTasks([], [fullTask]);
+            }}
+            activeTimerTaskName={activeTimerTask}
+            activeTimerSeconds={activeTimerSeconds}
+            onStartTimer={handleStartTimer}
+            onPauseTimer={handlePauseTimer}
+            onResetTimer={handleResetTimer}
+          />
+        ) : viewMode === 'common' ? (
           <CommonDashboard
             selectedDate={selectedDate}
             employees={employees}
@@ -1517,6 +1633,8 @@ export default function App() {
         onToggleTheme={handleToggleTheme}
         isFocusMode={isFocusMode}
         onToggleFocusMode={() => setIsFocusMode((prev) => !prev)}
+        categories={effectiveCategories}
+        onSelectCategory={handleSelectHead}
       />
 
       {/* Midnight Rollover Notification Toast / Banner */}
