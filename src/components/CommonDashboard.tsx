@@ -9,7 +9,7 @@ interface CommonDashboardProps {
   currentUser: Employee | null;
   onOpenSignIn: () => void;
   onRajiSirSignIn: () => void;
-  onOpenEmployeeSignUp: () => void;
+  onOpenEmployeeSignUp?: () => void;
   onSelectEmployee: (emp: Employee) => void;
   onGoToChecklist: () => void;
   onGoToSupervisor: () => void;
@@ -23,7 +23,7 @@ export const CommonDashboard: React.FC<CommonDashboardProps> = ({
   currentUser,
   onOpenSignIn,
   onRajiSirSignIn,
-  onOpenEmployeeSignUp,
+  onOpenEmployeeSignUp: _onOpenEmployeeSignUp,
   onSelectEmployee,
   onGoToChecklist,
   onGoToSupervisor,
@@ -74,22 +74,22 @@ export const CommonDashboard: React.FC<CommonDashboardProps> = ({
       <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-xs sm:text-sm font-bold text-white">Notice for All Personnel:</span>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30">
-              Staff Registration &amp; Authorization
+            <span className="text-xs sm:text-sm font-bold text-white">স্টাফ লগইন ও ড্যাশবোর্ড অ্যাক্সেস নির্দেশিকা:</span>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-semibold border border-indigo-500/30">
+              নিরাপদ ব্যক্তিগত পাসওয়ার্ড
             </span>
           </div>
           <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-            All personnel across Gazipur Branch and Gazipur Sadar Office can register via <strong>'Employee Sign Up'</strong> with full name, branch, custom Login ID, and 4-digit PIN. New accounts are submitted to Central Management (Raji Sir) for authorization before first login.
+            গাজীপুর শাখা এবং গাজীপুর সদর অফিসের সকল কর্মীর জন্য আলাদা আলাদা পাসওয়ার্ড নির্ধারণ করা আছে। সাইন আপ করার প্রয়োজন নেই — তালিকা থেকে আপনার নাম নির্বাচন করে রাজী স্যারের দেওয়া গোপন পাসওয়ার্ড দিন এবং সরাসরি নিজ ড্যাশবোর্ডে প্রবেশ করুন।
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <button
             id="btn-notice-employee-signup"
-            onClick={onOpenEmployeeSignUp}
-            className="w-full sm:w-auto px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-xs"
+            onClick={onOpenSignIn}
+            className="w-full sm:w-auto px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-xs"
           >
-            Employee Sign Up
+            নাম সিলেক্ট করে লগইন করুন
           </button>
         </div>
       </div>
@@ -150,20 +150,20 @@ export const CommonDashboard: React.FC<CommonDashboardProps> = ({
               type="button"
               id="hero-sign-in-btn"
               onClick={onOpenSignIn}
-              className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg transition-all border border-indigo-400/30 flex items-center justify-center gap-2"
+              className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black shadow-lg transition-all border border-indigo-400/30 flex items-center justify-center gap-2"
             >
-              Sign In
+              লগইন / আইডি নির্বাচন
             </button>
 
-            {/* Employee Sign Up */}
+            {/* Quick Raji Sir sign in */}
             <button
               type="button"
-              id="hero-employee-signup-btn"
-              onClick={onOpenEmployeeSignUp}
-              className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black shadow-lg transition-all"
-              title="Register a new employee account"
+              id="hero-raji-sir-btn"
+              onClick={onRajiSirSignIn}
+              className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black shadow-lg transition-all"
+              title="কেন্দ্রীয় তত্ত্বাবধায়ক ড্যাশবোর্ডে প্রবেশ করুন"
             >
-              Employee Sign Up
+              তত্ত্বাবধায়ক ভিউ (Raji Sir)
             </button>
           </div>
         </div>

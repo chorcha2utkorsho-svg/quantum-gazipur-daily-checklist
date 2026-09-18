@@ -27,15 +27,15 @@ export const AiStrategicInsight: React.FC<AiStrategicInsightProps> = ({
   // Find all office assistants or relevant operational in-charges
   const officeAssistants = useMemo(() => {
     const list = employees.filter(
-      (e) => e.is_active && (e.role === 'office_assistant' || e.employee_id.startsWith('GB-') || e.role === 'main_boss')
+      (e) => e && e.is_active && (e.role === 'office_assistant' || e.employee_id?.startsWith('GB-') || e.role === 'main_boss')
     );
     if (list.length > 0) return list;
-    return employees.filter((e) => e.is_active);
+    return employees.filter((e) => e && e.is_active);
   }, [employees]);
 
   // Selected assistant for insight analysis
   const [selectedAssistantId, setSelectedAssistantId] = useState<string>(() => {
-    if (currentUser && (currentUser.role === 'office_assistant' || currentUser.employee_id.startsWith('GB-'))) {
+    if (currentUser && (currentUser.role === 'office_assistant' || currentUser.employee_id?.startsWith('GB-'))) {
       return currentUser.employee_id;
     }
     const defaultOA = officeAssistants.find((e) => e.role === 'office_assistant');
@@ -43,12 +43,12 @@ export const AiStrategicInsight: React.FC<AiStrategicInsightProps> = ({
   });
 
   const selectedAssistant = useMemo(() => {
-    return employees.find((e) => e.employee_id === selectedAssistantId) || officeAssistants[0] || currentUser;
+    return employees.find((e) => e?.employee_id === selectedAssistantId) || officeAssistants[0] || currentUser;
   }, [employees, officeAssistants, selectedAssistantId, currentUser]);
 
   // Daily completion logs for the selected assistant
   const assistantCompletionLogs = useMemo(() => {
-    if (!selectedAssistant) return [];
+    if (!selectedAssistant || !selectedAssistant.employee_id) return [];
 
     const userLogs = logs.filter((l) => l.employee_id === selectedAssistant.employee_id && l.date === date);
     const wf = getWorkflowForEmployee(selectedAssistant.employee_id, selectedAssistant.name);

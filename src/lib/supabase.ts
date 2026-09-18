@@ -101,9 +101,20 @@ export async function testConnection(url: string, anonKey: string): Promise<{ su
 // ==========================================
 const STORAGE_PREFIX = 'qgz_cell_';
 
+// Map of official initial distinct PINs
+const DEFAULT_DISTINCT_PINS: Record<string, string> = {
+  RAJI_SIR: '9090',
+  DEV_ADMIN: '7788',
+  'GB-01': '2481',
+  'GB-02': '3719',
+  JAHID: '5824',
+  'SO-01': '4932',
+  'SO-02': '6158',
+};
+
 export function getLocalEmployees(): Employee[] {
   if (typeof window === 'undefined') return INITIAL_EMPLOYEES;
-  const stored = localStorage.getItem(`${STORAGE_PREFIX}employees_v5`);
+  const stored = localStorage.getItem(`${STORAGE_PREFIX}employees_v6`);
   if (stored) {
     try {
       const parsed = JSON.parse(stored);
@@ -117,11 +128,15 @@ export function getLocalEmployees(): Employee[] {
         const hasTanzina = parsed.some((e) => e.name && (e.name.toLowerCase().includes('tanzina') || e.name.toLowerCase().includes('tanjina')));
         const hasPronoy = parsed.some((e) => e.name && e.name.toLowerCase().includes('pronoy'));
         if (hasRajiSir && hasMustakimOA && hasAnjuman && hasJahid && hasTanzina && hasPronoy) {
-          // Normalize approval_status for pre-existing staff
-          return parsed.map((emp: Employee) => ({
-            ...emp,
-            approval_status: emp.approval_status || (emp.is_active ? 'approved' : 'pending'),
-          }));
+          // Normalize approval_status and migrate any old '1234' PINs to unique character PINs
+          return parsed.map((emp: Employee) => {
+            const distinctPin = (emp.pin === '1234' || !emp.pin) ? (DEFAULT_DISTINCT_PINS[emp.employee_id] || emp.pin || '1234') : emp.pin;
+            return {
+              ...emp,
+              pin: distinctPin,
+              approval_status: emp.approval_status || (emp.is_active ? 'approved' : 'pending'),
+            };
+          });
         }
       }
     } catch {
@@ -129,14 +144,14 @@ export function getLocalEmployees(): Employee[] {
     }
   }
 
-  // Set to official 2-person Gazipur Branch + 3-person Sadar Office roster (+ Raji Sir)
-  localStorage.setItem(`${STORAGE_PREFIX}employees_v5`, JSON.stringify(INITIAL_EMPLOYEES));
+  // Set to official 2-person Gazipur Branch + 3-person Sadar Office roster (+ Raji Sir) with distinct PINs
+  localStorage.setItem(`${STORAGE_PREFIX}employees_v6`, JSON.stringify(INITIAL_EMPLOYEES));
   return INITIAL_EMPLOYEES;
 }
 
 export function saveLocalEmployees(employees: Employee[]) {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(`${STORAGE_PREFIX}employees_v5`, JSON.stringify(employees));
+  localStorage.setItem(`${STORAGE_PREFIX}employees_v6`, JSON.stringify(employees));
 }
 
 export function getLocalTemplates(): TaskTemplate[] {
@@ -292,6 +307,24 @@ export async function toggleEmployeeStatus(employeeId: string, isActive: boolean
       await supabase.from('employees').update({ is_active: isActive }).eq('employee_id', employeeId);
     } catch (e) {
       console.warn('Error updating employee status in Supabase:', e);
+    }
+  }
+  return updated;
+}
+
+export async function updateEmployeePin(employeeId: string, newPin: string): Promise<Employee[]> {
+  const current = getLocalEmployees();
+  const updated = current.map((e) =>
+    e.employee_id === employeeId ? { ...e, pin: newPin.trim() } : e
+  );
+  saveLocalEmployees(updated);
+
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    try {
+      await supabase.from('employees').update({ pin: newPin.trim() }).eq('employee_id', employeeId);
+    } catch (e) {
+      console.warn('Error updating employee pin in Supabase:', e);
     }
   }
   return updated;
@@ -544,18 +577,42 @@ export async function upsertDailyLog(log: DailyLogItem): Promise<void> {
   const supabase = getSupabaseClient();
   if (supabase) {
     try {
-      await supabase.from('daily_logs').upsert(
-        {
-          date: log.date,
-          employee_id: log.employee_id,
-          task_name: log.task_name,
-          status: log.status,
-          reason_for_pending: log.reason_for_pending || '',
-          order_index: log.order_index,
-          completed_at: log.completed_at || null,
-        },
+      const payload: Record<string, any> = {
+        date: log.date,
+        employee_id: log.employee_id,
+        task_name: log.task_name,
+        status: log.status,
+        reason_for_pending: log.reason_for_pending || '',
+        order_index: log.order_index,
+        completed_at: log.completed_at || null,
+      };
+      if (log.actual_minutes !== undefined) payload.actual_minutes = log.actual_minutes;
+      if (log.time_spent_seconds !== undefined) payload.time_spent_seconds = log.time_spent_seconds;
+      if (log.timer_started_at !== undefined) payload.timer_started_at = log.timer_started_at;
+
+      const { error } = await supabase.from('daily_logs').upsert(
+        payload,
         { onConflict: 'date,employee_id,task_name' }
       );
+      if (error) {
+        // Fallback to core columns if remote schema lacks timer columns
+        if (error.message && (error.message.includes('column') || error.code === '42703')) {
+          await supabase.from('daily_logs').upsert(
+            {
+              date: log.date,
+              employee_id: log.employee_id,
+              task_name: log.task_name,
+              status: log.status,
+              reason_for_pending: log.reason_for_pending || '',
+              order_index: log.order_index,
+              completed_at: log.completed_at || null,
+            },
+            { onConflict: 'date,employee_id,task_name' }
+          );
+        } else {
+          console.warn('Failed to upsert to Supabase:', error);
+        }
+      }
     } catch (e) {
       console.warn('Failed to upsert to Supabase:', e);
     }
@@ -571,6 +628,7 @@ export async function fetchAllEmployeesComparative(
   const results: EmployeeDailyProgress[] = [];
 
   for (const emp of employees) {
+    if (!emp || !emp.employee_id) continue;
     const logs = await fetchDailyLogsForEmployee(date, emp.employee_id, templates);
     const total = logs.length;
     const done = logs.filter((l) => l.status === 'done').length;

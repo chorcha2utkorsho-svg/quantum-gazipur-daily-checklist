@@ -189,23 +189,23 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
 
   // Branch-specific calculations (only active, approved staff)
   const activeStaff = progressList.filter(
-    (p) => p.employee.is_active && p.employee.approval_status !== 'pending' && p.employee.approval_status !== 'rejected'
+    (p) => p?.employee && p.employee.is_active && p.employee.approval_status !== 'pending' && p.employee.approval_status !== 'rejected'
   );
 
   const chowrastaStaff = activeStaff.filter(
     (p) =>
-      p.employee.branch === 'chowrasta' ||
-      p.employee.employee_id.startsWith('GB-') ||
-      p.employee.employee_id.startsWith('CR-') ||
-      p.employee.employee_id === 'SUP-CHOW'
+      p.employee?.branch === 'chowrasta' ||
+      p.employee?.employee_id?.startsWith('GB-') ||
+      p.employee?.employee_id?.startsWith('CR-') ||
+      p.employee?.employee_id === 'SUP-CHOW'
   );
   const rajbariStaff = activeStaff.filter(
     (p) =>
-      p.employee.branch === 'rajbari' ||
-      p.employee.employee_id.startsWith('SO-') ||
-      p.employee.employee_id.startsWith('RB-') ||
-      p.employee.employee_id === 'SUP-RAJB' ||
-      p.employee.employee_id === 'JAHID'
+      p.employee?.branch === 'rajbari' ||
+      p.employee?.employee_id?.startsWith('SO-') ||
+      p.employee?.employee_id?.startsWith('RB-') ||
+      p.employee?.employee_id === 'SUP-RAJB' ||
+      p.employee?.employee_id === 'JAHID'
   );
 
   const getBranchStats = (staff: EmployeeDailyProgress[]) => {
@@ -225,19 +225,19 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
     if (selectedBranch === 'all') return true;
     if (selectedBranch === 'chowrasta') {
       return (
-        p.employee.branch === 'chowrasta' ||
-        p.employee.employee_id.startsWith('GB-') ||
-        p.employee.employee_id.startsWith('CR-') ||
-        p.employee.employee_id === 'SUP-CHOW'
+        p.employee?.branch === 'chowrasta' ||
+        p.employee?.employee_id?.startsWith('GB-') ||
+        p.employee?.employee_id?.startsWith('CR-') ||
+        p.employee?.employee_id === 'SUP-CHOW'
       );
     }
     if (selectedBranch === 'rajbari') {
       return (
-        p.employee.branch === 'rajbari' ||
-        p.employee.employee_id.startsWith('SO-') ||
-        p.employee.employee_id.startsWith('RB-') ||
-        p.employee.employee_id === 'SUP-RAJB' ||
-        p.employee.employee_id === 'JAHID'
+        p.employee?.branch === 'rajbari' ||
+        p.employee?.employee_id?.startsWith('SO-') ||
+        p.employee?.employee_id?.startsWith('RB-') ||
+        p.employee?.employee_id === 'SUP-RAJB' ||
+        p.employee?.employee_id === 'JAHID'
       );
     }
     return true;
@@ -895,15 +895,15 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
             if (selectedBranch !== 'all') {
               if (selectedBranch === 'chowrasta') {
                 const isChow =
-                  p.employee.branch === 'chowrasta' ||
-                  p.employee.employee_id.startsWith('GB-') ||
-                  p.employee.employee_id.startsWith('CR-');
+                  p.employee?.branch === 'chowrasta' ||
+                  p.employee?.employee_id?.startsWith('GB-') ||
+                  p.employee?.employee_id?.startsWith('CR-');
                 if (!isChow) return false;
               } else {
                 const isSadar =
-                  p.employee.branch === 'rajbari' ||
-                  p.employee.employee_id.startsWith('SO-') ||
-                  p.employee.employee_id.startsWith('RB-');
+                  p.employee?.branch === 'rajbari' ||
+                  p.employee?.employee_id?.startsWith('SO-') ||
+                  p.employee?.employee_id?.startsWith('RB-');
                 if (!isSadar) return false;
               }
             }
@@ -1084,11 +1084,11 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
             {/* Proportional Comparative Visualizer List */}
             <div className="space-y-3">
               {displayedFieldStaff.map((p) => {
-                const roleDef = SYSTEM_ROLES.find((r) => r.id === p.employee.role);
+                const roleDef = SYSTEM_ROLES.find((r) => r.id === p.employee?.role);
                 const isChowrasta =
-                  p.employee.branch === 'chowrasta' ||
-                  p.employee.employee_id.startsWith('GB-') ||
-                  p.employee.employee_id.startsWith('CR-');
+                  p.employee?.branch === 'chowrasta' ||
+                  p.employee?.employee_id?.startsWith('GB-') ||
+                  p.employee?.employee_id?.startsWith('CR-');
                 const branchLabel = isChowrasta ? '1. Gazipur Branch' : '2. Gazipur Sadar Office';
 
                 const tierColor =
@@ -1540,12 +1540,12 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
       {activeTab === 'matrix' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredStaff.map((p) => {
-            const roleDef = SYSTEM_ROLES.find((r) => r.id === p.employee.role);
+            const roleDef = SYSTEM_ROLES.find((r) => r.id === p.employee?.role);
             const isChowrasta =
-              p.employee.branch === 'chowrasta' ||
-              p.employee.employee_id.startsWith('GB-') ||
-              p.employee.employee_id.startsWith('CR-') ||
-              p.employee.employee_id === 'SUP-CHOW';
+              p.employee?.branch === 'chowrasta' ||
+              p.employee?.employee_id?.startsWith('GB-') ||
+              p.employee?.employee_id?.startsWith('CR-') ||
+              p.employee?.employee_id === 'SUP-CHOW';
             const branchTag = isChowrasta ? '1. Gazipur Branch' : '2. Gazipur Sadar Office';
             const branchBadgeColor = isChowrasta
               ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
@@ -1894,12 +1894,12 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
           ) : (
             <div className="space-y-3">
               {staffWithPendingReasons.map((p) => {
-                const roleDef = SYSTEM_ROLES.find((r) => r.id === p.employee.role);
+                const roleDef = SYSTEM_ROLES.find((r) => r.id === p.employee?.role);
                 const isChowrasta =
-                  p.employee.branch === 'chowrasta' ||
-                  p.employee.employee_id.startsWith('GB-') ||
-                  p.employee.employee_id.startsWith('CR-') ||
-                  p.employee.employee_id === 'SUP-CHOW';
+                  p.employee?.branch === 'chowrasta' ||
+                  p.employee?.employee_id?.startsWith('GB-') ||
+                  p.employee?.employee_id?.startsWith('CR-') ||
+                  p.employee?.employee_id === 'SUP-CHOW';
                 const branchLabel = isChowrasta ? '1. Gazipur Branch' : '2. Gazipur Sadar Office';
 
                 return (

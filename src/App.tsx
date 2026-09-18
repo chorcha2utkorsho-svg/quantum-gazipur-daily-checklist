@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import confetti from 'canvas-confetti';
 
 import {
@@ -40,6 +40,7 @@ import {
   saveStoredSession,
   fetchAllEmployeesComparative,
   saveLocalDailyLogs,
+  updateEmployeePin,
 } from './lib/supabase';
 
 import { Header } from './components/Header';
@@ -56,13 +57,14 @@ import { WorkflowHeroBanner } from './components/WorkflowHeroBanner';
 import { WorkflowStatCards } from './components/WorkflowStatCards';
 import { WorkflowFilterBar } from './components/WorkflowFilterBar';
 import { WorkflowTaskTable } from './components/WorkflowTaskTable';
-import { SignUpModal } from './components/SignUpModal';
+import { CredentialsVaultModal } from './components/CredentialsVaultModal';
 import { CommonDashboard } from './components/CommonDashboard';
 import { AiStrategicInsight } from './components/AiStrategicInsight';
 import { EmployeeProfileWorkspace } from './components/EmployeeProfileWorkspace';
 import { CommunicationCenter } from './components/CommunicationCenter';
 import { DeveloperConsoleModal } from './components/DeveloperConsoleModal';
 import { DatabaseArchiveModal } from './components/DatabaseArchiveModal';
+import { FocusModeView } from './components/FocusModeView';
 import { getEffectiveWorkflowForEmployee } from './lib/customWorkflowStorage';
 
 export default function App() {
@@ -137,6 +139,25 @@ export default function App() {
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [priorityFilter, setPriorityFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
   const [viewDensity, setViewDensity] = useState<'detailed' | 'compact'>('detailed');
+  const [isFocusMode, setIsFocusMode] = useState<boolean>(false);
+
+  // ==========================================
+  // Workflow Task Live Timer & Time Tracking
+  // ==========================================
+  const [activeTimerTask, setActiveTimerTask] = useState<string | null>(null);
+  const [activeTimerSeconds, setActiveTimerSeconds] = useState<number>(0);
+  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const timerStartTimestampRef = useRef<number | null>(null);
+  const timerBaseSecondsRef = useRef<number>(0);
+
+  // Clean up running timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+      }
+    };
+  }, []);
 
   // Synchronize tasks when employee changes
   useEffect(() => {
@@ -146,7 +167,7 @@ export default function App() {
 
   // Modals state
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false);
+  const [isCredentialsVaultOpen, setIsCredentialsVaultOpen] = useState(false);
   const [isEmployeeManagerOpen, setIsEmployeeManagerOpen] = useState(false);
   const [isTaskManagerOpen, setIsTaskManagerOpen] = useState(false);
   const [isSupabaseModalOpen, setIsSupabaseModalOpen] = useState(false);
@@ -286,11 +307,12 @@ export default function App() {
     setCurrentUser(user);
     saveStoredSession(user);
     setIsLoginModalOpen(false);
-    const isAuthority = user.role === 'main_boss' || user.role === 'office_assistant' || user.employee_id === 'RAJI_SIR';
+    const isAuthority = user.role === 'main_boss' || user.employee_id === 'RAJI_SIR';
     if (isAuthority) {
       setViewMode('supervisor');
     } else {
-      setViewMode('checklist');
+      // User lands directly on their personal workspace dashboard
+      setViewMode('profile');
     }
     loadData(selectedDate, user);
   };
@@ -304,17 +326,17 @@ export default function App() {
     loadData(selectedDate, rajiSir);
   };
 
-  const handleOpenEmployeeSignUp = () => {
-    setIsSignUpModalOpen(true);
-  };
-
-  // Handle employee registration submission (remains pending until Raji Sir approves)
-  const handleSignUpSuccess = async (newEmployee: Employee) => {
-    const updated = await upsertEmployee(newEmployee);
+  // Handle PIN update from Credentials Vault
+  const handleUpdateEmployeePin = async (employeeId: string, newPin: string) => {
+    const updated = await updateEmployeePin(employeeId, newPin);
     setEmployees(updated);
-    // Reload comparative stats to include the updated employee list
-    const comparative = await fetchAllEmployeesComparative(selectedDate, updated, templates);
-    setProgressList(comparative);
+    if (currentUser?.employee_id === employeeId) {
+      const updatedUser = updated.find((e) => e.employee_id === employeeId);
+      if (updatedUser) {
+        setCurrentUser(updatedUser);
+        saveStoredSession(updatedUser);
+      }
+    }
   };
 
   // Approve pending employee by Raji Sir
@@ -433,7 +455,7 @@ export default function App() {
       completed_at: null,
     }));
     setLogs(resetLogs);
-    saveLocalDailyLogs(selectedDate, resetLogs, currentUser.employee_id);
+    saveLocalDailyLogs(selectedDate, resetLogs, currentUser?.employee_id || 'RAJI_SIR');
 
     for (const item of resetLogs) {
       await upsertDailyLog(item);
@@ -514,8 +536,216 @@ export default function App() {
     });
   }, [workflowTasks, selectedCategory, priorityFilter, searchQuery, workflowLogsMap]);
 
+  // Stop & clear running timer interval helper
+  const stopTimerInterval = useCallback(() => {
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+  }, []);
+
+  // Pause active timer and save logged duration into DailyLogItem
+  const handlePauseTimer = useCallback(
+    async (taskName?: string) => {
+      const targetTask = taskName || activeTimerTask;
+      if (!targetTask) return;
+
+      stopTimerInterval();
+
+      const elapsed =
+        timerStartTimestampRef.current !== null
+          ? Math.floor((Date.now() - timerStartTimestampRef.current) / 1000)
+          : 0;
+      const finalSeconds = timerBaseSecondsRef.current + elapsed;
+      const finalActualMinutes = Math.round((finalSeconds / 60) * 10) / 10;
+
+      setActiveTimerTask(null);
+      setActiveTimerSeconds(0);
+      timerStartTimestampRef.current = null;
+      timerBaseSecondsRef.current = 0;
+
+      const existing = logs.find((l) => l.task_name === targetTask);
+      const activeEmpId = currentUser?.employee_id || 'RAJI_SIR';
+      const updatedItem: DailyLogItem = existing
+        ? {
+            ...existing,
+            time_spent_seconds: finalSeconds,
+            actual_minutes: finalActualMinutes,
+            timer_started_at: null,
+          }
+        : {
+            id: `log-${activeEmpId}-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+            date: selectedDate,
+            employee_id: activeEmpId,
+            task_name: targetTask,
+            status: 'pending',
+            reason_for_pending: '',
+            order_index: 0,
+            completed_at: null,
+            time_spent_seconds: finalSeconds,
+            actual_minutes: finalActualMinutes,
+            timer_started_at: null,
+          };
+
+      const newLogs = existing
+        ? logs.map((l) => (l.task_name === targetTask ? updatedItem : l))
+        : [...logs, updatedItem];
+
+      setLogs(newLogs);
+      await upsertDailyLog(updatedItem);
+      handleRefreshComparative();
+    },
+    [activeTimerTask, logs, currentUser, selectedDate, stopTimerInterval]
+  );
+
+  // Start or resume timer for a workflow task
+  const handleStartTimer = useCallback(
+    async (taskName: string) => {
+      // If another timer is running, pause and commit it first
+      if (activeTimerTask && activeTimerTask !== taskName) {
+        await handlePauseTimer(activeTimerTask);
+      }
+
+      stopTimerInterval();
+
+      const existing = logs.find((l) => l.task_name === taskName);
+      const baseSec = existing?.time_spent_seconds || 0;
+      timerBaseSecondsRef.current = baseSec;
+      timerStartTimestampRef.current = Date.now();
+      setActiveTimerTask(taskName);
+      setActiveTimerSeconds(baseSec);
+
+      timerIntervalRef.current = setInterval(() => {
+        if (timerStartTimestampRef.current !== null) {
+          const elapsed = Math.floor((Date.now() - timerStartTimestampRef.current) / 1000);
+          setActiveTimerSeconds(timerBaseSecondsRef.current + elapsed);
+        }
+      }, 1000);
+
+      const activeEmpId = currentUser?.employee_id || 'RAJI_SIR';
+      const nowIso = new Date().toISOString();
+      const updatedItem: DailyLogItem = existing
+        ? {
+            ...existing,
+            timer_started_at: nowIso,
+          }
+        : {
+            id: `log-${activeEmpId}-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+            date: selectedDate,
+            employee_id: activeEmpId,
+            task_name: taskName,
+            status: 'pending',
+            reason_for_pending: '',
+            order_index: 0,
+            completed_at: null,
+            time_spent_seconds: baseSec,
+            actual_minutes: existing?.actual_minutes ?? (baseSec > 0 ? Math.round(baseSec / 60) : 0),
+            timer_started_at: nowIso,
+          };
+
+      const newLogs = existing
+        ? logs.map((l) => (l.task_name === taskName ? updatedItem : l))
+        : [...logs, updatedItem];
+
+      setLogs(newLogs);
+      await upsertDailyLog(updatedItem);
+    },
+    [activeTimerTask, handlePauseTimer, logs, currentUser, selectedDate, stopTimerInterval]
+  );
+
+  // Reset logged time back to 0
+  const handleResetTimer = useCallback(
+    async (taskName: string) => {
+      if (activeTimerTask === taskName) {
+        stopTimerInterval();
+        setActiveTimerTask(null);
+        setActiveTimerSeconds(0);
+        timerStartTimestampRef.current = null;
+        timerBaseSecondsRef.current = 0;
+      }
+
+      const existing = logs.find((l) => l.task_name === taskName);
+      if (existing) {
+        const updatedItem: DailyLogItem = {
+          ...existing,
+          time_spent_seconds: 0,
+          actual_minutes: 0,
+          timer_started_at: null,
+        };
+        setLogs((prev) => prev.map((l) => (l.task_name === taskName ? updatedItem : l)));
+        await upsertDailyLog(updatedItem);
+        handleRefreshComparative();
+      }
+    },
+    [activeTimerTask, logs, stopTimerInterval]
+  );
+
+  // Manually enter minutes for a workflow task
+  const handleSetManualMinutes = useCallback(
+    async (taskName: string, minutes: number) => {
+      if (activeTimerTask === taskName) {
+        stopTimerInterval();
+        setActiveTimerTask(null);
+        setActiveTimerSeconds(0);
+        timerStartTimestampRef.current = null;
+        timerBaseSecondsRef.current = 0;
+      }
+
+      const totalSeconds = Math.round(minutes * 60);
+      const existing = logs.find((l) => l.task_name === taskName);
+      const activeEmpId = currentUser?.employee_id || 'RAJI_SIR';
+      const updatedItem: DailyLogItem = existing
+        ? {
+            ...existing,
+            actual_minutes: minutes,
+            time_spent_seconds: totalSeconds,
+            timer_started_at: null,
+          }
+        : {
+            id: `log-${activeEmpId}-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+            date: selectedDate,
+            employee_id: activeEmpId,
+            task_name: taskName,
+            status: 'pending',
+            reason_for_pending: '',
+            order_index: 0,
+            completed_at: null,
+            actual_minutes: minutes,
+            time_spent_seconds: totalSeconds,
+            timer_started_at: null,
+          };
+
+      const newLogs = existing
+        ? logs.map((l) => (l.task_name === taskName ? updatedItem : l))
+        : [...logs, updatedItem];
+
+      setLogs(newLogs);
+      await upsertDailyLog(updatedItem);
+      handleRefreshComparative();
+    },
+    [activeTimerTask, logs, currentUser, selectedDate, stopTimerInterval]
+  );
+
   // Toggle status for a workflow task
   const handleToggleWorkflowStatus = async (taskName: string) => {
+    // If the task being completed has an active timer running, commit its time
+    let finalSeconds: number | undefined = undefined;
+    let finalActualMinutes: number | undefined = undefined;
+
+    if (activeTimerTask === taskName) {
+      stopTimerInterval();
+      const elapsed =
+        timerStartTimestampRef.current !== null
+          ? Math.floor((Date.now() - timerStartTimestampRef.current) / 1000)
+          : 0;
+      finalSeconds = timerBaseSecondsRef.current + elapsed;
+      finalActualMinutes = Math.round((finalSeconds / 60) * 10) / 10;
+      setActiveTimerTask(null);
+      setActiveTimerSeconds(0);
+      timerStartTimestampRef.current = null;
+      timerBaseSecondsRef.current = 0;
+    }
+
     const existing = logs.find((l) => l.task_name === taskName);
     const now = new Date().toISOString();
     let updatedItem: DailyLogItem;
@@ -527,6 +757,9 @@ export default function App() {
         ...existing,
         status: newStatus,
         completed_at: newStatus === 'done' ? now : null,
+        time_spent_seconds: finalSeconds !== undefined ? finalSeconds : existing.time_spent_seconds,
+        actual_minutes: finalActualMinutes !== undefined ? finalActualMinutes : existing.actual_minutes,
+        timer_started_at: null,
       };
       const newLogs = logs.map((l) => (l.task_name === taskName ? updatedItem : l));
       setLogs(newLogs);
@@ -542,15 +775,19 @@ export default function App() {
         fireCelebration();
       }
     } else {
+      const activeEmpId = currentUser?.employee_id || 'RAJI_SIR';
       updatedItem = {
-        id: `log-${currentUser.employee_id}-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        id: `log-${activeEmpId}-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
         date: selectedDate,
-        employee_id: currentUser.employee_id,
+        employee_id: activeEmpId,
         task_name: taskName,
         status: 'done',
         reason_for_pending: '',
         order_index: 0,
         completed_at: now,
+        time_spent_seconds: finalSeconds !== undefined ? finalSeconds : 0,
+        actual_minutes: finalActualMinutes !== undefined ? finalActualMinutes : undefined,
+        timer_started_at: null,
       };
       const newLogs = [...logs, updatedItem];
       setLogs(newLogs);
@@ -583,10 +820,11 @@ export default function App() {
       setLogs(newLogs);
       await upsertDailyLog(updatedItem);
     } else {
+      const activeEmpId = currentUser?.employee_id || 'RAJI_SIR';
       updatedItem = {
-        id: `log-${currentUser.employee_id}-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        id: `log-${activeEmpId}-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
         date: selectedDate,
-        employee_id: currentUser.employee_id,
+        employee_id: activeEmpId,
         task_name: taskName,
         status: 'pending',
         reason_for_pending: reason,
@@ -627,6 +865,29 @@ export default function App() {
     return 'min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-indigo-500/20 selection:text-indigo-900';
   };
 
+  // If Focus Mode is activated, hide all non-essential elements on the screen
+  // and display only the single most high-priority incomplete task
+  if (isFocusMode) {
+    return (
+      <FocusModeView
+        tasks={workflowTasks}
+        dailyLogs={workflowLogsMap}
+        onToggleStatus={handleToggleWorkflowStatus}
+        onUpdateReason={handleUpdateWorkflowReason}
+        onExitFocusMode={() => setIsFocusMode(false)}
+        currentUser={currentUser}
+        selectedDate={selectedDate}
+        categories={employeeWorkflow.categories}
+        activeTimerTaskName={activeTimerTask}
+        activeTimerSeconds={activeTimerSeconds}
+        onStartTimer={handleStartTimer}
+        onPauseTimer={handlePauseTimer}
+        onResetTimer={handleResetTimer}
+        onSetManualMinutes={handleSetManualMinutes}
+      />
+    );
+  }
+
   return (
     <div className={getThemeWrapperClass()}>
       {/* Header */}
@@ -639,7 +900,7 @@ export default function App() {
         onOpenPrintModal={() => setIsPrintModalOpen(true)}
         onOpenLoginModal={() => setIsLoginModalOpen(true)}
         onRajiSirSignIn={handleRajiSirSignIn}
-        onOpenEmployeeSignUp={handleOpenEmployeeSignUp}
+        onOpenCredentialsVault={() => setIsCredentialsVaultOpen(true)}
         onOpenEmployeeManager={() => setIsEmployeeManagerOpen(true)}
         isSupabaseConnected={isSupabaseConnected}
         currentUser={currentUser}
@@ -651,6 +912,8 @@ export default function App() {
         onOpenArchiveModal={() => setIsArchiveModalOpen(true)}
         currentTheme={theme}
         onToggleTheme={handleToggleTheme}
+        isFocusMode={isFocusMode}
+        onToggleFocusMode={() => setIsFocusMode((prev) => !prev)}
       />
 
       {/* Main Content Area */}
@@ -699,7 +962,6 @@ export default function App() {
             currentUser={currentUser}
             onOpenSignIn={() => setIsLoginModalOpen(true)}
             onRajiSirSignIn={handleRajiSirSignIn}
-            onOpenEmployeeSignUp={handleOpenEmployeeSignUp}
             onSelectEmployee={(emp) => {
               setCurrentUser(emp);
               saveStoredSession(emp);
@@ -729,13 +991,22 @@ export default function App() {
         ) : viewMode === 'profile' ? (
           /* 3. Personalized Employee Profile & Planner Workspace (Exact User Requirement) */
           <EmployeeProfileWorkspace
+            currentUser={currentUser}
             employee={currentUser}
             selectedDate={selectedDate}
             workflow={employeeWorkflow}
             logs={logs}
+            onToggleTaskStatus={handleToggleWorkflowStatus}
             onToggleTask={handleToggleWorkflowStatus}
             onUpdatePendingReason={handleUpdateWorkflowReason}
+            onToggleFocusMode={() => setIsFocusMode(true)}
             onGoToTableView={() => setViewMode('checklist')}
+            activeTimerTaskName={activeTimerTask}
+            activeTimerSeconds={activeTimerSeconds}
+            onStartTimer={handleStartTimer}
+            onPauseTimer={handlePauseTimer}
+            onResetTimer={handleResetTimer}
+            onSetManualMinutes={handleSetManualMinutes}
           />
         ) : viewMode === 'communication' ? (
           /* 4. Client Communication & Calling Head CRM (Exact User Requirement) */
@@ -778,6 +1049,7 @@ export default function App() {
               onOpenNewTaskModal={() => setIsTaskManagerOpen(true)}
               onOpenPrintModal={() => setIsPrintModalOpen(true)}
               onOpenAiInsightModal={() => setIsAiInsightModalOpen(true)}
+              onToggleFocusMode={() => setIsFocusMode(true)}
               onResetDaily={() => setIsResetConfirmOpen(true)}
               priorityFilter={priorityFilter}
               onPriorityFilterChange={setPriorityFilter}
@@ -795,6 +1067,12 @@ export default function App() {
               selectedCategory={selectedCategory}
               viewDensity={viewDensity}
               categories={employeeWorkflow.categories}
+              activeTimerTaskName={activeTimerTask}
+              activeTimerSeconds={activeTimerSeconds}
+              onStartTimer={handleStartTimer}
+              onPauseTimer={handlePauseTimer}
+              onResetTimer={handleResetTimer}
+              onSetManualMinutes={handleSetManualMinutes}
             />
 
             {/* 100% Completion Milestone Banner */}
@@ -855,16 +1133,14 @@ export default function App() {
         currentUserId={currentUser?.employee_id}
         onLoginSuccess={handleUserLogin}
         onRajiSirSignIn={handleRajiSirSignIn}
-        onOpenEmployeeSignUp={handleOpenEmployeeSignUp}
       />
 
-      {/* Employee Sign Up Modal */}
-      <SignUpModal
-        isOpen={isSignUpModalOpen}
-        onClose={() => setIsSignUpModalOpen(false)}
-        existingEmployees={employees}
-        onSignUpSuccess={handleSignUpSuccess}
-        onOpenSignIn={() => setIsLoginModalOpen(true)}
+      {/* Staff Password Credentials Vault Modal */}
+      <CredentialsVaultModal
+        isOpen={isCredentialsVaultOpen}
+        onClose={() => setIsCredentialsVaultOpen(false)}
+        employees={employees}
+        onUpdatePin={handleUpdateEmployeePin}
       />
 
       {/* Employee Manager Modal */}

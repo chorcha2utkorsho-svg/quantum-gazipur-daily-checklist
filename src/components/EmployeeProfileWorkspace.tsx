@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { Clock, Target, Sliders, Edit3 } from 'lucide-react';
 import {
   Employee,
   DailyLogItem,
@@ -7,39 +8,104 @@ import {
   ExecutiveDirective,
   EmployeeDailyPlan,
 } from '../types';
-import { getWorkflowForEmployee, ALL_WORKFLOW_TASKS } from '../data/workflowData';
+import { getWorkflowForEmployee, ALL_WORKFLOW_TASKS, WorkflowTask, WorkflowCategory } from '../data/workflowData';
 import {
   fetchDirectives,
   acknowledgeDirective,
   fetchDailyPlan,
   saveDailyPlan,
 } from '../lib/supabase';
+import { TaskTimerControl } from './TaskTimerControl';
+import { EditTaskModal } from './EditTaskModal';
+import { updateTaskPoint, resetTaskPointToDefault } from '../lib/customWorkflowStorage';
 
 interface EmployeeProfileWorkspaceProps {
-  currentUser: Employee;
+  currentUser?: Employee;
+  employee?: Employee;
   selectedDate: string;
+  workflow?: any;
   logs: DailyLogItem[];
-  onToggleTaskStatus: (taskName: string, currentStatus: 'done' | 'pending', reason?: string) => void;
+  categories?: WorkflowCategory[];
+  onToggleTaskStatus?: (taskName: string, currentStatus: 'done' | 'pending', reason?: string) => void;
+  onToggleTask?: (taskName: string, currentStatus: 'done' | 'pending', reason?: string) => void;
   onUpdatePendingReason: (taskName: string, reason: string) => void;
   onOpenEmployeeSwitcher?: () => void;
   onOpenAiInsightModal?: () => void;
+  onToggleFocusMode?: () => void;
+  onGoToTableView?: () => void;
+  activeTimerTaskName?: string | null;
+  activeTimerSeconds?: number;
+  onStartTimer?: (taskName: string) => void;
+  onPauseTimer?: (taskName: string) => void;
+  onResetTimer?: (taskName: string) => void;
+  onSetManualMinutes?: (taskName: string, minutes: number) => void;
+  onCustomizeTask?: (
+    taskId: string,
+    updates: {
+      name: string;
+      priority: 'high' | 'medium' | 'low';
+      estimated_minutes: number;
+      category: string;
+      details?: string;
+    },
+    oldName: string
+  ) => Promise<void> | void;
+  onResetTaskToDefault?: (taskId: string) => Promise<void> | void;
 }
 
 export const EmployeeProfileWorkspace: React.FC<EmployeeProfileWorkspaceProps> = ({
-  currentUser,
+  currentUser: propCurrentUser,
+  employee,
   selectedDate,
-  logs,
+  workflow: propWorkflow,
+  logs = [],
+  categories = [],
   onToggleTaskStatus,
+  onToggleTask,
   onUpdatePendingReason,
   onOpenEmployeeSwitcher,
   onOpenAiInsightModal,
+  onToggleFocusMode,
+  onGoToTableView,
+  activeTimerTaskName,
+  activeTimerSeconds = 0,
+  onStartTimer,
+  onPauseTimer,
+  onResetTimer,
+  onSetManualMinutes,
+  onCustomizeTask,
+  onResetTaskToDefault,
 }) => {
+  const currentUser = useMemo<Employee>(() => {
+    return (
+      propCurrentUser ||
+      employee || {
+        id: 'emp-raji-sir',
+        employee_id: 'RAJI_SIR',
+        name: 'Raji Sir',
+        role: 'main_boss',
+        branch: 'chowrasta',
+        avatar_color: '#d97706',
+        is_active: true,
+        created_at: new Date().toISOString(),
+      }
+    );
+  }, [propCurrentUser, employee]);
+
+  const handleToggleTask = (taskName: string, currentStatus: 'done' | 'pending', reason?: string) => {
+    if (onToggleTaskStatus) {
+      onToggleTaskStatus(taskName, currentStatus, reason);
+    } else if (onToggleTask) {
+      onToggleTask(taskName, currentStatus, reason);
+    }
+  };
+
   // Current active sub-tab inside profile
   const [profileTab, setProfileTab] = useState<'checklist' | 'pending_only' | 'planner'>('checklist');
 
   // Daily planner state
   const [dailyPlan, setDailyPlan] = useState<EmployeeDailyPlan>(() =>
-    fetchDailyPlan(currentUser.employee_id, selectedDate)
+    fetchDailyPlan(currentUser?.employee_id || 'RAJI_SIR', selectedDate)
   );
   const [newPlanTime, setNewPlanTime] = useState('');
   const [newPlanTitle, setNewPlanTitle] = useState('');
@@ -52,13 +118,16 @@ export const EmployeeProfileWorkspace: React.FC<EmployeeProfileWorkspaceProps> =
   // Refresh directives & plan when date or user changes
   useEffect(() => {
     setDirectives(fetchDirectives(selectedDate));
-    setDailyPlan(fetchDailyPlan(currentUser.employee_id, selectedDate));
-  }, [currentUser.employee_id, selectedDate]);
+    if (currentUser?.employee_id) {
+      setDailyPlan(fetchDailyPlan(currentUser.employee_id, selectedDate));
+    }
+  }, [currentUser?.employee_id, selectedDate]);
 
   // Specific workflow tasks for this individual employee
   const employeeWorkflow = useMemo(() => {
-    return getWorkflowForEmployee(currentUser.employee_id, currentUser.name);
-  }, [currentUser]);
+    if (propWorkflow) return propWorkflow;
+    return getWorkflowForEmployee(currentUser?.employee_id || 'RAJI_SIR', currentUser?.name || 'Staff');
+  }, [propWorkflow, currentUser]);
 
   const tasksList = useMemo(() => {
     return employeeWorkflow?.tasks && employeeWorkflow.tasks.length > 0
@@ -75,18 +144,52 @@ export const EmployeeProfileWorkspace: React.FC<EmployeeProfileWorkspaceProps> =
     return map;
   }, [logs, currentUser.employee_id, selectedDate]);
 
-  // Real-time calculation of Done vs Pending tasks
+  // Real-time calculation of Done vs Pending tasks & Workload time
   const stats = useMemo(() => {
     const total = tasksList.length;
     let done = 0;
+    let totalMinutes = 0;
+    let completedMinutes = 0;
+
     tasksList.forEach((t) => {
+      const minutes = t.estimated_minutes || 30;
+      totalMinutes += minutes;
       const log = userLogsMap.get(t.name);
-      if (log?.status === 'done') done += 1;
+      if (log?.status === 'done') {
+        done += 1;
+        completedMinutes += minutes;
+      }
     });
+
     const pending = total - done;
+    const remainingMinutes = Math.max(0, totalMinutes - completedMinutes);
     const percentage = total > 0 ? Math.round((done / total) * 100) : 0;
     const remainingPercentage = 100 - percentage;
-    return { total, done, pending, percentage, remainingPercentage };
+
+    const totalHours = Math.floor(totalMinutes / 60);
+    const totalRemMins = totalMinutes % 60;
+    const completedHours = Math.floor(completedMinutes / 60);
+    const completedRemMins = completedMinutes % 60;
+    const remainingHours = Math.floor(remainingMinutes / 60);
+    const remainingRemMins = remainingMinutes % 60;
+
+    const formattedTotalTime = totalHours > 0 ? `${totalHours}h ${totalRemMins}m` : `${totalRemMins}m`;
+    const formattedCompletedTime = completedHours > 0 ? `${completedHours}h ${completedRemMins}m` : `${completedRemMins}m`;
+    const formattedRemainingTime = remainingHours > 0 ? `${remainingHours}h ${remainingRemMins}m` : `${remainingRemMins}m`;
+
+    return {
+      total,
+      done,
+      pending,
+      percentage,
+      remainingPercentage,
+      totalMinutes,
+      completedMinutes,
+      remainingMinutes,
+      formattedTotalTime,
+      formattedCompletedTime,
+      formattedRemainingTime,
+    };
   }, [tasksList, userLogsMap]);
 
   // Filter tasks based on selected tab
@@ -297,6 +400,19 @@ export const EmployeeProfileWorkspace: React.FC<EmployeeProfileWorkspaceProps> =
 
           {/* Profile Controls & Switcher */}
           <div className="flex flex-wrap items-center gap-2 self-start md:self-auto">
+            {onToggleFocusMode && (
+              <button
+                type="button"
+                id="btn-profile-focus-mode"
+                onClick={onToggleFocusMode}
+                className="px-3.5 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+                title="Focus Mode: Single-task focus on the highest-priority incomplete task"
+              >
+                <Target className="w-3.5 h-3.5 text-amber-400" />
+                <span>Focus Mode</span>
+              </button>
+            )}
+
             {onOpenAiInsightModal && (
               <button
                 type="button"
@@ -369,6 +485,23 @@ export const EmployeeProfileWorkspace: React.FC<EmployeeProfileWorkspaceProps> =
                 </span>
                 <span className="text-amber-400">
                   Remaining: {stats.remainingPercentage}% ({stats.pending} Tasks)
+                </span>
+              </div>
+            </div>
+
+            {/* Workload Time Estimation Breakdown */}
+            <div className="pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2 text-slate-300">
+                <Clock className="w-4 h-4 text-sky-400" />
+                <span className="font-semibold text-white">Daily Workload:</span>
+                <span className="font-mono text-sky-300 font-bold">{stats.formattedTotalTime}</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-4 text-[11px] font-mono">
+                <span className="text-emerald-400">
+                  Done: {stats.formattedCompletedTime}
+                </span>
+                <span className="text-amber-400">
+                  Remaining: {stats.formattedRemainingTime}
                 </span>
               </div>
             </div>
@@ -466,7 +599,7 @@ export const EmployeeProfileWorkspace: React.FC<EmployeeProfileWorkspaceProps> =
                           type="button"
                           id={`task-check-${task.id || idx}`}
                           onClick={() =>
-                            onToggleTaskStatus(
+                            handleToggleTask(
                               task.name,
                               isDone ? 'done' : 'pending',
                               reason
@@ -495,6 +628,24 @@ export const EmployeeProfileWorkspace: React.FC<EmployeeProfileWorkspaceProps> =
                             </span>
                             <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-white/10 text-slate-300 border border-white/10">
                               {task.category || 'General'}
+                            </span>
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-md border font-mono uppercase ${
+                                task.priority === 'high'
+                                  ? 'bg-rose-500/15 text-rose-300 border-rose-500/30'
+                                  : task.priority === 'medium'
+                                  ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                                  : 'bg-white/5 text-slate-400 border-white/10'
+                              }`}
+                            >
+                              {task.priority || 'medium'}
+                            </span>
+                            <span
+                              className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-md bg-sky-500/15 text-sky-300 border border-sky-500/30 font-mono"
+                              title={`Estimated workload duration: ${task.estimated_minutes || 30} minutes`}
+                            >
+                              <Clock className="w-3 h-3 text-sky-400" />
+                              {task.estimated_minutes || 30} mins
                             </span>
                           </div>
 
@@ -533,6 +684,20 @@ export const EmployeeProfileWorkspace: React.FC<EmployeeProfileWorkspaceProps> =
                         {isDone ? 'Done' : 'Pending'}
                       </span>
                     </div>
+
+                    {/* Task Timer & Time Tracking Strip */}
+                    <TaskTimerControl
+                      taskName={task.name}
+                      estimatedMinutes={task.estimated_minutes || 30}
+                      log={log}
+                      isRunning={activeTimerTaskName === task.name}
+                      liveSeconds={activeTimerSeconds}
+                      onStart={() => onStartTimer && onStartTimer(task.name)}
+                      onPause={() => onPauseTimer && onPauseTimer(task.name)}
+                      onReset={() => onResetTimer && onResetTimer(task.name)}
+                      onSetManualMinutes={(mins) => onSetManualMinutes && onSetManualMinutes(task.name, mins)}
+                      variant="card"
+                    />
                   </div>
                 );
               })}

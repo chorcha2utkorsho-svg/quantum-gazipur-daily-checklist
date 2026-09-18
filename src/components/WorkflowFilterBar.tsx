@@ -1,4 +1,5 @@
 import React from 'react';
+import { Target } from 'lucide-react';
 import { WORKFLOW_CATEGORIES, WorkflowCategory } from '../data/workflowData';
 
 interface WorkflowFilterBarProps {
@@ -11,6 +12,7 @@ interface WorkflowFilterBarProps {
   onOpenNewTaskModal?: () => void;
   onOpenPrintModal?: () => void;
   onOpenAiInsightModal?: () => void;
+  onToggleFocusMode?: () => void;
   onResetDaily?: () => void;
   priorityFilter: 'all' | 'high' | 'medium' | 'low';
   onPriorityFilterChange: (p: 'all' | 'high' | 'medium' | 'low') => void;
@@ -29,6 +31,7 @@ export const WorkflowFilterBar: React.FC<WorkflowFilterBarProps> = ({
   onOpenNewTaskModal,
   onOpenPrintModal,
   onOpenAiInsightModal,
+  onToggleFocusMode,
   priorityFilter,
   onPriorityFilterChange,
   viewDensity,
@@ -61,6 +64,19 @@ export const WorkflowFilterBar: React.FC<WorkflowFilterBarProps> = ({
 
         {/* Quick Tools & Add Task Button */}
         <div className="flex flex-wrap items-center gap-2 shrink-0">
+          {onToggleFocusMode && (
+            <button
+              type="button"
+              id="btn-filter-focus-mode"
+              onClick={onToggleFocusMode}
+              className="px-3 py-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+              title="Focus Mode: Hide all distractions and work on the highest priority incomplete task"
+            >
+              <Target className="w-3.5 h-3.5 text-amber-400" />
+              <span>Focus Mode</span>
+            </button>
+          )}
+
           {onOpenAiInsightModal && (
             <button
               type="button"

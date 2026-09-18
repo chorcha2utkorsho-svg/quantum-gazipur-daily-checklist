@@ -20,6 +20,117 @@ export interface WorkflowTask {
   priority: 'high' | 'medium' | 'low';
   order: number;
   assigneeNotes?: string;
+  estimated_minutes?: number;
+}
+
+/**
+ * Intelligent workload estimation helper to compute realistic duration in minutes
+ * for each task based on name, category, priority, and operational complexity.
+ */
+export function getDefaultEstimatedMinutes(
+  name: string = '',
+  category: string = '',
+  priority: 'high' | 'medium' | 'low' = 'medium',
+  details: string = ''
+): number {
+  const text = `${name} ${category} ${details}`.toLowerCase();
+
+  // 1. Outside / Field / Venue / Major Events (60 - 90 mins)
+  if (
+    text.includes('campaign') ||
+    text.includes('outside') ||
+    text.includes('home visit') ||
+    text.includes('venue') ||
+    text.includes('outdoor')
+  ) {
+    return 60;
+  }
+
+  // 2. Large Group Programs / Meditation / Assemblies (45 - 60 mins)
+  if (
+    text.includes('program') ||
+    text.includes('meditation') ||
+    text.includes('hall') ||
+    text.includes('session') ||
+    text.includes('counseling') ||
+    text.includes('matrimongl') ||
+    text.includes('review meeting')
+  ) {
+    return 45;
+  }
+
+  // 3. Financial Auditing / Banking / Reconciliation / Complex Registers (35 - 45 mins)
+  if (
+    text.includes('bank') ||
+    text.includes('deposit') ||
+    text.includes('audit') ||
+    text.includes('reconciliation') ||
+    text.includes('reconcile') ||
+    text.includes('documentation') ||
+    text.includes('cash review')
+  ) {
+    return 40;
+  }
+
+  // 4. Reporting / Ledgers / Deep Communication / Calling (25 - 35 mins)
+  if (
+    text.includes('report') ||
+    text.includes('ledger') ||
+    text.includes('inventory') ||
+    text.includes('bill entry') ||
+    text.includes('contact entry') ||
+    text.includes('donor') ||
+    text.includes('communication') ||
+    text.includes('calling') ||
+    text.includes('call') ||
+    text.includes('follow-up')
+  ) {
+    return 30;
+  }
+
+  // 5. Verification / Bill Check / Standard Payments (20 - 25 mins)
+  if (
+    text.includes('check') ||
+    text.includes('verify') ||
+    text.includes('review') ||
+    text.includes('bill') ||
+    text.includes('voucher') ||
+    text.includes('cash pay') ||
+    text.includes('disburse')
+  ) {
+    return 20;
+  }
+
+  // 6. Routine Desk / Set-up / Filing / Cleanliness / Receiving (10 - 15 mins)
+  if (
+    text.includes('desk') ||
+    text.includes('set-up') ||
+    text.includes('setup') ||
+    text.includes('clean') ||
+    text.includes('filing') ||
+    text.includes('file') ||
+    text.includes('receive') ||
+    text.includes('register') ||
+    text.includes('equipments') ||
+    text.includes('short meditation')
+  ) {
+    return 15;
+  }
+
+  // Priority-based standard fallbacks
+  if (priority === 'high') return 35;
+  if (priority === 'medium') return 25;
+  return 15;
+}
+
+export function enrichTaskWithEstimatedMinutes(task: WorkflowTask): WorkflowTask {
+  return {
+    ...task,
+    estimated_minutes:
+      typeof task.estimated_minutes === 'number' && task.estimated_minutes > 0
+        ? task.estimated_minutes
+        : getDefaultEstimatedMinutes(task.name, task.category, task.priority, task.details),
+  };
 }
 
 export const WORKFLOW_CATEGORIES: WorkflowCategory[] = [
@@ -2123,74 +2234,65 @@ export function getWorkflowForEmployee(employeeId?: string, employeeName?: strin
   tasks: WorkflowTask[];
   categories: WorkflowCategory[];
 } {
+  let selectedTasks: WorkflowTask[] = STANDARD_20_TASKS;
+  let selectedCategories: WorkflowCategory[] = STANDARD_STAFF_CATEGORIES;
+
   if (!employeeId && !employeeName) {
-    return {
-      tasks: WORKFLOW_73_TASKS,
-      categories: WORKFLOW_CATEGORIES,
-    };
+    selectedTasks = WORKFLOW_73_TASKS;
+    selectedCategories = WORKFLOW_CATEGORIES;
+  } else {
+    const normalizedId = (employeeId || '').toLowerCase();
+    const normalizedName = (employeeName || '').toLowerCase();
+    const combined = `${normalizedId} ${normalizedName}`.trim();
+
+    // 1. Jahid Hasan: 73 operational workflow tasks
+    if (combined.includes('jahid')) {
+      selectedTasks = WORKFLOW_73_TASKS;
+      selectedCategories = WORKFLOW_CATEGORIES;
+    }
+    // 2. Tanzina Akter: 32 tasks across 2 categories (Wel-O & COMMUNICATION)
+    else if (
+      normalizedId === 'so-01' ||
+      combined.includes('tanzina') ||
+      combined.includes('tanjina')
+    ) {
+      selectedTasks = TANZINA_32_TASKS;
+      selectedCategories = TANZINA_CATEGORIES;
+    }
+    // 3. Anjuman Khan (Gazipur Branch): 34 tasks across 3 categories (MATRIMONGL, HOME VISIT, HR)
+    else if (
+      normalizedId === 'gb-01' ||
+      combined.includes('anjuman')
+    ) {
+      selectedTasks = ANJUMAN_34_TASKS;
+      selectedCategories = ANJUMAN_CATEGORIES;
+    }
+    // 4. Mustakim Hosen / Mustakim Hossain (Gazipur Branch): 90 tasks across 7 categories
+    else if (
+      normalizedId === 'gb-02' ||
+      combined.includes('mustakim') ||
+      combined.includes('mostakim')
+    ) {
+      selectedTasks = MUSTAKIM_90_TASKS;
+      selectedCategories = MUSTAKIM_CATEGORIES;
+    }
+    // 5. Pronoy Das (Gazipur Sadar Office): 83 tasks across 6 categories
+    else if (
+      normalizedId === 'so-02' ||
+      combined.includes('pronoy')
+    ) {
+      selectedTasks = PRONOY_83_TASKS;
+      selectedCategories = PRONOY_CATEGORIES;
+    }
+    // 6. Default / Other Staff: 20 Wel-O tasks
+    else {
+      selectedTasks = STANDARD_20_TASKS;
+      selectedCategories = STANDARD_STAFF_CATEGORIES;
+    }
   }
 
-  const normalizedId = (employeeId || '').toLowerCase();
-  const normalizedName = (employeeName || '').toLowerCase();
-  const combined = `${normalizedId} ${normalizedName}`.trim();
-
-  // 1. Jahid Hasan: 73 operational workflow tasks
-  if (combined.includes('jahid')) {
-    return {
-      tasks: WORKFLOW_73_TASKS,
-      categories: WORKFLOW_CATEGORIES,
-    };
-  }
-
-  // 2. Tanzina Akter: 32 tasks across 2 categories (Wel-O & COMMUNICATION)
-  if (
-    normalizedId === 'so-01' ||
-    combined.includes('tanzina') ||
-    combined.includes('tanjina')
-  ) {
-    return {
-      tasks: TANZINA_32_TASKS,
-      categories: TANZINA_CATEGORIES,
-    };
-  }
-
-  // 3. Anjuman Khan (Gazipur Branch): 34 tasks across 3 categories (MATRIMONGL, HOME VISIT, HR)
-  if (
-    normalizedId === 'gb-01' ||
-    combined.includes('anjuman')
-  ) {
-    return {
-      tasks: ANJUMAN_34_TASKS,
-      categories: ANJUMAN_CATEGORIES,
-    };
-  }
-
-  // 4. Mustakim Hosen / Mustakim Hossain (Gazipur Branch): 90 tasks across 7 categories
-  if (
-    normalizedId === 'gb-02' ||
-    combined.includes('mustakim') ||
-    combined.includes('mostakim')
-  ) {
-    return {
-      tasks: MUSTAKIM_90_TASKS,
-      categories: MUSTAKIM_CATEGORIES,
-    };
-  }
-
-  // 5. Pronoy Das (Gazipur Sadar Office): 83 tasks across 6 categories
-  if (
-    normalizedId === 'so-02' ||
-    combined.includes('pronoy')
-  ) {
-    return {
-      tasks: PRONOY_83_TASKS,
-      categories: PRONOY_CATEGORIES,
-    };
-  }
-
-  // 6. Default / Other Staff: 20 Wel-O tasks
   return {
-    tasks: STANDARD_20_TASKS,
-    categories: STANDARD_STAFF_CATEGORIES,
+    tasks: selectedTasks.map(enrichTaskWithEstimatedMinutes),
+    categories: selectedCategories,
   };
 }

@@ -1,4 +1,9 @@
-import { WorkflowCategory, WorkflowTask, getWorkflowForEmployee } from '../data/workflowData';
+import {
+  WorkflowCategory,
+  WorkflowTask,
+  getWorkflowForEmployee,
+  enrichTaskWithEstimatedMinutes,
+} from '../data/workflowData';
 
 export interface CustomTaskOverride {
   id: string;
@@ -108,6 +113,13 @@ export function updateTaskPoint(taskId: string, updates: Partial<WorkflowTask>):
   saveCustomWorkflowState(state);
 }
 
+// Reset a specific task point back to factory default
+export function resetTaskPointToDefault(taskId: string): void {
+  const state = getCustomWorkflowState();
+  delete state.overrides[taskId];
+  saveCustomWorkflowState(state);
+}
+
 // Reset all customizations back to factory default
 export function resetCustomWorkflowState(): void {
   if (typeof window === 'undefined') return;
@@ -175,5 +187,5 @@ export function getEffectiveWorkflowForEmployee(
 
   const categories = Array.from(categoryMap.values()).filter((c) => c.taskCount > 0);
 
-  return { tasks, categories };
+  return { tasks: tasks.map(enrichTaskWithEstimatedMinutes), categories };
 }

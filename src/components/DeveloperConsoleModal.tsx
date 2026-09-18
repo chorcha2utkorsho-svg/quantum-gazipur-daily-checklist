@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { Clock } from 'lucide-react';
 import { Employee } from '../types';
 import { WorkflowTask } from '../data/workflowData';
 import {
@@ -39,6 +40,7 @@ export const DeveloperConsoleModal: React.FC<DeveloperConsoleModalProps> = ({
   const [newCategory, setNewCategory] = useState('OFFICE MANAGEMENT');
   const [newCategoryBn, setNewCategoryBn] = useState('Office Management');
   const [newPriority, setNewPriority] = useState<'high' | 'medium' | 'low'>('medium');
+  const [newEstimatedMinutes, setNewEstimatedMinutes] = useState<number>(30);
   const [newTargetEmp, setNewTargetEmp] = useState('all');
 
   // Developer PIN Gate
@@ -102,6 +104,7 @@ export const DeveloperConsoleModal: React.FC<DeveloperConsoleModalProps> = ({
         category: newCategory.trim().toUpperCase(),
         categoryBn: newCategoryBn.trim() || newCategory.trim(),
         priority: newPriority,
+        estimated_minutes: Number(newEstimatedMinutes) || 30,
       },
       newTargetEmp
     );
@@ -109,6 +112,7 @@ export const DeveloperConsoleModal: React.FC<DeveloperConsoleModalProps> = ({
     setNewCode('');
     setNewName('');
     setNewDetails('');
+    setNewEstimatedMinutes(30);
     setVersion((v) => v + 1);
     onWorkflowMutated?.();
     notify(`New task point successfully added (${codeToUse})!`);
@@ -133,6 +137,7 @@ export const DeveloperConsoleModal: React.FC<DeveloperConsoleModalProps> = ({
       details: editTask.details,
       priority: editTask.priority,
       code: editTask.code,
+      estimated_minutes: Number(editTask.estimated_minutes) || 30,
     });
 
     setEditTask(null);
@@ -424,6 +429,10 @@ export const DeveloperConsoleModal: React.FC<DeveloperConsoleModalProps> = ({
                                 ? 'Medium'
                                 : 'Routine'}
                             </span>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-sky-500/15 text-sky-300 border border-sky-500/30">
+                              <Clock className="w-3 h-3 text-sky-400" />
+                              {t.estimated_minutes || 30}m
+                            </span>
                             {isCustom && (
                               <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-rose-500/30 text-rose-300 border border-rose-500/50">
                                 Developer Custom
@@ -473,7 +482,7 @@ export const DeveloperConsoleModal: React.FC<DeveloperConsoleModalProps> = ({
                 </div>
 
                 <form onSubmit={handleAddNewPoint} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div>
                       <label className="block text-xs font-semibold text-slate-300 mb-1">
                         Point Code (Optional)
@@ -502,6 +511,40 @@ export const DeveloperConsoleModal: React.FC<DeveloperConsoleModalProps> = ({
                         <option value="medium">Medium Priority</option>
                         <option value="low">Low Priority</option>
                       </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-300 mb-1">
+                        Est. Time (Minutes)
+                      </label>
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          id="new-point-estimated-minutes"
+                          type="number"
+                          min={5}
+                          max={480}
+                          step={5}
+                          value={newEstimatedMinutes}
+                          onChange={(e) => setNewEstimatedMinutes(Number(e.target.value))}
+                          className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white font-mono focus:outline-none focus:border-rose-500"
+                        />
+                        <div className="flex gap-1 shrink-0">
+                          {[15, 30, 45, 60].map((m) => (
+                            <button
+                              key={m}
+                              type="button"
+                              onClick={() => setNewEstimatedMinutes(m)}
+                              className={`px-1.5 py-1 rounded text-[10px] font-mono font-semibold transition ${
+                                newEstimatedMinutes === m
+                                  ? 'bg-sky-500 text-white'
+                                  : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
+                              }`}
+                            >
+                              {m}m
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -722,6 +765,42 @@ export const DeveloperConsoleModal: React.FC<DeveloperConsoleModalProps> = ({
                     <option value="medium">Medium Priority</option>
                     <option value="low">Low Priority</option>
                   </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    Estimated Time (Minutes)
+                  </label>
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      id="edit-point-estimated-minutes"
+                      type="number"
+                      min={5}
+                      max={480}
+                      step={5}
+                      value={editTask.estimated_minutes || 30}
+                      onChange={(e) =>
+                        setEditTask({ ...editTask, estimated_minutes: Number(e.target.value) || 30 })
+                      }
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white font-mono"
+                    />
+                    <div className="flex gap-1 shrink-0">
+                      {[15, 30, 45, 60].map((m) => (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() => setEditTask({ ...editTask, estimated_minutes: m })}
+                          className={`px-1.5 py-1 rounded text-[10px] font-mono font-semibold transition ${
+                            (editTask.estimated_minutes || 30) === m
+                              ? 'bg-sky-500 text-white'
+                              : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
+                          }`}
+                        >
+                          {m}m
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-2 pt-2">

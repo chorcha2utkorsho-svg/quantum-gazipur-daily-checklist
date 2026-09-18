@@ -189,6 +189,9 @@ export interface DailyLogItem {
   order_index: number;
   completed_at?: string | null;
   updated_at?: string;
+  actual_minutes?: number; // Total actual time spent in minutes (e.g. 24 or 24.5)
+  time_spent_seconds?: number; // Total accumulated seconds spent on task
+  timer_started_at?: string | null; // ISO timestamp when current active timer was started, null if paused/stopped
 }
 
 export interface DailySummaryStats {
@@ -237,7 +240,7 @@ export const BOSS_RAJI_SIR: Employee = {
   id: 'emp-raji-sir-boss',
   employee_id: 'RAJI_SIR',
   name: 'Raji Sir',
-  pin: '1234',
+  pin: '9090',
   role: 'main_boss',
   branch: 'all',
   is_active: true,
@@ -278,7 +281,7 @@ export const INITIAL_EMPLOYEES: Employee[] = [
     id: 'emp-chow-anjuman',
     employee_id: 'GB-01',
     name: 'Anjuman Khan',
-    pin: '1234',
+    pin: '2481',
     role: 'office_assistant',
     branch: 'chowrasta',
     is_active: true,
@@ -292,7 +295,7 @@ export const INITIAL_EMPLOYEES: Employee[] = [
     id: 'emp-chow-mustakim',
     employee_id: 'GB-02',
     name: 'Mustakim Hosen',
-    pin: '1234',
+    pin: '3719',
     role: 'office_assistant',
     branch: 'chowrasta',
     is_active: true,
@@ -308,7 +311,7 @@ export const INITIAL_EMPLOYEES: Employee[] = [
     id: 'emp-jahid-akand',
     employee_id: 'JAHID',
     name: 'Jahid Hasan',
-    pin: '1234',
+    pin: '5824',
     role: 'accounts',
     branch: 'rajbari',
     is_active: true,
@@ -322,7 +325,7 @@ export const INITIAL_EMPLOYEES: Employee[] = [
     id: 'emp-rajb-tanjina',
     employee_id: 'SO-01',
     name: 'Tanzina Akter',
-    pin: '1234',
+    pin: '4932',
     role: 'front_desk',
     branch: 'rajbari',
     is_active: true,
@@ -336,7 +339,7 @@ export const INITIAL_EMPLOYEES: Employee[] = [
     id: 'emp-rajb-pronoy',
     employee_id: 'SO-02',
     name: 'Pronoy Das',
-    pin: '1234',
+    pin: '6158',
     role: 'logistics',
     branch: 'rajbari',
     is_active: true,

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sun, Moon, Monitor, LogIn } from 'lucide-react';
+import { Sun, Moon, Monitor, LogIn, Target, Key } from 'lucide-react';
 import { BranchId, Employee, SYSTEM_ROLES } from '../types';
 
 interface HeaderProps {
@@ -11,7 +11,7 @@ interface HeaderProps {
   onOpenPrintModal: () => void;
   onOpenLoginModal: () => void;
   onRajiSirSignIn?: () => void;
-  onOpenEmployeeSignUp: () => void;
+  onOpenCredentialsVault?: () => void;
   onOpenEmployeeManager: () => void;
   isSupabaseConnected: boolean;
   currentUser: Employee | null;
@@ -23,6 +23,8 @@ interface HeaderProps {
   onOpenArchiveModal?: () => void;
   currentTheme?: 'light' | 'dark' | 'slate';
   onToggleTheme?: (theme: 'light' | 'dark' | 'slate') => void;
+  isFocusMode?: boolean;
+  onToggleFocusMode?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -34,7 +36,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenPrintModal,
   onOpenLoginModal,
   onRajiSirSignIn,
-  onOpenEmployeeSignUp,
+  onOpenCredentialsVault,
   onOpenEmployeeManager,
   isSupabaseConnected,
   currentUser,
@@ -46,6 +48,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenArchiveModal,
   currentTheme = 'light',
   onToggleTheme,
+  isFocusMode = false,
+  onToggleFocusMode,
 }) => {
   const dateObj = new Date(`${selectedDate}T00:00:00`);
   const formattedDisplay = isNaN(dateObj.getTime())
@@ -185,15 +189,18 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             </div>
 
-            {/* 4. Employee Sign Up */}
-            <button
-              id="header-employee-signup-btn"
-              onClick={onOpenEmployeeSignUp}
-              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black transition-all shadow-2xs shadow-emerald-600/20"
-              title="Register new employee credentials"
-            >
-              Staff Sign Up
-            </button>
+            {/* 4. Credentials Vault for Raji Sir / Authority */}
+            {onOpenCredentialsVault && (isBoss || currentUser?.employee_id === 'DEV_ADMIN') && (
+              <button
+                id="header-credentials-vault-btn"
+                onClick={onOpenCredentialsVault}
+                className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black transition-all shadow-2xs shadow-amber-500/20 flex items-center gap-1.5"
+                title="সকল স্টাফের পাসওয়ার্ড দেখুন ও কপি করুন"
+              >
+                <Key className="w-3.5 h-3.5" />
+                <span>পাসওয়ার্ড তালিকা</span>
+              </button>
+            )}
 
             {/* Active User Card & Switch Button */}
             <div className={`flex items-center gap-2 p-1 pl-2 rounded-xl border shadow-2xs ${
@@ -302,6 +309,23 @@ export const Header: React.FC<HeaderProps> = ({
               Reset Checklist
             </button>
 
+            {/* Focus Mode Quick Launcher */}
+            {onToggleFocusMode && (
+              <button
+                id="header-toggle-focus-mode-btn"
+                onClick={onToggleFocusMode}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border flex items-center gap-1.5 shadow-2xs ${
+                  isFocusMode
+                    ? 'bg-amber-500 text-slate-950 border-amber-600 ring-2 ring-amber-400'
+                    : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-300'
+                }`}
+                title="Focus Mode: Hide all distractions and display only the highest-priority incomplete task"
+              >
+                <Target className="w-3.5 h-3.5 text-amber-600" />
+                <span>Focus Mode</span>
+              </button>
+            )}
+
             {/* Print / Export Report */}
             <button
               id="print-export-btn"
@@ -316,6 +340,26 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Middle row: Mode Switcher */}
         <div className="mt-3 pt-3 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-slate-100 border border-slate-200">
+            {/* Focus Mode Tab in Mode Switcher */}
+            {onToggleFocusMode && (
+              <button
+                id="tab-focus-mode-view"
+                onClick={onToggleFocusMode}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs ${
+                  isFocusMode
+                    ? 'bg-amber-500 text-slate-950 font-black ring-2 ring-amber-400'
+                    : 'bg-white hover:bg-amber-50 text-amber-900 border border-amber-300'
+                }`}
+                title="Focus Mode: Single-task deep focus on the highest-priority incomplete task"
+              >
+                <Target className="w-3.5 h-3.5 text-amber-600" />
+                <span>Focus Mode</span>
+                <span className="text-[9px] uppercase font-mono px-1 py-0.2 rounded bg-amber-500/20 text-amber-950 font-black">
+                  1-Task
+                </span>
+              </button>
+            )}
+
             {/* For Supervisor / Raji Sir */}
             {isSupervisor && (
               <button

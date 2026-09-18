@@ -1,5 +1,7 @@
 import React from 'react';
+import { Clock } from 'lucide-react';
 import { DailyLogItem, Employee, SYSTEM_ROLES } from '../types';
+import { getDefaultEstimatedMinutes } from '../data/workflowData';
 
 interface EmployeeInspectionModalProps {
   isOpen: boolean;
@@ -22,6 +24,17 @@ export const EmployeeInspectionModal: React.FC<EmployeeInspectionModalProps> = (
   const doneCount = logs.filter((l) => l.status === 'done').length;
   const totalCount = logs.length;
   const percentage = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+
+  const totalMinutes = logs.reduce(
+    (acc, item) => acc + getDefaultEstimatedMinutes(item.task_name, 'General', 'medium'),
+    0
+  );
+  const doneMinutes = logs
+    .filter((l) => l.status === 'done')
+    .reduce((acc, item) => acc + getDefaultEstimatedMinutes(item.task_name, 'General', 'medium'), 0);
+  const totalHours = Math.floor(totalMinutes / 60);
+  const totalRemMins = totalMinutes % 60;
+  const formattedTotal = totalHours > 0 ? `${totalHours}h ${totalRemMins}m` : `${totalRemMins}m`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
@@ -71,7 +84,7 @@ export const EmployeeInspectionModal: React.FC<EmployeeInspectionModalProps> = (
         </div>
 
         {/* Progress summary ribbon */}
-        <div className="px-6 py-3 bg-white/[0.03] border-b border-white/5 flex items-center justify-between">
+        <div className="px-6 py-3 bg-white/[0.03] border-b border-white/5 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <span className="text-xs font-semibold text-[#8e9299]">Progress:</span>
             <span
@@ -82,15 +95,22 @@ export const EmployeeInspectionModal: React.FC<EmployeeInspectionModalProps> = (
               {percentage}% Completed
             </span>
           </div>
-          <span className="text-xs text-[#8e9299]">
-            {doneCount} Done • {totalCount - doneCount} Pending
-          </span>
+          <div className="flex items-center gap-4 text-xs">
+            <span className="text-sky-300 font-mono flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5 text-sky-400" />
+              Est. Workload: {formattedTotal}
+            </span>
+            <span className="text-[#8e9299]">
+              {doneCount} Done • {totalCount - doneCount} Pending
+            </span>
+          </div>
         </div>
 
         {/* Logs Checklist */}
         <div className="p-6 overflow-y-auto space-y-2.5">
           {logs.map((item, idx) => {
             const isDone = item.status === 'done';
+            const estMin = getDefaultEstimatedMinutes(item.task_name, 'General', 'medium');
 
             return (
               <div
@@ -103,9 +123,15 @@ export const EmployeeInspectionModal: React.FC<EmployeeInspectionModalProps> = (
               >
                 <div className="flex items-start sm:items-center gap-3 min-w-0">
                   <div className="min-w-0">
-                    <span className={`text-sm font-medium ${isDone ? 'text-white' : 'text-zinc-300'}`}>
-                      {item.order_index}. {item.task_name}
-                    </span>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`text-sm font-medium ${isDone ? 'text-white' : 'text-zinc-300'}`}>
+                        {item.order_index}. {item.task_name}
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded bg-sky-500/10 text-sky-300 border border-sky-500/20">
+                        <Clock className="w-3 h-3 text-sky-400" />
+                        {estMin}m
+                      </span>
+                    </div>
                     {!isDone && item.reason_for_pending && (
                       <div className="mt-1 text-xs text-amber-300/90 italic bg-amber-500/10 px-2.5 py-1 rounded border border-amber-500/20">
                         Reason: "{item.reason_for_pending}"
